@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+allure-results/
+allure-report/
+*.tgz
+.env
+.env.local
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

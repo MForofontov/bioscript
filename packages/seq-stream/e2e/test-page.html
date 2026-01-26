@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bioseq-Stream Browser Tests</title>
+</head>
+<body>
+  <h1>Bioseq-Stream Browser Tests</h1>
+  <div id="status">Loading...</div>
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      console.error('Error:', msg, 'at', url, line, col);
+      document.getElementById('status').textContent = 'Error: ' + msg;
+      return false;
+    };
+    console.log('Starting to load bioseq-bundle.js');
+  </script>
+  <script src="/e2e/bioseq-bundle.js" onload="console.log('Bundle script loaded')" onerror="console.error('Failed to load bundle')"></script>
+  <script>
+    console.log('After script tag');
+    console.log('window.bioseqStream:', window.bioseqStream);
+    if (window.bioseqStream) {
+      console.log('Bioseq-Stream loaded successfully!');
+      console.log('Available functions:', Object.keys(window.bioseqStream));
+      document.getElementById('status').textContent = 'Loaded: ' + Object.keys(window.bioseqStream).length + ' exports';
+    } else {
+      console.error('window.bioseqStream is undefined!');
+      document.getElementById('status').textContent = 'ERROR: bioseqStream not loaded';
+    }
+  </script>
+</body>
+</html>
