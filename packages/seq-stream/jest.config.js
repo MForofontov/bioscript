@@ -7,13 +7,8 @@ const Status = {
 
 const config = {
   preset: 'ts-jest',
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.test.json',
-    },
-  },
   testEnvironment: 'node',
-  testMatch: ['**/src/__tests__/**/*.test.ts'],
+  testMatch: ['**/src/tests/**/*.test.ts'],
   collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageReporters: ['json', 'lcov', 'text', 'clover', 'html'],
@@ -22,19 +17,19 @@ const config = {
     '/dist/',
     '/e2e/',
     '/examples/',
-    '/__tests__/',
+    '/tests/',
     '/browser-example.html',
     'demo.js',
     '.spec.ts$',
-    '.d.ts$'
+    '.d.ts$',
   ],
   testPathIgnorePatterns: [
-    '/node_modules/', 
-    '/dist/', 
-    '/coverage/', 
+    '/node_modules/',
+    '/dist/',
+    '/coverage/',
     '/e2e/',
     '\\.spec\\.ts$',
-    '\\.d\\.ts$'
+    '\\.d\\.ts$',
   ],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',

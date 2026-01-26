@@ -114,7 +114,12 @@ await pipeline(parser, converter, writer);
 ### Filter sequences by length and quality
 
 ```typescript
-import { createFastqParser, createFastqWriter, LengthFilter, QualityFilter } from '@bioscript/seq-stream';
+import {
+  createFastqParser,
+  createFastqWriter,
+  LengthFilter,
+  QualityFilter,
+} from '@bioscript/seq-stream';
 import { pipeline } from 'stream/promises';
 
 const parser = createFastqParser('reads.fastq');

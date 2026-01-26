@@ -1,5 +1,4 @@
-import type { FastaRecord } from '../fasta.js';
-import { FastaParser, FastaWriter } from '../fasta.js';
+import { FastaParser, FastaWriter, type FastaRecord } from '../fasta';
 import { Readable, Writable } from 'stream';
 import { pipeline } from 'stream/promises';
 

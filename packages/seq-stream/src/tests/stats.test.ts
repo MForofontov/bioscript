@@ -1,7 +1,6 @@
-import { StatsCalculator, calculateN50, calculateL50, LengthFilter } from '../stats.js';
-import type { FastaRecord } from '../fasta.js';
-import type { FastqRecord } from '../fastq.js';
-import { QualityEncoding } from '../fastq.js';
+import { StatsCalculator, calculateN50, calculateL50, LengthFilter } from '../stats';
+import type { FastaRecord } from '../fasta';
+import { QualityEncoding, type FastqRecord } from '../fastq';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
 
@@ -136,11 +135,11 @@ describe('LengthFilter', () => {
     await pipeline(readable, stats);
 
     const results = stats.getStats();
-    
+
     // Basic stats
     expect(results.totalSequences).toBe(3);
     expect(results.totalBases).toBe(20);
-    
+
     // GC and AT content
     // seq1: 4 GC, 4 AT
     // seq2: 4 GC, 0 AT
@@ -148,22 +147,22 @@ describe('LengthFilter', () => {
     // Total: 8 GC, 8 AT out of 20 bases
     expect(results.gcContent).toBeCloseTo(40, 1); // 8 GC out of 20
     expect(results.atContent).toBeCloseTo(40, 1); // 8 AT out of 20
-    
+
     // N and ambiguous bases
     expect(results.nContent).toBeCloseTo(10, 1); // 2 N out of 20
     expect(results.ambiguousBasesCount).toBe(2); // 2 R bases
-    
+
     // Length stats
     expect(results.minLength).toBe(4);
     expect(results.maxLength).toBe(8);
     expect(results.meanLength).toBe(20 / 3);
     expect(results.medianLength).toBe(4); // Sorted lengths [4, 8, 8], median at index floor(3/2) = 1 -> value 4
     expect(results.stdDevLength).toBeGreaterThan(0);
-    
+
     // N50/L50
     expect(results.n50).toBe(8);
     expect(results.l50).toBe(2);
-    
+
     // Quality stats
     expect(results.meanQuality).toBeGreaterThan(0);
     expect(results.minQuality).toBe(2); // # = Q2

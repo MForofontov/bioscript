@@ -12,7 +12,7 @@ test.describe('Browser FASTA Parser', () => {
       const blob = new Blob([fastaContent], { type: 'text/plain' });
 
       const records = [];
-      // @ts-ignore - browser bundle
+      // @ts-expect-error - browser bundle
       for await (const record of window.bioseqStream.parseFastaBrowser(blob)) {
         records.push(record);
       }
@@ -31,7 +31,7 @@ test.describe('Browser FASTA Parser', () => {
       const blob = new Blob([fastaContent], { type: 'text/plain' });
 
       const records = [];
-      // @ts-ignore
+      // @ts-expect-error - Browser bundle types
       for await (const record of window.bioseqStream.parseFastaBrowser(blob)) {
         records.push(record);
       }
@@ -55,7 +55,7 @@ test.describe('Browser FASTA Parser', () => {
         { id: 'seq2', sequence: 'TGCATGCA', description: 'test' },
       ];
 
-      // @ts-ignore
+      // @ts-expect-error - Browser bundle types
       const blob = window.bioseqStream.writeFastaBrowser(records, 80);
       const text = await blob.text();
       return text;
@@ -68,7 +68,7 @@ test.describe('Browser FASTA Parser', () => {
     const result = await page.evaluate(async () => {
       const records = [{ id: 'seq1', sequence: 'ACGTACGT' }];
 
-      // @ts-ignore
+      // @ts-expect-error - Browser bundle types
       const blob = window.bioseqStream.writeFastaBrowser(records, 4);
       const text = await blob.text();
       return text;
@@ -81,7 +81,7 @@ test.describe('Browser FASTA Parser', () => {
     const result = await page.evaluate(() => {
       const fastaContent = '>seq1\nACGTACGT\n>seq2\nTGCATGCA\n';
 
-      // @ts-ignore
+      // @ts-expect-error - Browser bundle types
       return window.bioseqStream.parseFastaText(fastaContent);
     });
 

@@ -7,5 +7,6 @@
     "allowSyntheticDefaultImports": true,
     "types": ["node", "@playwright/test"]
   },
-  "include": ["e2e/**/*"]
+  "include": ["e2e/**/*"],
+  "exclude": ["node_modules"]
 }

@@ -1,8 +1,6 @@
-import type { TransformCallback } from 'stream';
-import { Transform } from 'stream';
-import type { FastaRecord } from './fasta.js';
-import type { FastqRecord } from './fastq.js';
-import { QualityEncoding, decodeQualityScores } from './fastq.js';
+import { Transform, type TransformCallback } from 'stream';
+import type { FastaRecord } from './fasta';
+import { QualityEncoding, decodeQualityScores, type FastqRecord } from './fastq';
 
 /**
  * Statistics for a collection of sequences
@@ -141,18 +139,18 @@ export class StatsCalculator extends Transform {
 
     // Calculate standard deviation using Welford's method
     const meanLength = this.totalSequences > 0 ? this.totalBases / this.totalSequences : 0;
-    const variance = this.totalSequences > 0
-      ? (this.sumOfSquares / this.totalSequences) - (meanLength * meanLength)
-      : 0;
+    const variance =
+      this.totalSequences > 0
+        ? this.sumOfSquares / this.totalSequences - meanLength * meanLength
+        : 0;
     const stdDevLength = Math.sqrt(Math.max(0, variance));
 
     // Calculate N50 and L50 from length distribution
-    const n50 = calculateN50(Array.from(this.lengthDistribution.entries()).flatMap(
-      ([length, count]) => Array(count).fill(length)
-    ));
-    const l50 = calculateL50(Array.from(this.lengthDistribution.entries()).flatMap(
-      ([length, count]) => Array(count).fill(length)
-    ));
+    const allLengths: number[] = Array.from(this.lengthDistribution.entries()).flatMap(
+      ([length, count]: [number, number]): number[] => Array(count).fill(length) as number[]
+    );
+    const n50 = calculateN50(allLengths);
+    const l50 = calculateL50(allLengths);
 
     const stats: SequenceStats = {
       totalSequences: this.totalSequences,

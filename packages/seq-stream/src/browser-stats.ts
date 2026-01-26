@@ -3,8 +3,8 @@
  * Memory-efficient processing of sequence data
  */
 
-import type { FastaRecord } from './fasta.js';
-import type { FastqRecord } from './fastq.js';
+import type { FastaRecord } from './fasta';
+import type { FastqRecord } from './fastq';
 
 // Define QualityEncoding locally to avoid importing Node.js dependencies
 enum QualityEncoding {
@@ -138,14 +138,12 @@ export async function calculateStatsBrowser(
 
   // Calculate standard deviation
   const meanLength = totalSequences > 0 ? totalBases / totalSequences : 0;
-  const variance = totalSequences > 0
-    ? (sumOfSquares / totalSequences) - (meanLength * meanLength)
-    : 0;
+  const variance = totalSequences > 0 ? sumOfSquares / totalSequences - meanLength * meanLength : 0;
   const stdDevLength = Math.sqrt(Math.max(0, variance));
 
   // Calculate N50 and L50
-  const allLengths = Array.from(lengthDistribution.entries()).flatMap(
-    ([length, count]) => Array(count).fill(length)
+  const allLengths: number[] = Array.from(lengthDistribution.entries()).flatMap(
+    ([length, count]: [number, number]): number[] => Array(count).fill(length) as number[]
   );
   const n50 = calculateN50Browser(allLengths);
   const l50 = calculateL50Browser(allLengths);
@@ -262,14 +260,12 @@ export function calculateStatsSync(
 
   // Calculate standard deviation
   const meanLength = totalSequences > 0 ? totalBases / totalSequences : 0;
-  const variance = totalSequences > 0
-    ? (sumOfSquares / totalSequences) - (meanLength * meanLength)
-    : 0;
+  const variance = totalSequences > 0 ? sumOfSquares / totalSequences - meanLength * meanLength : 0;
   const stdDevLength = Math.sqrt(Math.max(0, variance));
 
   // Calculate N50 and L50
-  const allLengths = Array.from(lengthDistribution.entries()).flatMap(
-    ([length, count]) => Array(count).fill(length)
+  const allLengths: number[] = Array.from(lengthDistribution.entries()).flatMap(
+    ([length, count]: [number, number]): number[] => Array(count).fill(length) as number[]
   );
   const n50 = calculateN50Browser(allLengths);
   const l50 = calculateL50Browser(allLengths);

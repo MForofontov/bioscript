@@ -509,41 +509,41 @@ var bioseqStream = (() => {
         QualityEncoding2["Phred33"] = "phred33";
         QualityEncoding2["Phred64"] = "phred64";
       })(QualityEncoding || (exports.QualityEncoding = QualityEncoding = {}));
-      var browser_fasta_js_1 = require_browser_fasta();
+      var browser_fasta_1 = require_browser_fasta();
       Object.defineProperty(exports, "parseFastaBrowser", { enumerable: true, get: function() {
-        return browser_fasta_js_1.parseFastaBrowser;
+        return browser_fasta_1.parseFastaBrowser;
       } });
       Object.defineProperty(exports, "writeFastaBrowser", { enumerable: true, get: function() {
-        return browser_fasta_js_1.writeFastaBrowser;
+        return browser_fasta_1.writeFastaBrowser;
       } });
       Object.defineProperty(exports, "parseFastaText", { enumerable: true, get: function() {
-        return browser_fasta_js_1.parseFastaText;
+        return browser_fasta_1.parseFastaText;
       } });
-      var browser_fastq_js_1 = require_browser_fastq();
+      var browser_fastq_1 = require_browser_fastq();
       Object.defineProperty(exports, "parseFastqBrowser", { enumerable: true, get: function() {
-        return browser_fastq_js_1.parseFastqBrowser;
+        return browser_fastq_1.parseFastqBrowser;
       } });
       Object.defineProperty(exports, "writeFastqBrowser", { enumerable: true, get: function() {
-        return browser_fastq_js_1.writeFastqBrowser;
+        return browser_fastq_1.writeFastqBrowser;
       } });
       Object.defineProperty(exports, "parseFastqText", { enumerable: true, get: function() {
-        return browser_fastq_js_1.parseFastqText;
+        return browser_fastq_1.parseFastqText;
       } });
       Object.defineProperty(exports, "convertQualityBrowser", { enumerable: true, get: function() {
-        return browser_fastq_js_1.convertQualityBrowser;
+        return browser_fastq_1.convertQualityBrowser;
       } });
-      var browser_stats_js_1 = require_browser_stats();
+      var browser_stats_1 = require_browser_stats();
       Object.defineProperty(exports, "calculateStatsBrowser", { enumerable: true, get: function() {
-        return browser_stats_js_1.calculateStatsBrowser;
+        return browser_stats_1.calculateStatsBrowser;
       } });
       Object.defineProperty(exports, "calculateStatsSync", { enumerable: true, get: function() {
-        return browser_stats_js_1.calculateStatsSync;
+        return browser_stats_1.calculateStatsSync;
       } });
       Object.defineProperty(exports, "calculateN50Browser", { enumerable: true, get: function() {
-        return browser_stats_js_1.calculateN50Browser;
+        return browser_stats_1.calculateN50Browser;
       } });
       Object.defineProperty(exports, "calculateL50Browser", { enumerable: true, get: function() {
-        return browser_stats_js_1.calculateL50Browser;
+        return browser_stats_1.calculateL50Browser;
       } });
     }
   });

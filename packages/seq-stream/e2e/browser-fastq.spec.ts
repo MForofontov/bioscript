@@ -12,7 +12,7 @@ test.describe('Browser FASTQ Parser', () => {
       const blob = new Blob([fastqContent], { type: 'text/plain' });
 
       const records = [];
-      // @ts-ignore
+      // @ts-expect-error - Browser bundle types
       for await (const record of window.bioseqStream.parseFastqBrowser(blob)) {
         records.push(record);
       }
@@ -31,7 +31,7 @@ test.describe('Browser FASTQ Parser', () => {
       const blob = new Blob([fastqContent], { type: 'text/plain' });
 
       const records = [];
-      // @ts-ignore
+      // @ts-expect-error - Browser bundle types
       for await (const record of window.bioseqStream.parseFastqBrowser(blob)) {
         records.push(record);
       }
@@ -55,7 +55,7 @@ test.describe('Browser FASTQ Parser', () => {
         { id: 'read2', sequence: 'TGCA', quality: 'JJJJ', description: 'test' },
       ];
 
-      // @ts-ignore
+      // @ts-expect-error - Browser bundle types
       const blob = window.bioseqStream.writeFastqBrowser(records);
       const text = await blob.text();
       return text;
@@ -68,7 +68,7 @@ test.describe('Browser FASTQ Parser', () => {
     const result = await page.evaluate(() => {
       const fastqContent = '@read1\nACGT\n+\nIIII\n@read2\nTGCA\n+\nJJJJ\n';
 
-      // @ts-ignore
+      // @ts-expect-error - Browser bundle types
       return window.bioseqStream.parseFastqText(fastqContent);
     });
 
@@ -79,7 +79,7 @@ test.describe('Browser FASTQ Parser', () => {
 
   test('convertQualityBrowser should convert Phred+33 to Phred+64', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-ignore - Use numeric values: 33 for Phred+33, 64 for Phred+64
+      // @ts-expect-error - Use numeric values: 33 for Phred+33, 64 for Phred+64
       return window.bioseqStream.convertQualityBrowser('IIII', 33, 64);
     });
 
@@ -88,7 +88,7 @@ test.describe('Browser FASTQ Parser', () => {
 
   test('convertQualityBrowser should convert Phred+64 to Phred+33', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-ignore - Use numeric values: 64 for Phred+64, 33 for Phred+33
+      // @ts-expect-error - Use numeric values: 64 for Phred+64, 33 for Phred+33
       return window.bioseqStream.convertQualityBrowser('hhhh', 64, 33);
     });
 

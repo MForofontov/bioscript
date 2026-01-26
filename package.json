@@ -8,9 +8,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/bioscript.git"
+    "url": "https://github.com/MForofontov/bioscript.git"
   },
-  "author": "",
+  "homepage": "https://github.com/MForofontov/bioscript#readme",
+  "bugs": {
+    "url": "https://github.com/MForofontov/bioscript/issues"
+  },
+  "author": "MForofontov",
   "engines": {
     "node": ">=16.0.0"
   },
@@ -22,6 +26,8 @@
     "test": "npm run test --workspaces",
     "test:browser": "npm run test:browser --workspaces --if-present",
     "test:all": "npm run test:all --workspaces --if-present",
+    "test:install:full": "./scripts/test-install-full.sh",
+    "publish:all": "./scripts/publish-packages.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",

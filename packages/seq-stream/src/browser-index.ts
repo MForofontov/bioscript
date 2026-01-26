@@ -4,7 +4,7 @@
  */
 
 // FASTA functions
-export { parseFastaBrowser, writeFastaBrowser, parseFastaText } from './browser-fasta.js';
+export { parseFastaBrowser, writeFastaBrowser, parseFastaText } from './browser-fasta';
 
 // FASTQ functions
 export {
@@ -12,7 +12,7 @@ export {
   writeFastqBrowser,
   parseFastqText,
   convertQualityBrowser,
-} from './browser-fastq.js';
+} from './browser-fastq';
 
 // Statistics functions
 export {
@@ -21,9 +21,9 @@ export {
   calculateN50Browser,
   calculateL50Browser,
   type BrowserStats,
-} from './browser-stats.js';
+} from './browser-stats';
 
 // Re-export types from main modules
-export type { FastaRecord } from './fasta.js';
-export type { FastqRecord } from './fastq.js';
-export { QualityEncoding } from './fastq.js';
+export type { FastaRecord } from './fasta';
+export type { FastqRecord } from './fastq';
+export { QualityEncoding } from './fastq';

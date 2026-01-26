@@ -1,5 +1,4 @@
-import type { TransformCallback } from 'stream';
-import { Transform } from 'stream';
+import { Transform, type TransformCallback } from 'stream';
 import { createReadStream, createWriteStream } from 'fs';
 import { createGunzip, createGzip } from 'zlib';
 

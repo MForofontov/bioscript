@@ -1,4 +1,3 @@
-import type { FastqRecord } from '../fastq.js';
 import {
   FastqParser,
   FastqWriter,
@@ -6,7 +5,8 @@ import {
   convertQualityScores,
   decodeQualityScores,
   encodeQualityScores,
-} from '../fastq.js';
+  type FastqRecord,
+} from '../fastq';
 import { Readable, Writable } from 'stream';
 import { pipeline } from 'stream/promises';
 

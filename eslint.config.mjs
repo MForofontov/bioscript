@@ -10,10 +10,15 @@ export default tseslint.config(
       'eslint.config.mjs',
       'node_modules/**',
       'dist/**',
+      '**/dist/**',
       'coverage/**',
       '**/*.js',
       'demo.js',
-      'jest.config.js'
+      'jest.config.js',
+      'jest.config.d.ts',
+      'packages/*/dist/**',
+      'e2e/**/*.js',
+      '**/playwright.config.ts'
     ],
   },
   eslint.configs.recommended,
@@ -30,7 +35,12 @@ export default tseslint.config(
       ecmaVersion: 2024,
       sourceType: 'module',
       parserOptions: {
-        project: ['./tsconfig.json', './tsconfig.test.json'],
+        project: [
+          './tsconfig.json',
+          './packages/*/tsconfig.json',
+          './packages/*/tsconfig.test.json',
+          './packages/*/tsconfig.e2e.json'
+        ],
         tsconfigRootDir: import.meta.dirname,
       },
     },

@@ -17,14 +17,14 @@ GGCCGGCC
 AATTNNRR
 >seq4 Fourth sequence
 ACGTACGTACGT`;
-      
+
       const blob = new Blob([fastaContent], { type: 'text/plain' });
-      
-      // @ts-ignore
+
+      // @ts-expect-error - Browser bundle types
       const parser = window.bioseqStream.parseFastaBrowser(blob);
-      // @ts-ignore
+      // @ts-expect-error - Browser bundle types
       const stats = await window.bioseqStream.calculateStatsBrowser(parser);
-      
+
       return {
         totalSequences: stats.totalSequences,
         totalBases: stats.totalBases,
@@ -41,9 +41,9 @@ ACGTACGTACGT`;
         l50: stats.l50,
       };
     });
-    
+
     console.log('Small file stats:', result);
-    
+
     // Verify stats
     expect(result.totalSequences).toBe(4);
     expect(result.totalBases).toBe(36); // 8+8+8+12
@@ -75,14 +75,14 @@ IIII
 AATT
 +
 5555`;
-      
+
       const blob = new Blob([fastqContent], { type: 'text/plain' });
-      
-      // @ts-ignore
+
+      // @ts-expect-error - Browser bundle types
       const parser = window.bioseqStream.parseFastqBrowser(blob);
-      // @ts-ignore
+      // @ts-expect-error - Browser bundle types
       const stats = await window.bioseqStream.calculateStatsBrowser(parser);
-      
+
       return {
         totalSequences: stats.totalSequences,
         totalBases: stats.totalBases,
@@ -93,9 +93,9 @@ AATT
         q30Percent: stats.q30Percent ? parseFloat(stats.q30Percent.toFixed(2)) : undefined,
       };
     });
-    
+
     console.log('FASTQ quality stats:', result);
-    
+
     expect(result.totalSequences).toBe(2); // actual parsed sequences
     expect(result.totalBases).toBe(8); // 4+4 bases
     expect(result.meanQuality).toBeGreaterThan(0);
@@ -110,37 +110,37 @@ AATT
       // Generate 10MB file
       const numSequences = 10000;
       const seqLength = 1000;
-      
+
       const sequences = [];
       for (let i = 0; i < numSequences; i++) {
         // Vary the base composition for more interesting stats
         const gcRatio = 0.3 + (i % 5) * 0.1; // 30-70% GC
-        const gcBases = Math.floor(seqLength * gcRatio / 2);
+        const gcBases = Math.floor((seqLength * gcRatio) / 2);
         const atBases = Math.floor((seqLength - gcBases * 2) / 2);
-        
+
         let seq = '';
         seq += 'G'.repeat(gcBases);
         seq += 'C'.repeat(gcBases);
         seq += 'A'.repeat(atBases);
         seq += 'T'.repeat(seqLength - gcBases * 2 - atBases);
-        
+
         sequences.push('>seq' + i + '\n' + seq + '\n');
       }
-      
+
       const fastaContent = sequences.join('');
       const blob = new Blob([fastaContent], { type: 'text/plain' });
-      
+
       console.log(`Blob size: ${(blob.size / (1024 * 1024)).toFixed(2)} MB`);
-      
+
       const startTime = performance.now();
-      
-      // @ts-ignore
+
+      // @ts-expect-error - Browser bundle types
       const parser = window.bioseqStream.parseFastaBrowser(blob);
-      // @ts-ignore
+      // @ts-expect-error - Browser bundle types
       const stats = await window.bioseqStream.calculateStatsBrowser(parser);
-      
+
       const totalTime = (performance.now() - startTime) / 1000;
-      
+
       return {
         totalSequences: stats.totalSequences,
         totalBases: stats.totalBases,
@@ -153,13 +153,13 @@ AATT
         n50: stats.n50,
         l50: stats.l50,
         totalTime,
-        throughputMBps: parseFloat(((blob.size / (1024 * 1024)) / totalTime).toFixed(2)),
+        throughputMBps: parseFloat((blob.size / (1024 * 1024) / totalTime).toFixed(2)),
       };
     });
-    
+
     console.log('Large file stats result:', result);
     console.log(`Throughput: ${result.throughputMBps} MB/s`);
-    
+
     expect(result.totalSequences).toBe(10000);
     expect(result.totalBases).toBe(10000000); // 10M bases
     expect(result.gcContent).toBeGreaterThan(0);
@@ -183,20 +183,20 @@ ACGTACGT
 GGCCGGCC
 >seq3
 AATTNNRR`;
-      
+
       const blob = new Blob([fastaContent], { type: 'text/plain' });
-      
-      // @ts-ignore
+
+      // @ts-expect-error - Browser bundle types
       const parser = window.bioseqStream.parseFastaBrowser(blob);
       const records = [];
       for await (const record of parser) {
         records.push(record);
       }
-      
+
       // Calculate stats synchronously
-      // @ts-ignore
+      // @ts-expect-error - Browser bundle types
       const stats = window.bioseqStream.calculateStatsSync(records);
-      
+
       return {
         totalSequences: stats.totalSequences,
         totalBases: stats.totalBases,
@@ -206,9 +206,9 @@ AATTNNRR`;
         l50: stats.l50,
       };
     });
-    
+
     console.log('Sync stats result:', result);
-    
+
     expect(result.totalSequences).toBe(3);
     expect(result.totalBases).toBe(24);
     expect(result.gcContent).toBe(50); // actual calculated value

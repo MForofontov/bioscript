@@ -3,7 +3,7 @@
  * Handles File/Blob objects with automatic gzip decompression
  */
 
-import type { FastqRecord, QualityEncoding } from './fastq.js';
+import type { FastqRecord, QualityEncoding } from './fastq';
 
 /**
  * Parse FASTQ from a File or Blob object in the browser

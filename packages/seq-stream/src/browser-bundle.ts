@@ -39,16 +39,16 @@ export interface BrowserStats {
 }
 
 // Only import browser-specific modules (no Node.js dependencies)
-export { parseFastaBrowser, writeFastaBrowser, parseFastaText } from './browser-fasta.js';
+export { parseFastaBrowser, writeFastaBrowser, parseFastaText } from './browser-fasta';
 export {
   parseFastqBrowser,
   writeFastqBrowser,
   parseFastqText,
   convertQualityBrowser,
-} from './browser-fastq.js';
+} from './browser-fastq';
 export {
   calculateStatsBrowser,
   calculateStatsSync,
   calculateN50Browser,
   calculateL50Browser,
-} from './browser-stats.js';
+} from './browser-stats';

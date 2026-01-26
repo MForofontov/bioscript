@@ -3,7 +3,7 @@
  * Handles File/Blob objects with automatic gzip decompression
  */
 
-import type { FastaRecord } from './fasta.js';
+import type { FastaRecord } from './fasta';
 
 /**
  * Parse FASTA from a File or Blob object in the browser
