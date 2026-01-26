@@ -23,9 +23,12 @@
   ],
   "scripts": {
     "build": "tsc && npm run build --workspaces",
-    "test": "npm run test --workspaces",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:seq-stream": "npm test -w @bioscript/seq-stream",
+    "test:coverage": "jest --coverage",
     "test:browser": "npm run test:browser --workspaces --if-present",
-    "test:all": "npm run test:all --workspaces --if-present",
+    "test:all": "npm test && npm run test:browser",
     "test:install:full": "./scripts/test-install-full.sh",
     "publish:all": "./scripts/publish-packages.sh",
     "lint": "eslint .",
@@ -52,6 +55,7 @@
     "jest-html-reporter": "^3.10.2",
     "prettier": "^3.3.3",
     "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.0",
     "typescript-eslint": "^8.15.0"
   }
