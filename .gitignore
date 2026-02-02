@@ -10,7 +10,7 @@ allure-results/
 *.fasta
 *.fastq
 *.gz
-e2e/*.js
-e2e/*.bundle.js
-dist/*.bundle.js
+**/e2e/*.js
+**/e2e/*.bundle.js
+**/dist/*.bundle.js
 jest.html
