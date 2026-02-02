@@ -1,6 +1,6 @@
 {
   "name": "@bioscript/seq-stream",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Streaming parser/writer for FASTA and FASTQ files with quality score conversion and statistics",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
