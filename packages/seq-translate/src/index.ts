@@ -1,7 +1,7 @@
 /**
  * @bioscript/seq-translate
  * Efficient sequence translation supporting all NCBI genetic code tables
- * 
+ *
  * Main exports for Node.js environment
  * For browser usage, import from '@bioscript/seq-translate/browser'
  */
@@ -33,4 +33,3 @@ export {
   type BrowserTranslationOptions,
   type TranslationResult as BrowserTranslationResult,
 } from './browser-translate';
-

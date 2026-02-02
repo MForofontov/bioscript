@@ -6,6 +6,7 @@
 import { Worker } from 'worker_threads';
 import { cpus } from 'os';
 import { resolve } from 'path';
+import { existsSync } from 'fs';
 
 /**
  * Translation options for worker-based translation
@@ -47,7 +48,7 @@ function runWorker(
   sequences: string[],
   options: WorkerTranslationOptions
 ): Promise<TranslationResult[][]> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolveWorker, reject) => {
     const worker = new Worker(workerPath, {
       workerData: {
         sequences,
@@ -63,7 +64,7 @@ function runWorker(
       if (result.error) {
         reject(new Error(result.error));
       } else {
-        resolve(result.results);
+        resolveWorker(result.results);
       }
     });
 
@@ -79,15 +80,15 @@ function runWorker(
 /**
  * Translate multiple sequences in parallel using worker threads
  * Automatically distributes work across available CPU cores
- * 
+ *
  * @example
  * ```typescript
  * const sequences = ['ATGGCC', 'ATGTAA', 'ATGCCC'];
- * const results = await translateWorker(sequences, { 
+ * const results = await translateWorker(sequences, {
  *   table: 'standard',
- *   allFrames: true 
+ *   allFrames: true
  * });
- * 
+ *
  * results.forEach((seqResults, i) => {
  *   console.log(`Sequence ${i}:`);
  *   seqResults.forEach(r => console.log(`  Frame ${r.frame}: ${r.sequence}`));
@@ -105,12 +106,11 @@ export async function translateWorker(
   const numWorkers = options.numWorkers || cpus().length;
   // Try dist first (production), fall back to src (development/testing)
   let workerPath = resolve(__dirname, 'translate-worker.js');
-  
+
   // Check if we're in development/test mode (src directory)
   if (__dirname.includes('/src')) {
     const distPath = resolve(__dirname, '../dist/translate-worker.js');
-    const fs = require('fs');
-    if (fs.existsSync(distPath)) {
+    if (existsSync(distPath)) {
       workerPath = distPath;
     }
   }
@@ -123,18 +123,16 @@ export async function translateWorker(
   // Distribute sequences across workers
   const chunkSize = Math.ceil(sequences.length / numWorkers);
   const chunks: string[][] = [];
-  
+
   for (let i = 0; i < sequences.length; i += chunkSize) {
     chunks.push(sequences.slice(i, i + chunkSize));
   }
 
   // Run workers in parallel
-  const workerPromises = chunks.map(chunk => 
-    runWorker(workerPath, chunk, options)
-  );
+  const workerPromises = chunks.map((chunk) => runWorker(workerPath, chunk, options));
 
   const results = await Promise.all(workerPromises);
-  
+
   // Flatten results back to original order
   return results.flat();
 }
@@ -142,7 +140,7 @@ export async function translateWorker(
 /**
  * Translate a single large sequence by splitting it into chunks
  * and processing chunks in parallel. Useful for very long sequences (> 1MB)
- * 
+ *
  * @example
  * ```typescript
  * const longSeq = 'ATG' + 'GCC'.repeat(100000) + 'TAA';
@@ -150,7 +148,7 @@ export async function translateWorker(
  *   table: 'standard',
  *   chunkSize: 30000
  * });
- * 
+ *
  * // Combine chunks
  * const fullTranslation = results.map(r => r.sequence).join('');
  * ```
@@ -161,7 +159,7 @@ export async function translateWorkerChunked(
 ): Promise<TranslationResult[]> {
   const chunkSize = options.chunkSize || 30000; // 30kb chunks (10k codons)
   const seq = sequence.trim().toUpperCase();
-  
+
   // Split sequence into overlapping chunks to maintain frame
   const chunks: string[] = [];
   for (let i = 0; i < seq.length; i += chunkSize) {
@@ -169,9 +167,9 @@ export async function translateWorkerChunked(
   }
 
   const results = await translateWorker(chunks, options);
-  
+
   // Return first frame of each chunk
-  return results.map((chunkResults, idx) => chunkResults[0]);
+  return results.map((chunkResults) => chunkResults[0]);
 }
 
 /**
@@ -193,23 +191,22 @@ export class TranslationPool {
   constructor(numWorkers?: number) {
     this.numWorkers = numWorkers || cpus().length;
     let workerPath = resolve(__dirname, 'translate-worker.js');
-    
+
     // Check if we're in development/test mode (src directory)
     if (__dirname.includes('/src')) {
       const distPath = resolve(__dirname, '../dist/translate-worker.js');
-      const fs = require('fs');
-      if (fs.existsSync(distPath)) {
+      if (existsSync(distPath)) {
         workerPath = distPath;
       }
     }
-    
+
     this.workerPath = workerPath;
   }
 
   /**
    * Initialize the worker pool
    */
-  async initialize(): Promise<void> {
+  initialize(): void {
     for (let i = 0; i < this.numWorkers; i++) {
       const worker = new Worker(this.workerPath);
       this.workers.push(worker);
@@ -224,12 +221,12 @@ export class TranslationPool {
     options: WorkerTranslationOptions = {}
   ): Promise<TranslationResult[][]> {
     if (this.workers.length === 0) {
-      await this.initialize();
+      this.initialize();
     }
 
     return new Promise((resolve, reject) => {
       this.taskQueue.push({ sequences, options, resolve, reject });
-      this.processQueue();
+      void this.processQueue();
     });
   }
 
@@ -247,7 +244,6 @@ export class TranslationPool {
     if (!task) return;
 
     this.busyWorkers.add(availableWorkerIdx);
-    const worker = this.workers[availableWorkerIdx];
 
     try {
       const result = await runWorker(this.workerPath, task.sequences, task.options);
@@ -256,7 +252,7 @@ export class TranslationPool {
       task.reject(error as Error);
     } finally {
       this.busyWorkers.delete(availableWorkerIdx);
-      this.processQueue();
+      void this.processQueue();
     }
   }
 
@@ -264,7 +260,7 @@ export class TranslationPool {
    * Terminate all workers in the pool
    */
   async terminate(): Promise<void> {
-    await Promise.all(this.workers.map(worker => worker.terminate()));
+    await Promise.all(this.workers.map((worker) => worker.terminate()));
     this.workers = [];
     this.busyWorkers.clear();
     this.taskQueue = [];

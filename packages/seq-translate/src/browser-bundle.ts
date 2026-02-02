@@ -4,7 +4,11 @@
  */
 
 import { tables, getTable } from './tables';
-import { translateBrowser, translateBrowserStreaming, translateBrowserBatch } from './browser-translate';
+import {
+  translateBrowser,
+  translateBrowserStreaming,
+  translateBrowserBatch,
+} from './browser-translate';
 import { translateSequence } from './translate';
 import { translateAllFrames, translateSixFrames } from './translate-frames';
 import { translateBatch } from './translate-batch';
@@ -16,18 +20,18 @@ export {
   // Tables
   tables,
   getTable,
-  
+
   // Core translation
   translateSequence,
   translateAllFrames,
   translateSixFrames,
   translateBatch,
-  
+
   // Browser-specific
   translateBrowser,
   translateBrowserStreaming,
   translateBrowserBatch,
-  
+
   // Utilities
   dnaToRna,
   rnaToDna,

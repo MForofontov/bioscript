@@ -2,7 +2,7 @@
  * Build optimized lookup table for codon translation
  */
 
-import { CodonTable } from './tables';
+import type { CodonTable } from './tables';
 
 /**
  * Build optimized lookup table using Map for O(1) access
@@ -10,7 +10,7 @@ import { CodonTable } from './tables';
  */
 export function buildLookup(table: CodonTable): Map<string, string> {
   const lookup = new Map<string, string>();
-  
+
   for (const [codon, aa] of Object.entries(table)) {
     const normalized = codon.toUpperCase();
     lookup.set(normalized, aa);
@@ -18,6 +18,6 @@ export function buildLookup(table: CodonTable): Map<string, string> {
     const dnaCodon = normalized.replace(/U/g, 'T');
     lookup.set(dnaCodon, aa);
   }
-  
+
   return lookup;
 }

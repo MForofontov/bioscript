@@ -3,7 +3,7 @@
  * Optimized for large sequences with streaming support
  */
 
-import { CodonTable, getTable } from './tables';
+import { getTable, type CodonTable } from './tables';
 
 /**
  * Translation options for browser translation
@@ -43,7 +43,7 @@ export interface TranslationResult {
  */
 function buildOptimizedLookup(table: CodonTable): Map<string, string> {
   const lookup = new Map<string, string>();
-  
+
   for (const [codon, aa] of Object.entries(table)) {
     const normalized = codon.toUpperCase();
     lookup.set(normalized, aa);
@@ -51,7 +51,7 @@ function buildOptimizedLookup(table: CodonTable): Map<string, string> {
     const dnaCodon = normalized.replace(/U/g, 'T');
     lookup.set(dnaCodon, aa);
   }
-  
+
   return lookup;
 }
 
@@ -67,11 +67,11 @@ function translateFrame(
 ): string {
   const start = frameOffset;
   const result: string[] = [];
-  
+
   for (let i = start; i + 3 <= seq.length; i += 3) {
     const codon = seq.slice(i, i + 3).toUpperCase();
     const aa = lookup.get(codon) ?? 'X';
-    
+
     if (aa === '*') {
       result.push(stopSymbol);
       if (breakOnStop) break;
@@ -79,7 +79,7 @@ function translateFrame(
       result.push(aa);
     }
   }
-  
+
   return result.join('');
 }
 
@@ -88,23 +88,31 @@ function translateFrame(
  */
 function reverseComplement(seq: string): string {
   const complement: Record<string, string> = {
-    'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G',
-    'a': 't', 't': 'a', 'g': 'c', 'c': 'g',
-    'U': 'A', 'u': 'a',
-    'N': 'N', 'n': 'n'
+    A: 'T',
+    T: 'A',
+    G: 'C',
+    C: 'G',
+    a: 't',
+    t: 'a',
+    g: 'c',
+    c: 'g',
+    U: 'A',
+    u: 'a',
+    N: 'N',
+    n: 'n',
   };
-  
+
   return seq
     .split('')
     .reverse()
-    .map(b => complement[b] ?? b)
+    .map((b) => complement[b] ?? b)
     .join('');
 }
 
 /**
  * Translate a sequence in the browser
  * Handles large sequences efficiently
- * 
+ *
  * @example
  * ```typescript
  * const result = translateBrowser('ATGGCCAAA', { table: 'standard' });
@@ -130,7 +138,7 @@ export function translateBrowser(
 
   // Translate forward frames
   const framesToTranslate = allFrames ? [0, 1, 2] : [0];
-  
+
   for (const frame of framesToTranslate) {
     const translated = translateFrame(seq, lookup, stopSymbol, breakOnStop, frame);
     results.push({
@@ -145,7 +153,7 @@ export function translateBrowser(
   if (includeReverse) {
     const revSeq = reverseComplement(seq);
     const reverseFrames = allFrames ? [0, 1, 2] : [0];
-    
+
     for (const frame of reverseFrames) {
       const translated = translateFrame(revSeq, lookup, stopSymbol, breakOnStop, frame);
       results.push({
@@ -163,11 +171,11 @@ export function translateBrowser(
 /**
  * Translate sequence from a File or Blob in chunks
  * Ideal for very large sequences (> 100MB)
- * 
+ *
  * @example
  * ```typescript
  * const file = document.querySelector('input[type="file"]').files[0];
- * 
+ *
  * for await (const chunk of translateBrowserStreaming(file, { table: 'standard' })) {
  *   console.log(`Translated chunk: ${chunk.sequence.slice(0, 50)}...`);
  * }
@@ -177,17 +185,12 @@ export async function* translateBrowserStreaming(
   file: File | Blob,
   options: BrowserTranslationOptions = {}
 ): AsyncGenerator<TranslationResult> {
-  const {
-    table = 'standard',
-    stopSymbol = '*',
-    breakOnStop = true,
-    chunkSize = 10000,
-  } = options;
+  const { table = 'standard', stopSymbol = '*', breakOnStop = true, chunkSize = 10000 } = options;
 
   const codonTable = getTable(table);
   const lookup = buildOptimizedLookup(codonTable);
   const textDecoder = new TextDecoder('utf-8');
-  
+
   // Handle gzip decompression if needed
   let stream: ReadableStream<Uint8Array>;
   if (file instanceof File && file.name.endsWith('.gz')) {
@@ -199,13 +202,12 @@ export async function* translateBrowserStreaming(
   const reader = stream.getReader();
   let buffer = '';
   let remainder = '';
-  let chunkIndex = 0;
   let stopped = false;
 
   try {
     while (true) {
       const { done, value } = await reader.read();
-      
+
       if (done) {
         // Process final buffer
         if (remainder.length >= 3 && !stopped) {
@@ -223,18 +225,18 @@ export async function* translateBrowserStreaming(
       }
 
       buffer += textDecoder.decode(value, { stream: true });
-      
+
       // Process in chunks
       while (buffer.length >= chunkSize && !stopped) {
         const chunk = remainder + buffer.slice(0, chunkSize);
-        
+
         // Keep codons aligned - process only complete triplets
         const processLength = Math.floor(chunk.length / 3) * 3;
         const toTranslate = chunk.slice(0, processLength);
         remainder = chunk.slice(processLength);
-        
+
         const translated = translateFrame(toTranslate, lookup, stopSymbol, breakOnStop);
-        
+
         if (translated.length > 0) {
           yield {
             sequence: translated,
@@ -242,15 +244,14 @@ export async function* translateBrowserStreaming(
             isReverse: false,
             sourceLength: toTranslate.length,
           };
-          
+
           if (breakOnStop && translated.includes(stopSymbol)) {
             stopped = true;
             break;
           }
         }
-        
+
         buffer = buffer.slice(chunkSize);
-        chunkIndex++;
       }
     }
   } finally {
@@ -261,7 +262,7 @@ export async function* translateBrowserStreaming(
 /**
  * Batch translate multiple sequences efficiently
  * Reuses lookup table for better performance
- * 
+ *
  * @example
  * ```typescript
  * const sequences = ['ATGGCC', 'ATGTAA', 'ATGCCC'];
@@ -283,13 +284,13 @@ export function translateBrowserBatch(
 
   const codonTable = getTable(table);
   const lookup = buildOptimizedLookup(codonTable);
-  
-  return sequences.map(seq => {
+
+  return sequences.map((seq) => {
     const results: TranslationResult[] = [];
     const normalized = seq.trim().toUpperCase();
 
     const framesToTranslate = allFrames ? [0, 1, 2] : [0];
-    
+
     for (const frame of framesToTranslate) {
       const translated = translateFrame(normalized, lookup, stopSymbol, breakOnStop, frame);
       results.push({
@@ -303,7 +304,7 @@ export function translateBrowserBatch(
     if (includeReverse) {
       const revSeq = reverseComplement(normalized);
       const reverseFrames = allFrames ? [0, 1, 2] : [0];
-      
+
       for (const frame of reverseFrames) {
         const translated = translateFrame(revSeq, lookup, stopSymbol, breakOnStop, frame);
         results.push({
