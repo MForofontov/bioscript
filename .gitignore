@@ -11,4 +11,6 @@ allure-results/
 *.fastq
 *.gz
 e2e/*.js
-!e2e/bioseq-bundle.js
+e2e/*.bundle.js
+dist/*.bundle.js
+jest.html

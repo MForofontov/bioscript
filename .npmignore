@@ -1,2 +1,5 @@
 dist/
 *.tsbuildinfo
+e2e/
+playwright-report/
+test-results/

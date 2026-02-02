@@ -1,0 +1,8 @@
+{
+  "name": "seq-translate-e2e",
+  "private": true,
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "http-server": "^14.1.1"
+  }
+}
