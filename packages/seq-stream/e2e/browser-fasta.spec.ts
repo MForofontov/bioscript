@@ -6,7 +6,7 @@ test.describe('Browser FASTA Parser', () => {
     await page.waitForFunction(() => window.bioseqStream !== undefined);
   });
 
-  test('parseFastaBrowser should parse FASTA from Blob', async ({ page }) => {
+  test('1. parseFastaBrowser should parse FASTA from Blob', async ({ page }) => {
     const result = await page.evaluate(async () => {
       const fastaContent = '>seq1\nACGTACGT\n>seq2\nTGCATGCA\n';
       const blob = new Blob([fastaContent], { type: 'text/plain' });
@@ -25,7 +25,7 @@ test.describe('Browser FASTA Parser', () => {
     expect(result[1]).toEqual({ id: 'seq2', sequence: 'TGCATGCA', description: '' });
   });
 
-  test('parseFastaBrowser should handle multiline sequences', async ({ page }) => {
+  test('2. parseFastaBrowser should handle multiline sequences', async ({ page }) => {
     const result = await page.evaluate(async () => {
       const fastaContent = '>seq1\nACGT\nACGT\n>seq2 description here\nTGCA\nTGCA\n';
       const blob = new Blob([fastaContent], { type: 'text/plain' });
@@ -48,7 +48,7 @@ test.describe('Browser FASTA Parser', () => {
     });
   });
 
-  test('writeFastaBrowser should create FASTA Blob', async ({ page }) => {
+  test('3. writeFastaBrowser should create FASTA Blob', async ({ page }) => {
     const result = await page.evaluate(async () => {
       const records = [
         { id: 'seq1', sequence: 'ACGTACGT' },
@@ -64,7 +64,7 @@ test.describe('Browser FASTA Parser', () => {
     expect(result).toBe('>seq1\nACGTACGT\n>seq2 test\nTGCATGCA\n');
   });
 
-  test('writeFastaBrowser should handle line wrapping', async ({ page }) => {
+  test('4. writeFastaBrowser should handle line wrapping', async ({ page }) => {
     const result = await page.evaluate(async () => {
       const records = [{ id: 'seq1', sequence: 'ACGTACGT' }];
 
@@ -77,7 +77,7 @@ test.describe('Browser FASTA Parser', () => {
     expect(result).toBe('>seq1\nACGT\nACGT\n');
   });
 
-  test('parseFastaText should parse FASTA from string', async ({ page }) => {
+  test('5. parseFastaText should parse FASTA from string', async ({ page }) => {
     const result = await page.evaluate(() => {
       const fastaContent = '>seq1\nACGTACGT\n>seq2\nTGCATGCA\n';
 
@@ -88,5 +88,29 @@ test.describe('Browser FASTA Parser', () => {
     expect(result).toHaveLength(2);
     expect(result[0]).toEqual({ id: 'seq1', sequence: 'ACGTACGT', description: '' });
     expect(result[1]).toEqual({ id: 'seq2', sequence: 'TGCATGCA', description: '' });
+  });
+
+  test('6. parseFastaBrowser should handle gzip-compressed File', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      // Fetch the gzip-compressed test file
+      const response = await fetch('/e2e/fixtures/test.fasta.gz');
+      const arrayBuffer = await response.arrayBuffer();
+      const file = new File([arrayBuffer], 'test.fasta.gz', { type: 'application/gzip' });
+
+      const records = [];
+      // @ts-expect-error - Browser bundle types
+      for await (const record of window.bioseqStream.parseFastaBrowser(file)) {
+        records.push(record);
+      }
+
+      return records;
+    });
+
+    // Verify the decompressed content
+    expect(result).toHaveLength(2);
+    expect(result[0].id).toBe('seq1');
+    expect(result[0].sequence).toBe('ACGTACGT');
+    expect(result[1].id).toBe('seq2');
+    expect(result[1].sequence).toBe('TGCATGCA');
   });
 });

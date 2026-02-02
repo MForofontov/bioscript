@@ -12,7 +12,7 @@ test.describe('Browser Large File Tests', () => {
     await page.waitForFunction(() => window.bioseqStream !== undefined);
   });
 
-  test('parseFastaBrowser should handle 10MB file', async ({ page }) => {
+  test('1. parseFastaBrowser should handle 10MB file', async ({ page }) => {
     // Realistic test with 10MB file (browser can handle this in memory)
     const result = await page.evaluate(async () => {
       // Generate 10MB of FASTA data
@@ -71,7 +71,7 @@ test.describe('Browser Large File Tests', () => {
     expect(result.totalTime).toBeLessThan(10); // Should parse 10MB in under 10 seconds
   });
 
-  test('parseFastqBrowser should handle 10MB file', async ({ page }) => {
+  test('2. parseFastqBrowser should handle 10MB file', async ({ page }) => {
     // Realistic test with 10MB FASTQ file
     const result = await page.evaluate(async () => {
       // Generate 10MB of FASTQ data
@@ -128,7 +128,7 @@ test.describe('Browser Large File Tests', () => {
     expect(result.totalTime).toBeLessThan(10); // Should parse ~6MB in under 10 seconds
   });
 
-  test('parseFastaBrowser should handle 100MB file with performance metrics', async ({ page }) => {
+  test('3. parseFastaBrowser should handle 100MB file with performance metrics', async ({ page }) => {
     // Test with 100MB file - more realistic for browser environment
     const result = await page.evaluate(async () => {
       // Generate 100MB of FASTA data using Blob chunks (avoids string length limit)
@@ -198,7 +198,7 @@ test.describe('Browser Large File Tests', () => {
     expect(result.throughputMBps).toBeGreaterThan(3); // At least 3 MB/s throughput
   });
 
-  test('parseFastaBrowser should process file from file system', async ({ page }) => {
+  test('4. parseFastaBrowser should process file from file system', async ({ page }) => {
     // First, create a test file
     const testFilePath = path.join(__dirname, 'test-fasta-input.fasta');
 
@@ -277,7 +277,7 @@ test.describe('Browser Large File Tests', () => {
     fs.unlinkSync(testFilePath);
   });
 
-  test('parseFastaBrowser should process 1GB file from file system', async ({ page }) => {
+  test('5. parseFastaBrowser should process 1GB file from file system', async ({ page }) => {
     // Test with real 1GB file on disk
     const testFilePath = path.join(__dirname, 'test-fasta-1gb.fasta');
 
@@ -379,7 +379,7 @@ test.describe('Browser Large File Tests', () => {
     fs.unlinkSync(testFilePath);
   });
 
-  test('parseFastaBrowser should process 2GB file from file system', async ({ page }) => {
+  test('6. parseFastaBrowser should process 2GB file from file system', async ({ page }) => {
     // Test with real 2GB file on disk - this will test browser's absolute limits
     const testFilePath = path.join(__dirname, 'test-fasta-2gb.fasta');
 
@@ -485,7 +485,7 @@ test.describe('Browser Large File Tests', () => {
     fs.unlinkSync(testFilePath);
   });
 
-  test('Note: Browser has memory limits - files >1GB will likely crash', () => {
+  test('7. Note: Browser has memory limits - files >1GB will likely crash', () => {
     // This is a documentation test explaining browser limitations
     console.log(`
 Browser memory limitations:

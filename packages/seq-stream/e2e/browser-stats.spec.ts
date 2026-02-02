@@ -6,7 +6,7 @@ test.describe('Browser Statistics Tests', () => {
     await page.waitForFunction(() => window.bioseqStream !== undefined);
   });
 
-  test('calculateStatsBrowser calculates comprehensive stats for small file', async ({ page }) => {
+  test('1. calculateStatsBrowser calculates comprehensive stats for small file', async ({ page }) => {
     const result = await page.evaluate(async () => {
       // Create test FASTA data
       const fastaContent = `>seq1 First sequence
@@ -60,7 +60,7 @@ ACGTACGTACGT`;
     expect(result.l50).toBe(2); // actual calculated value
   });
 
-  test('calculateStatsBrowser calculates quality stats for FASTQ', async ({ page }) => {
+  test('2. calculateStatsBrowser calculates quality stats for FASTQ', async ({ page }) => {
     const result = await page.evaluate(async () => {
       // Create test FASTQ data with varying qualities
       const fastqContent = `@read1
@@ -105,7 +105,7 @@ AATT
     expect(result.q30Percent).toBeGreaterThan(0);
   });
 
-  test('calculateStatsBrowser handles large file (10MB) with stats', async ({ page }) => {
+  test('3. calculateStatsBrowser handles large file (10MB) with stats', async ({ page }) => {
     const result = await page.evaluate(async () => {
       // Generate 10MB file
       const numSequences = 10000;
@@ -174,7 +174,7 @@ AATT
     expect(result.throughputMBps).toBeGreaterThan(0.5); // At least 0.5 MB/s
   });
 
-  test('calculateStatsSync calculates stats synchronously', async ({ page }) => {
+  test('4. calculateStatsSync calculates stats synchronously', async ({ page }) => {
     const result = await page.evaluate(async () => {
       // Parse first
       const fastaContent = `>seq1

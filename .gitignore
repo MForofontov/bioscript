@@ -10,6 +10,8 @@ allure-results/
 *.fasta
 *.fastq
 *.gz
+# Allow test fixtures
+!**/fixtures/**
 **/e2e/*.js
 **/e2e/*.bundle.js
 **/dist/*.bundle.js
