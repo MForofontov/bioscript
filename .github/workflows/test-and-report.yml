@@ -215,18 +215,6 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      # Upload raw Allure results
-      - name: Upload Allure results (raw)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-results-${{ matrix.node }}
-          path: |
-            ${{ env.ALLURE_RESULTS_DIR }}
-            allure-results-unit/
-            allure-results-e2e/
-          retention-days: 30
-
       # Upload coverage reports
       - name: Upload coverage reports
         if: always()
