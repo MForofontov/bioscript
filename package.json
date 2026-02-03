@@ -22,7 +22,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "tsc && npm run build --workspaces",
+    "build": "tsc && npm run build -w @bioscript/seq-utils && npm run build -w @bioscript/seq-stream && npm run build -w @bioscript/seq-translate",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:seq-stream": "npm test -w @bioscript/seq-stream",
