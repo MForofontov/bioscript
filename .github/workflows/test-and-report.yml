@@ -149,7 +149,7 @@ jobs:
           
           exit 0
 
-      # Run e2e tests (Playwright)
+      # Run e2e tests (Playwright) - runs for all workspaces via test:browser
       - name: Run e2e tests (Playwright)
         if: ${{ inputs.run_e2e_tests }}
         id: e2e_tests
@@ -159,7 +159,7 @@ jobs:
           set +e
           if [ -f pnpm-lock.yaml ]; then PM="pnpm"; elif [ -f yarn.lock ]; then PM="yarn"; else PM="npm"; fi
           
-          echo "Running e2e tests with: $PM run $E2E_TEST_SCRIPT"
+          echo "Running e2e tests with: $PM run $E2E_TEST_SCRIPT (all workspaces)"
           $PM run "$E2E_TEST_SCRIPT"
           CODE=$?
           
@@ -213,8 +213,8 @@ jobs:
         with:
           name: playwright-artifacts-${{ matrix.node }}
           path: |
-            **/test-results/
-            **/playwright-report/
+            packages/*/test-results/
+            packages/*/playwright-report/
           if-no-files-found: ignore
           retention-days: 14
 
@@ -251,6 +251,7 @@ jobs:
         with:
           name: allure-report-${{ matrix.node }}
           path: ${{ env.ALLURE_REPORT_DIR }}
+          if-no-files-found: ignore
           retention-days: 30
 
       # Job summary
