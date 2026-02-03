@@ -250,7 +250,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: allure-report-${{ matrix.node }}
-          path: ${{ env.ALLURE_REPORT_DIR }}
+          path: allure-report/
           if-no-files-found: ignore
           retention-days: 30
 
