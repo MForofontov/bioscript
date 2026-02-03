@@ -141,7 +141,7 @@ jobs:
           
           echo "exit_code=$CODE" >> $GITHUB_OUTPUT
           
-          # Move unit test results if they exist
+          # Jest allure-results are in root directory
           if [ -d "$ALLURE_RESULTS_DIR" ] && [ "$(ls -A $ALLURE_RESULTS_DIR)" ]; then
             cp -r "$ALLURE_RESULTS_DIR"/* allure-results-unit/ 2>/dev/null || true
             rm -rf "$ALLURE_RESULTS_DIR"/*
@@ -165,11 +165,8 @@ jobs:
           
           echo "exit_code=$CODE" >> $GITHUB_OUTPUT
           
-          # Move e2e test results if they exist
-          if [ -d "$ALLURE_RESULTS_DIR" ] && [ "$(ls -A $ALLURE_RESULTS_DIR)" ]; then
-            cp -r "$ALLURE_RESULTS_DIR"/* allure-results-e2e/ 2>/dev/null || true
-            rm -rf "$ALLURE_RESULTS_DIR"/*
-          fi
+          # Playwright allure-results are in packages/*/allure-results/
+          find packages -type d -name "allure-results" -exec sh -c 'cp -r "$1"/* allure-results-e2e/ 2>/dev/null || true' _ {} \;
           
           exit 0
 

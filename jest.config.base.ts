@@ -7,7 +7,14 @@ import type { Config } from 'jest';
 
 export const baseConfig: Config = {
   preset: 'ts-jest',
-  testEnvironment: 'node',
+  testEnvironment: 'allure-jest/node',
+  testEnvironmentOptions: {
+    resultsDir: 'allure-results',
+  },
+  reporters: [
+    'default',
+    ['jest-allure', { outputDir: 'allure-results' }],
+  ],
   collectCoverage: true,
   coverageReporters: ['json', 'lcov', 'text', 'clover', 'html'],
   testPathIgnorePatterns: [
