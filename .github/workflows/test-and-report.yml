@@ -1,0 +1,462 @@
+name: test-and-report
+
+on:
+  workflow_dispatch:
+    inputs:
+      node_versions:
+        description: 'JSON list of Node.js versions'
+        required: false
+        default: '["22.x"]'
+        type: string
+      unit_test_script:
+        description: 'npm script for unit tests'
+        required: false
+        default: 'test'
+        type: string
+      e2e_test_script:
+        description: 'npm script for e2e/playwright tests'
+        required: false
+        default: 'test:browser'
+        type: string
+      run_unit_tests:
+        description: 'Run unit tests (Jest/Vitest)'
+        required: false
+        default: true
+        type: boolean
+      run_e2e_tests:
+        description: 'Run e2e tests (Playwright)'
+        required: false
+        default: true
+        type: boolean
+      allure_version:
+        description: 'Allure CLI version'
+        required: false
+        default: '2.34.0'
+        type: string
+      deploy_pages:
+        description: 'Deploy Allure report to GitHub Pages (first matrix only)'
+        required: false
+        default: false
+        type: boolean
+      playwright_browsers:
+        description: 'Playwright browsers to install (chromium, firefox, webkit, all)'
+        required: false
+        default: 'chromium'
+        type: string
+
+permissions:
+  contents: read
+  pages: write          # needed only if deploy_pages=true
+  id-token: write       # needed only if deploy_pages=true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJSON(inputs.node_versions) }}
+
+    env:
+      ALLURE_RESULTS_DIR: allure-results
+      ALLURE_REPORT_DIR: allure-report
+      UNIT_TEST_SCRIPT: ${{ inputs.unit_test_script }}
+      E2E_TEST_SCRIPT: ${{ inputs.e2e_test_script }}
+      FORCE_COLOR: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: ${{ hashFiles('pnpm-lock.yaml') != '' && 'pnpm' || (hashFiles('yarn.lock') != '' && 'yarn' || 'npm') }}
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm
+        if: ${{ hashFiles('pnpm-lock.yaml') != '' }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies (pnpm)
+        if: ${{ hashFiles('pnpm-lock.yaml') != '' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Install dependencies (yarn)
+        if: ${{ hashFiles('pnpm-lock.yaml') == '' && hashFiles('yarn.lock') != '' }}
+        run: yarn install --frozen-lockfile
+
+      - name: Install dependencies (npm)
+        if: ${{ hashFiles('pnpm-lock.yaml') == '' && hashFiles('yarn.lock') == '' }}
+        run: npm ci
+
+      # Install Playwright browsers if e2e tests are enabled
+      - name: Install Playwright Browsers
+        if: ${{ inputs.run_e2e_tests }}
+        shell: bash
+        run: |
+          set -eux
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm exec playwright install --with-deps ${{ inputs.playwright_browsers }}
+          elif [ -f yarn.lock ]; then
+            yarn playwright install --with-deps ${{ inputs.playwright_browsers }}
+          else
+            npx playwright install --with-deps ${{ inputs.playwright_browsers }}
+          fi
+
+      # Allure CLI needs Java
+      - name: Setup Java for Allure
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Install Allure CLI
+      - name: Install Allure CLI ${{ inputs.allure_version }}
+        run: |
+          set -eux
+          curl -L -o allure.tgz "https://github.com/allure-framework/allure2/releases/download/${{ inputs.allure_version }}/allure-${{ inputs.allure_version }}.tgz"
+          sudo tar -C /opt -xzf allure.tgz
+          sudo mv "/opt/allure-${{ inputs.allure_version }}" /opt/allure
+          sudo ln -sf /opt/allure/bin/allure /usr/local/bin/allure
+          allure --version
+
+      # Create directories
+      - name: Setup test directories
+        run: |
+          mkdir -p "$ALLURE_RESULTS_DIR" "$ALLURE_REPORT_DIR"
+          mkdir -p allure-results-unit allure-results-e2e
+
+      # Run unit tests
+      - name: Run unit tests
+        if: ${{ inputs.run_unit_tests }}
+        id: unit_tests
+        shell: bash
+        continue-on-error: true
+        run: |
+          set +e
+          if [ -f pnpm-lock.yaml ]; then PM="pnpm"; elif [ -f yarn.lock ]; then PM="yarn"; else PM="npm"; fi
+          
+          echo "Running unit tests with: $PM run $UNIT_TEST_SCRIPT"
+          $PM run "$UNIT_TEST_SCRIPT"
+          CODE=$?
+          
+          echo "exit_code=$CODE" >> $GITHUB_OUTPUT
+          
+          # Move unit test results if they exist
+          if [ -d "$ALLURE_RESULTS_DIR" ] && [ "$(ls -A $ALLURE_RESULTS_DIR)" ]; then
+            cp -r "$ALLURE_RESULTS_DIR"/* allure-results-unit/ 2>/dev/null || true
+            rm -rf "$ALLURE_RESULTS_DIR"/*
+          fi
+          
+          exit 0
+
+      # Run e2e tests (Playwright)
+      - name: Run e2e tests (Playwright)
+        if: ${{ inputs.run_e2e_tests }}
+        id: e2e_tests
+        shell: bash
+        continue-on-error: true
+        run: |
+          set +e
+          if [ -f pnpm-lock.yaml ]; then PM="pnpm"; elif [ -f yarn.lock ]; then PM="yarn"; else PM="npm"; fi
+          
+          echo "Running e2e tests with: $PM run $E2E_TEST_SCRIPT"
+          $PM run "$E2E_TEST_SCRIPT"
+          CODE=$?
+          
+          echo "exit_code=$CODE" >> $GITHUB_OUTPUT
+          
+          # Move e2e test results if they exist
+          if [ -d "$ALLURE_RESULTS_DIR" ] && [ "$(ls -A $ALLURE_RESULTS_DIR)" ]; then
+            cp -r "$ALLURE_RESULTS_DIR"/* allure-results-e2e/ 2>/dev/null || true
+            rm -rf "$ALLURE_RESULTS_DIR"/*
+          fi
+          
+          exit 0
+
+      # Combine all test results
+      - name: Combine test results
+        if: always()
+        shell: bash
+        run: |
+          set -eux
+          mkdir -p "$ALLURE_RESULTS_DIR"
+          
+          # Copy all results to main directory
+          if [ -d allure-results-unit ] && [ "$(ls -A allure-results-unit)" ]; then
+            cp -r allure-results-unit/* "$ALLURE_RESULTS_DIR/" 2>/dev/null || true
+          fi
+          
+          if [ -d allure-results-e2e ] && [ "$(ls -A allure-results-e2e)" ]; then
+            cp -r allure-results-e2e/* "$ALLURE_RESULTS_DIR/" 2>/dev/null || true
+          fi
+          
+          echo "Combined results count: $(ls -1 $ALLURE_RESULTS_DIR | wc -l)"
+
+      # Generate combined Allure report
+      - name: Generate Allure report
+        if: always()
+        shell: bash
+        run: |
+          set -eux
+          if [ -d "$ALLURE_RESULTS_DIR" ] && [ "$(ls -A $ALLURE_RESULTS_DIR)" ]; then
+            allure generate "$ALLURE_RESULTS_DIR" --clean -o "$ALLURE_REPORT_DIR"
+          else
+            echo "No Allure results found, creating empty report directory"
+            mkdir -p "$ALLURE_REPORT_DIR"
+            echo "<html><body><h1>No test results available</h1></body></html>" > "$ALLURE_REPORT_DIR/index.html"
+          fi
+
+      # Upload Playwright trace/videos if e2e tests ran
+      - name: Upload Playwright artifacts
+        if: ${{ inputs.run_e2e_tests && always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts-${{ matrix.node }}
+          path: |
+            **/test-results/
+            **/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # Upload raw Allure results
+      - name: Upload Allure results (raw)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-${{ matrix.node }}
+          path: |
+            ${{ env.ALLURE_RESULTS_DIR }}
+            allure-results-unit/
+            allure-results-e2e/
+          retention-days: 30
+
+      # Upload coverage reports
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports-${{ matrix.node }}
+          path: |
+            packages/*/coverage/
+            !packages/*/coverage/lcov-report/
+            !packages/*/coverage/*.json
+            !packages/*/coverage/*.info
+            !packages/*/coverage/*.xml
+          retention-days: 30
+
+      # Upload HTML report (Allure only for artifacts)
+      - name: Upload Allure report (HTML)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-${{ matrix.node }}
+          path: ${{ env.ALLURE_REPORT_DIR }}
+          retention-days: 30
+
+      # Job summary
+      - name: Job Summary
+        if: always()
+        shell: bash
+        run: |
+          echo "## Test & Allure Summary (Node ${{ matrix.node }})" >> $GITHUB_STEP_SUMMARY
+          echo "- Node.js: \`${{ matrix.node }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Unit tests: \`${{ inputs.run_unit_tests && 'enabled' || 'skipped' }}\` (exit: ${{ steps.unit_tests.outputs.exit_code || 'N/A' }})" >> $GITHUB_STEP_SUMMARY
+          echo "- E2E tests: \`${{ inputs.run_e2e_tests && 'enabled' || 'skipped' }}\` (exit: ${{ steps.e2e_tests.outputs.exit_code || 'N/A' }})" >> $GITHUB_STEP_SUMMARY
+          echo "- Allure version: \`${{ inputs.allure_version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Playwright browsers: \`${{ inputs.playwright_browsers }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "${{ env.ALLURE_REPORT_DIR }}/widgets/summary.json" ]; then
+            sudo apt-get update -y >/dev/null 2>&1 || true
+            sudo apt-get install -y jq >/dev/null 2>&1 || true
+            P=$(jq '.statistic.passed' ${{ env.ALLURE_REPORT_DIR }}/widgets/summary.json 2>/dev/null || echo 0)
+            F=$(jq '.statistic.failed' ${{ env.ALLURE_REPORT_DIR }}/widgets/summary.json 2>/dev/null || echo 0)
+            B=$(jq '.statistic.broken' ${{ env.ALLURE_REPORT_DIR }}/widgets/summary.json 2>/dev/null || echo 0)
+            S=$(jq '.statistic.skipped' ${{ env.ALLURE_REPORT_DIR }}/widgets/summary.json 2>/dev/null || echo 0)
+            T=$(jq '.statistic.total'  ${{ env.ALLURE_REPORT_DIR }}/widgets/summary.json 2>/dev/null || echo 0)
+            echo "### Combined Test Results" >> $GITHUB_STEP_SUMMARY
+            echo "- Total: **$T**  |  Passed: **$P**  |  Failed: **$F**  |  Broken: **$B**  |  Skipped: **$S**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Allure summary not found (no results?)" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- \`allure-results-${{ matrix.node }}\` - Raw test results" >> $GITHUB_STEP_SUMMARY
+          echo "- \`allure-report-${{ matrix.node }}\` - Allure HTML report" >> $GITHUB_STEP_SUMMARY
+          echo "- \`coverage-reports-${{ matrix.node }}\` - Jest coverage reports" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.run_e2e_tests }}" = "true" ]; then
+            echo "- \`playwright-artifacts-${{ matrix.node }}\` - Playwright traces/videos" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # Fail job if any tests failed
+      - name: Check test results
+        if: always()
+        shell: bash
+        run: |
+          FAIL=0
+          if [ "${{ inputs.run_unit_tests }}" = "true" ] && [ "${{ steps.unit_tests.outputs.exit_code }}" != "0" ]; then
+            echo "❌ Unit tests failed with exit code: ${{ steps.unit_tests.outputs.exit_code }}"
+            FAIL=1
+          fi
+          if [ "${{ inputs.run_e2e_tests }}" = "true" ] && [ "${{ steps.e2e_tests.outputs.exit_code }}" != "0" ]; then
+            echo "❌ E2E tests failed with exit code: ${{ steps.e2e_tests.outputs.exit_code }}"
+            FAIL=1
+          fi
+          if [ "$FAIL" -ne 0 ]; then
+            exit 1
+          fi
+          echo "✅ All tests passed"
+
+  deploy-pages:
+    if: ${{ inputs.deploy_pages }}
+    needs: [test]
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download Allure report
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-report-${{ fromJSON(inputs.node_versions)[0] }}
+          path: ./site/allure
+
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-reports-${{ fromJSON(inputs.node_versions)[0] }}
+          path: ./site/coverage
+
+      - name: Create index page
+        shell: bash
+        run: |
+          cat > ./site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Bioscript Test Reports</title>
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+              }
+              .container {
+                background: white;
+                border-radius: 16px;
+                padding: 48px;
+                max-width: 600px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+              }
+              h1 {
+                color: #2d3748;
+                margin-bottom: 8px;
+                font-size: 32px;
+              }
+              .subtitle {
+                color: #718096;
+                margin-bottom: 32px;
+                font-size: 14px;
+              }
+              .links {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+              }
+              .link-card {
+                display: block;
+                padding: 20px 24px;
+                background: #f7fafc;
+                border-radius: 8px;
+                text-decoration: none;
+                transition: all 0.2s;
+                border: 2px solid transparent;
+              }
+              .link-card:hover {
+                background: #edf2f7;
+                border-color: #667eea;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+              }
+              .link-title {
+                color: #2d3748;
+                font-weight: 600;
+                font-size: 18px;
+                margin-bottom: 4px;
+              }
+              .link-desc {
+                color: #718096;
+                font-size: 14px;
+              }
+              .emoji {
+                margin-right: 12px;
+                font-size: 24px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>📊 Bioscript Test Reports</h1>
+              <p class="subtitle">CI/CD Test Results & Coverage</p>
+              
+              <div class="links">
+                <a href="./allure/index.html" class="link-card">
+                  <span class="emoji">🎯</span>
+                  <div style="display: inline-block; vertical-align: top;">
+                    <div class="link-title">Allure Test Report</div>
+                    <div class="link-desc">Interactive test results with trends and history</div>
+                  </div>
+                </a>
+                
+                <a href="./coverage/packages/" class="link-card">
+                  <span class="emoji">📈</span>
+                  <div style="display: inline-block; vertical-align: top;">
+                    <div class="link-title">Coverage Reports</div>
+                    <div class="link-desc">Code coverage by package</div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </body>
+          </html>
+          EOF
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Deployment Summary
+        shell: bash
+        run: |
+          echo "## 📊 Reports Deployed to GitHub Pages" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### URLs:" >> $GITHUB_STEP_SUMMARY
+          echo "- 🏠 [Home Page](${{ steps.deployment.outputs.page_url }})" >> $GITHUB_STEP_SUMMARY
+          echo "- 🎯 [Allure Report](${{ steps.deployment.outputs.page_url }}allure/)" >> $GITHUB_STEP_SUMMARY
+          echo "- 📈 [Coverage Reports](${{ steps.deployment.outputs.page_url }}coverage/packages/)" >> $GITHUB_STEP_SUMMARY
