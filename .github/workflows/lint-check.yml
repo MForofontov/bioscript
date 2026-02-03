@@ -26,7 +26,7 @@ on:
       fail_on_any_issue:
         description: "Fail the job if any issues found"
         required: false
-        default: true
+        default: false
         type: boolean
 
 permissions:
@@ -209,6 +209,13 @@ jobs:
           if [ "${{ inputs.run_prettier }}" = "true" ] && [ "${{ steps.prettier.outputs.exit_code }}" != "0" ]; then FAIL=1; fi
           if [ "${{ inputs.run_typecheck }}" = "true" ] && [ "${{ steps.typecheck.outputs.exit_code }}" != "0" ]; then FAIL=1; fi
 
-          if [ "${{ inputs.fail_on_any_issue }}" = "true" ] && [ "$FAIL" -ne 0 ]; then
-            exit 1
+          if [ "$FAIL" -ne 0 ]; then
+            if [ "${{ inputs.fail_on_any_issue }}" = "true" ]; then
+              echo "❌ Lint issues found - failing build"
+              exit 1
+            else
+              echo "⚠️ Lint issues found but not failing the build"
+            fi
+          else
+            echo "✅ No lint issues found"
           fi

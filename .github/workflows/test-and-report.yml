@@ -33,11 +33,6 @@ on:
         required: false
         default: '2.34.0'
         type: string
-      deploy_pages:
-        description: 'Deploy Allure report to GitHub Pages (first matrix only)'
-        required: false
-        default: false
-        type: boolean
       playwright_browsers:
         description: 'Playwright browsers to install (chromium, firefox, webkit, all)'
         required: false
@@ -46,8 +41,6 @@ on:
 
 permissions:
   contents: read
-  pages: write          # needed only if deploy_pages=true
-  id-token: write       # needed only if deploy_pages=true
 
 jobs:
   test:
@@ -314,149 +307,3 @@ jobs:
             exit 1
           fi
           echo "✅ All tests passed"
-
-  deploy-pages:
-    if: ${{ inputs.deploy_pages }}
-    needs: [test]
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Download Allure report
-        uses: actions/download-artifact@v4
-        with:
-          name: allure-report-${{ fromJSON(inputs.node_versions)[0] }}
-          path: ./site/allure
-
-      - name: Download coverage reports
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-reports-${{ fromJSON(inputs.node_versions)[0] }}
-          path: ./site/coverage
-
-      - name: Create index page
-        shell: bash
-        run: |
-          cat > ./site/index.html << 'EOF'
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Bioscript Test Reports</title>
-            <style>
-              * { margin: 0; padding: 0; box-sizing: border-box; }
-              body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 20px;
-              }
-              .container {
-                background: white;
-                border-radius: 16px;
-                padding: 48px;
-                max-width: 600px;
-                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-              }
-              h1 {
-                color: #2d3748;
-                margin-bottom: 8px;
-                font-size: 32px;
-              }
-              .subtitle {
-                color: #718096;
-                margin-bottom: 32px;
-                font-size: 14px;
-              }
-              .links {
-                display: flex;
-                flex-direction: column;
-                gap: 16px;
-              }
-              .link-card {
-                display: block;
-                padding: 20px 24px;
-                background: #f7fafc;
-                border-radius: 8px;
-                text-decoration: none;
-                transition: all 0.2s;
-                border: 2px solid transparent;
-              }
-              .link-card:hover {
-                background: #edf2f7;
-                border-color: #667eea;
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-              }
-              .link-title {
-                color: #2d3748;
-                font-weight: 600;
-                font-size: 18px;
-                margin-bottom: 4px;
-              }
-              .link-desc {
-                color: #718096;
-                font-size: 14px;
-              }
-              .emoji {
-                margin-right: 12px;
-                font-size: 24px;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1>📊 Bioscript Test Reports</h1>
-              <p class="subtitle">CI/CD Test Results & Coverage</p>
-              
-              <div class="links">
-                <a href="./allure/index.html" class="link-card">
-                  <span class="emoji">🎯</span>
-                  <div style="display: inline-block; vertical-align: top;">
-                    <div class="link-title">Allure Test Report</div>
-                    <div class="link-desc">Interactive test results with trends and history</div>
-                  </div>
-                </a>
-                
-                <a href="./coverage/packages/" class="link-card">
-                  <span class="emoji">📈</span>
-                  <div style="display: inline-block; vertical-align: top;">
-                    <div class="link-title">Coverage Reports</div>
-                    <div class="link-desc">Code coverage by package</div>
-                  </div>
-                </a>
-              </div>
-            </div>
-          </body>
-          </html>
-          EOF
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./site
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-      - name: Deployment Summary
-        shell: bash
-        run: |
-          echo "## 📊 Reports Deployed to GitHub Pages" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### URLs:" >> $GITHUB_STEP_SUMMARY
-          echo "- 🏠 [Home Page](${{ steps.deployment.outputs.page_url }})" >> $GITHUB_STEP_SUMMARY
-          echo "- 🎯 [Allure Report](${{ steps.deployment.outputs.page_url }}allure/)" >> $GITHUB_STEP_SUMMARY
-          echo "- 📈 [Coverage Reports](${{ steps.deployment.outputs.page_url }}coverage/packages/)" >> $GITHUB_STEP_SUMMARY
