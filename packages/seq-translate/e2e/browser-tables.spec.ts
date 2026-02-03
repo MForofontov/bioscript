@@ -6,7 +6,7 @@ test.describe('Browser Translation - Genetic Tables', () => {
     await page.waitForFunction(() => window.bioseqTranslate !== undefined);
   });
 
-  test('should support NCBI table numbers', async ({ page }) => {
+  test('1. should support NCBI table numbers', async ({ page }) => {
     const result = await page.evaluate(() => {
       const seq = 'ATGATG';
       // @ts-expect-error - browser bundle
@@ -22,7 +22,7 @@ test.describe('Browser Translation - Genetic Tables', () => {
     expect(result.table1).toBe(result.tableStd);
   });
 
-  test('should handle vertebrate mitochondrial table', async ({ page }) => {
+  test('2. should handle vertebrate mitochondrial table', async ({ page }) => {
     const result = await page.evaluate(() => {
       const seq = 'ATGATA'; // ATA codes for M in mitochondrial
       // @ts-expect-error - browser bundle
@@ -41,7 +41,7 @@ test.describe('Browser Translation - Genetic Tables', () => {
     expect(result.mito).toBe('MM');
   });
 
-  test('should handle yeast mitochondrial table', async ({ page }) => {
+  test('3. should handle yeast mitochondrial table', async ({ page }) => {
     const result = await page.evaluate(() => {
       const seq = 'ATGCTA'; // CTA codes for T in yeast mito
       // @ts-expect-error - browser bundle
@@ -58,7 +58,7 @@ test.describe('Browser Translation - Genetic Tables', () => {
     expect(result.yeast).toBe('MT');
   });
 
-  test('should list all available tables', async ({ page }) => {
+  test('4. should list all available tables', async ({ page }) => {
     const tables = await page.evaluate(() => {
       // @ts-expect-error - browser bundle
       return Object.keys(window.bioseqTranslate.tables);

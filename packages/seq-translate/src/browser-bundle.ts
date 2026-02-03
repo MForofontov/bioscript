@@ -12,7 +12,7 @@ import {
 import { translateSequence } from './translate';
 import { translateAllFrames, translateSixFrames } from './translate-frames';
 import { translateBatch } from './translate-batch';
-import { dnaToRna, rnaToDna, complement, reverseComplement } from './utils';
+import { dnaToRna, rnaToDna, complement, reverseComplement } from '@bioscript/seq-utils';
 import { buildLookup } from './lookup';
 
 // Export everything explicitly

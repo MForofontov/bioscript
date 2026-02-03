@@ -48,6 +48,9 @@
   "engines": {
     "node": ">=16.0.0"
   },
+  "dependencies": {
+    "@bioscript/seq-utils": "^0.1.0"
+  },
   "scripts": {
     "build": "tsc",
     "build:browser": "esbuild dist/browser-bundle.js --bundle --format=iife --global-name=bioseqTranslate --outfile=dist/bioseq-translate.bundle.js --platform=browser --external:worker_threads && cp dist/bioseq-translate.bundle.js e2e/",

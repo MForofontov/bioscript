@@ -8,5 +8,4 @@ export * from './browser-translate';
 export * from './translate';
 export * from './translate-frames';
 export * from './translate-batch';
-export * from './utils';
 export * from './lookup';

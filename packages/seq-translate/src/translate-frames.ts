@@ -5,7 +5,7 @@
 
 import { getTable } from './tables';
 import { buildLookup } from './lookup';
-import { reverseComplement } from './utils';
+import { reverseComplement } from '@bioscript/seq-utils';
 import type { TranslationOptions } from './translate';
 
 /**

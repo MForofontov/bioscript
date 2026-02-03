@@ -6,7 +6,7 @@ test.describe('Browser - Utility Functions', () => {
     await page.waitForFunction(() => window.bioseqTranslate !== undefined);
   });
 
-  test('dnaToRna should convert DNA to RNA', async ({ page }) => {
+  test('1. dnaToRna should convert DNA to RNA', async ({ page }) => {
     const result = await page.evaluate(() => {
       // @ts-expect-error - browser bundle
       return window.bioseqTranslate.dnaToRna('ATGC');
@@ -15,7 +15,7 @@ test.describe('Browser - Utility Functions', () => {
     expect(result).toBe('AUGC');
   });
 
-  test('rnaToDna should convert RNA to DNA', async ({ page }) => {
+  test('2. rnaToDna should convert RNA to DNA', async ({ page }) => {
     const result = await page.evaluate(() => {
       // @ts-expect-error - browser bundle
       return window.bioseqTranslate.rnaToDna('AUGC');
@@ -24,7 +24,7 @@ test.describe('Browser - Utility Functions', () => {
     expect(result).toBe('ATGC');
   });
 
-  test('complement should return complement sequence for DNA', async ({ page }) => {
+  test('3. complement should return complement sequence for DNA', async ({ page }) => {
     const result = await page.evaluate(() => {
       // @ts-expect-error - browser bundle
       return window.bioseqTranslate.complement('ATGC');
@@ -33,7 +33,7 @@ test.describe('Browser - Utility Functions', () => {
     expect(result).toBe('TACG');
   });
 
-  test('complement should return complement sequence for RNA', async ({ page }) => {
+  test('4. complement should return complement sequence for RNA', async ({ page }) => {
     const result = await page.evaluate(() => {
       // @ts-expect-error - browser bundle
       return window.bioseqTranslate.complement('AUGC');
@@ -42,7 +42,7 @@ test.describe('Browser - Utility Functions', () => {
     expect(result).toBe('UACG');
   });
 
-  test('reverseComplement should return reverse complement', async ({ page }) => {
+  test('5. reverseComplement should return reverse complement', async ({ page }) => {
     const result = await page.evaluate(() => {
       // @ts-expect-error - browser bundle
       return window.bioseqTranslate.reverseComplement('ATGC');
@@ -51,7 +51,7 @@ test.describe('Browser - Utility Functions', () => {
     expect(result).toBe('GCAT');
   });
 
-  test('reverseComplement should handle lowercase', async ({ page }) => {
+  test('6. reverseComplement should handle lowercase', async ({ page }) => {
     const result = await page.evaluate(() => {
       // @ts-expect-error - browser bundle
       return window.bioseqTranslate.reverseComplement('atgc');

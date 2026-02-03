@@ -13,7 +13,6 @@ export * from './tables';
 export * from './translate';
 export * from './translate-frames';
 export * from './translate-batch';
-export * from './utils';
 export * from './lookup';
 
 // Export worker-based parallel translation (Node.js only)

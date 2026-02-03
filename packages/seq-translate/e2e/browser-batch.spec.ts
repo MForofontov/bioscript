@@ -6,7 +6,7 @@ test.describe('Browser Translation - Batch', () => {
     await page.waitForFunction(() => window.bioseqTranslate !== undefined);
   });
 
-  test('translateBrowserBatch should translate multiple sequences', async ({ page }) => {
+  test('1. translateBrowserBatch should translate multiple sequences', async ({ page }) => {
     const result = await page.evaluate(() => {
       const sequences = ['ATGGCC', 'ATGTAA', 'ATGCCC'];
       // @ts-expect-error - browser bundle
@@ -19,7 +19,7 @@ test.describe('Browser Translation - Batch', () => {
     expect(result[2][0].sequence).toBe('MP');
   });
 
-  test('translateBrowserBatch should handle all frames', async ({ page }) => {
+  test('2. translateBrowserBatch should handle all frames', async ({ page }) => {
     const result = await page.evaluate(() => {
       const sequences = ['ATGGCCAAA', 'ATGTTTCCC'];
       // @ts-expect-error - browser bundle
@@ -34,7 +34,7 @@ test.describe('Browser Translation - Batch', () => {
     expect(result[1]).toHaveLength(3);
   });
 
-  test('translateBrowserBatch should handle empty array', async ({ page }) => {
+  test('3. translateBrowserBatch should handle empty array', async ({ page }) => {
     const result = await page.evaluate(() => {
       // @ts-expect-error - browser bundle
       return window.bioseqTranslate.translateBrowserBatch([]);
@@ -43,7 +43,7 @@ test.describe('Browser Translation - Batch', () => {
     expect(result).toHaveLength(0);
   });
 
-  test('translateBrowserBatch should handle large batch', async ({ page }) => {
+  test('4. translateBrowserBatch should handle large batch', async ({ page }) => {
     const result = await page.evaluate(() => {
       const sequences = Array(100).fill('ATGGCCAAA');
       // @ts-expect-error - browser bundle
