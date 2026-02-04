@@ -11,6 +11,7 @@ export const baseConfig: Config = {
   testEnvironmentOptions: {
     resultsDir: 'allure-results',
   },
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   reporters: [
     'default',
     ['jest-allure', { outputDir: 'allure-results' }],

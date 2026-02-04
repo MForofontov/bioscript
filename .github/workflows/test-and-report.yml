@@ -8,26 +8,15 @@ on:
         required: false
         default: '["22.x"]'
         type: string
-      unit_test_script:
-        description: 'npm script for unit tests'
+      test_mode:
+        description: 'Which tests to run'
         required: false
-        default: 'test'
-        type: string
-      e2e_test_script:
-        description: 'npm script for e2e/playwright tests'
-        required: false
-        default: 'test:browser'
-        type: string
-      run_unit_tests:
-        description: 'Run unit tests (Jest/Vitest)'
-        required: false
-        default: true
-        type: boolean
-      run_e2e_tests:
-        description: 'Run e2e tests (Playwright)'
-        required: false
-        default: true
-        type: boolean
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - unit
+          - e2e
       allure_version:
         description: 'Allure CLI version'
         required: false
@@ -53,8 +42,6 @@ jobs:
     env:
       ALLURE_RESULTS_DIR: allure-results
       ALLURE_REPORT_DIR: allure-report
-      UNIT_TEST_SCRIPT: ${{ inputs.unit_test_script }}
-      E2E_TEST_SCRIPT: ${{ inputs.e2e_test_script }}
       FORCE_COLOR: "1"
 
     steps:
@@ -88,9 +75,9 @@ jobs:
         if: ${{ hashFiles('pnpm-lock.yaml') == '' && hashFiles('yarn.lock') == '' }}
         run: npm ci
 
-      # Install Playwright browsers if e2e tests are enabled
+      # Install Playwright browsers (skip for unit-only)
       - name: Install Playwright Browsers
-        if: ${{ inputs.run_e2e_tests }}
+        if: ${{ inputs.test_mode != 'unit' }}
         shell: bash
         run: |
           set -eux
@@ -119,77 +106,39 @@ jobs:
           sudo ln -sf /opt/allure/bin/allure /usr/local/bin/allure
           allure --version
 
-      # Create directories
+      # Create test directories
       - name: Setup test directories
-        run: |
-          mkdir -p "$ALLURE_RESULTS_DIR" "$ALLURE_REPORT_DIR"
-          mkdir -p allure-results-unit allure-results-e2e
+        run: mkdir -p "$ALLURE_RESULTS_DIR" "$ALLURE_REPORT_DIR"
 
-      # Run unit tests
-      - name: Run unit tests
-        if: ${{ inputs.run_unit_tests }}
-        id: unit_tests
+      # Run all tests via single npm script
+      - name: Run tests
+        id: tests
         shell: bash
         continue-on-error: true
         run: |
           set +e
           if [ -f pnpm-lock.yaml ]; then PM="pnpm"; elif [ -f yarn.lock ]; then PM="yarn"; else PM="npm"; fi
           
-          echo "Running unit tests with: $PM run $UNIT_TEST_SCRIPT"
-          $PM run "$UNIT_TEST_SCRIPT"
+          # Determine which script to run based on test_mode
+          case "${{ inputs.test_mode }}" in
+            unit) SCRIPT="test" ;;
+            e2e)  SCRIPT="test:browser" ;;
+            *)    SCRIPT="test:github" ;;
+          esac
+          
+          echo "Running tests with: $PM run $SCRIPT"
+          $PM run "$SCRIPT"
           CODE=$?
           
           echo "exit_code=$CODE" >> $GITHUB_OUTPUT
           
-          # Jest allure-results are in root directory
-          if [ -d "$ALLURE_RESULTS_DIR" ] && [ "$(ls -A $ALLURE_RESULTS_DIR)" ]; then
-            cp -r "$ALLURE_RESULTS_DIR"/* allure-results-unit/ 2>/dev/null || true
-            rm -rf "$ALLURE_RESULTS_DIR"/*
-          fi
+          # Collect allure-results from packages (Playwright e2e)
+          find packages -type d -name "allure-results" -exec sh -c 'cp -r "$1"/* "'"$ALLURE_RESULTS_DIR"'/" 2>/dev/null || true' _ {} \;
           
+          echo "Results count: $(ls -1 $ALLURE_RESULTS_DIR 2>/dev/null | wc -l)"
           exit 0
 
-      # Run e2e tests (Playwright) - runs for all workspaces via test:browser
-      - name: Run e2e tests (Playwright)
-        if: ${{ inputs.run_e2e_tests }}
-        id: e2e_tests
-        shell: bash
-        continue-on-error: true
-        run: |
-          set +e
-          if [ -f pnpm-lock.yaml ]; then PM="pnpm"; elif [ -f yarn.lock ]; then PM="yarn"; else PM="npm"; fi
-          
-          echo "Running e2e tests with: $PM run $E2E_TEST_SCRIPT (all workspaces)"
-          $PM run "$E2E_TEST_SCRIPT"
-          CODE=$?
-          
-          echo "exit_code=$CODE" >> $GITHUB_OUTPUT
-          
-          # Playwright allure-results are in packages/*/allure-results/
-          find packages -type d -name "allure-results" -exec sh -c 'cp -r "$1"/* allure-results-e2e/ 2>/dev/null || true' _ {} \;
-          
-          exit 0
-
-      # Combine all test results
-      - name: Combine test results
-        if: always()
-        shell: bash
-        run: |
-          set -eux
-          mkdir -p "$ALLURE_RESULTS_DIR"
-          
-          # Copy all results to main directory
-          if [ -d allure-results-unit ] && [ "$(ls -A allure-results-unit)" ]; then
-            cp -r allure-results-unit/* "$ALLURE_RESULTS_DIR/" 2>/dev/null || true
-          fi
-          
-          if [ -d allure-results-e2e ] && [ "$(ls -A allure-results-e2e)" ]; then
-            cp -r allure-results-e2e/* "$ALLURE_RESULTS_DIR/" 2>/dev/null || true
-          fi
-          
-          echo "Combined results count: $(ls -1 $ALLURE_RESULTS_DIR | wc -l)"
-
-      # Generate combined Allure report
+      # Generate Allure report
       - name: Generate Allure report
         if: always()
         shell: bash
@@ -203,9 +152,9 @@ jobs:
             echo "<html><body><h1>No test results available</h1></body></html>" > "$ALLURE_REPORT_DIR/index.html"
           fi
 
-      # Upload Playwright trace/videos if e2e tests ran
+      # Upload Playwright artifacts (traces/videos) - skip for unit-only
       - name: Upload Playwright artifacts
-        if: ${{ inputs.run_e2e_tests && always() }}
+        if: ${{ inputs.test_mode != 'unit' && always() }}
         uses: actions/upload-artifact@v4
         with:
           name: playwright-artifacts-${{ matrix.node }}
@@ -215,27 +164,13 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      # Upload coverage reports
-      - name: Upload coverage reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-reports-${{ matrix.node }}
-          path: |
-            packages/*/coverage/
-            !packages/*/coverage/lcov-report/
-            !packages/*/coverage/*.json
-            !packages/*/coverage/*.info
-            !packages/*/coverage/*.xml
-          retention-days: 30
-
-      # Upload HTML report (Allure only for artifacts)
+      # Upload Allure report (HTML)
       - name: Upload Allure report (HTML)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: allure-report-${{ matrix.node }}
-          path: allure-report/
+          path: ${{ env.ALLURE_REPORT_DIR }}
           if-no-files-found: ignore
           retention-days: 30
 
@@ -246,8 +181,8 @@ jobs:
         run: |
           echo "## Test & Allure Summary (Node ${{ matrix.node }})" >> $GITHUB_STEP_SUMMARY
           echo "- Node.js: \`${{ matrix.node }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- Unit tests: \`${{ inputs.run_unit_tests && 'enabled' || 'skipped' }}\` (exit: ${{ steps.unit_tests.outputs.exit_code || 'N/A' }})" >> $GITHUB_STEP_SUMMARY
-          echo "- E2E tests: \`${{ inputs.run_e2e_tests && 'enabled' || 'skipped' }}\` (exit: ${{ steps.e2e_tests.outputs.exit_code || 'N/A' }})" >> $GITHUB_STEP_SUMMARY
+          echo "- Test mode: \`${{ inputs.test_mode }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Test exit code: \`${{ steps.tests.outputs.exit_code || 'N/A' }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- Allure version: \`${{ inputs.allure_version }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- Playwright browsers: \`${{ inputs.playwright_browsers }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -260,7 +195,7 @@ jobs:
             B=$(jq '.statistic.broken' ${{ env.ALLURE_REPORT_DIR }}/widgets/summary.json 2>/dev/null || echo 0)
             S=$(jq '.statistic.skipped' ${{ env.ALLURE_REPORT_DIR }}/widgets/summary.json 2>/dev/null || echo 0)
             T=$(jq '.statistic.total'  ${{ env.ALLURE_REPORT_DIR }}/widgets/summary.json 2>/dev/null || echo 0)
-            echo "### Combined Test Results" >> $GITHUB_STEP_SUMMARY
+            echo "### Test Results" >> $GITHUB_STEP_SUMMARY
             echo "- Total: **$T**  |  Passed: **$P**  |  Failed: **$F**  |  Broken: **$B**  |  Skipped: **$S**" >> $GITHUB_STEP_SUMMARY
           else
             echo "- Allure summary not found (no results?)" >> $GITHUB_STEP_SUMMARY
@@ -268,28 +203,16 @@ jobs:
           
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "- \`allure-results-${{ matrix.node }}\` - Raw test results" >> $GITHUB_STEP_SUMMARY
           echo "- \`allure-report-${{ matrix.node }}\` - Allure HTML report" >> $GITHUB_STEP_SUMMARY
-          echo "- \`coverage-reports-${{ matrix.node }}\` - Jest coverage reports" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ inputs.run_e2e_tests }}" = "true" ]; then
-            echo "- \`playwright-artifacts-${{ matrix.node }}\` - Playwright traces/videos" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "- \`playwright-artifacts-${{ matrix.node }}\` - Playwright traces/videos" >> $GITHUB_STEP_SUMMARY
 
-      # Fail job if any tests failed
+      # Fail job if tests failed
       - name: Check test results
         if: always()
         shell: bash
         run: |
-          FAIL=0
-          if [ "${{ inputs.run_unit_tests }}" = "true" ] && [ "${{ steps.unit_tests.outputs.exit_code }}" != "0" ]; then
-            echo "❌ Unit tests failed with exit code: ${{ steps.unit_tests.outputs.exit_code }}"
-            FAIL=1
-          fi
-          if [ "${{ inputs.run_e2e_tests }}" = "true" ] && [ "${{ steps.e2e_tests.outputs.exit_code }}" != "0" ]; then
-            echo "❌ E2E tests failed with exit code: ${{ steps.e2e_tests.outputs.exit_code }}"
-            FAIL=1
-          fi
-          if [ "$FAIL" -ne 0 ]; then
+          if [ "${{ steps.tests.outputs.exit_code }}" != "0" ]; then
+            echo "❌ Tests failed with exit code: ${{ steps.tests.outputs.exit_code }}"
             exit 1
           fi
           echo "✅ All tests passed"
