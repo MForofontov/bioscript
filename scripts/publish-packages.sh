@@ -37,7 +37,9 @@ fi
 
 # Packages to publish
 PACKAGES=(
+  "seq-utils"
   "seq-stream"
+  "seq-translate"
 )
 
 SUCCESS_COUNT=0
