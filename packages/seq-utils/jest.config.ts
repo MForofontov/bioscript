@@ -5,6 +5,7 @@ const config: Config = {
   ...baseConfig,
   displayName: 'seq-utils',
   rootDir: './',
+  setupFilesAfterEnv: ['../../jest.setup.ts'],
   testMatch: ['<rootDir>/src/tests/**/*.test.ts'],
   collectCoverageFrom: [
     'src/**/*.ts',
