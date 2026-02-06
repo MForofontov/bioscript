@@ -10,6 +10,7 @@ Efficient sequence translation utilities supporting all NCBI genetic code tables
 - 📊 **All NCBI Tables**: Supports all 33 NCBI genetic code tables
 - 🌊 **Streaming**: Browser streaming API for large sequences
 - 🎯 **Multiple Frames**: Translate single or all 6 reading frames
+- 🧬 **ORF Finding**: Identify Open Reading Frames with customizable options
 - 💪 **TypeScript**: Full type safety with TypeScript support
 
 ## Installation
@@ -158,6 +159,39 @@ const allFrames = translateSixFrames('ATGGCCAAA', {
 console.log(allFrames); // 6 translations
 ```
 
+### Open Reading Frame (ORF) Finding
+
+```typescript
+import { findOrfs } from '@bioscript/seq-translate';
+
+// Find all ORFs (start codon to stop codon)
+const orfs = findOrfs('ATGGCCAAATAAGATGGGGTAGCCC', {
+  minLength: 9,        // Minimum ORF length in bp
+  allFrames: true,     // Search all 6 frames
+  translate: true,     // Include protein translation
+  table: 'standard'
+});
+
+orfs.forEach(orf => {
+  console.log(`ORF at ${orf.start}-${orf.end} (frame ${orf.frame}, ${orf.strand} strand)`);
+  console.log(`  Sequence: ${orf.sequence}`);
+  console.log(`  Protein: ${orf.protein}`);
+  console.log(`  Has stop: ${orf.hasStopCodon}`);
+});
+
+// Include partial ORFs (no stop codon)
+const partialOrfs = findOrfs(sequence, {
+  minLength: 75,
+  includePartial: true  // Include ORFs without stop codon
+});
+
+// Use alternative start codons
+const altOrfs = findOrfs(sequence, {
+  startCodons: ['ATG', 'CTG', 'GTG'],  // Alternative starts
+  minLength: 30
+});
+```
+
 ## API Reference
 
 ### Translation Functions
@@ -166,6 +200,12 @@ console.log(allFrames); // 6 translations
 - **`translateAllFrames(seq, options)`** - Translate 3 forward frames
 - **`translateSixFrames(seq, options)`** - Translate all 6 frames
 - **`translateBatch(sequences, options)`** - Batch translate multiple sequences
+
+### ORF Finding
+
+- **`findOrfs(sequence, options)`** - Find Open Reading Frames in sequence
+  - Returns: Array of `Orf` objects with position, frame, strand, sequence, and optional protein
+  - Options: `minLength`, `includePartial`, `allFrames`, `translate`, `startCodons`
 
 ### Worker Functions (Node.js only)
 
@@ -222,6 +262,25 @@ interface TranslationResult {
   frame: number;
   isReverse: boolean;
   sourceLength: number;
+}
+
+interface Orf {
+  sequence: string;
+  start: number;
+  end: number;
+  frame: number;
+  strand: '+' | '-';
+  length: number;
+  protein?: string;
+  hasStopCodon: boolean;
+}
+
+interface OrfOptions extends TranslationOptions {
+  minLength?: number;
+  includePartial?: boolean;
+  allFrames?: boolean;
+  translate?: boolean;
+  startCodons?: string[];
 }
 ```
 

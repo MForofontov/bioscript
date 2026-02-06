@@ -4,7 +4,7 @@
  */
 
 import { getTable } from './tables';
-import { buildLookup } from './lookup';
+import { buildLookup, translateWithLookup } from './lookup';
 import type { TranslationOptions } from './translate';
 
 /**
@@ -29,20 +29,6 @@ export function translateBatch(sequences: string[], options: TranslationOptions 
 
   return sequences.map((seq) => {
     const normalized = seq.trim().toUpperCase();
-    const result: string[] = [];
-
-    for (let i = 0; i + 3 <= normalized.length; i += 3) {
-      const codon = normalized.slice(i, i + 3);
-      const aa = lookup.get(codon) ?? 'X';
-
-      if (aa === '*') {
-        result.push(stopSymbol);
-        if (breakOnStop) break;
-      } else {
-        result.push(aa);
-      }
-    }
-
-    return result.join('');
+    return translateWithLookup(normalized, lookup, stopSymbol, breakOnStop);
   });
 }

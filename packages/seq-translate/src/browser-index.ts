@@ -9,3 +9,4 @@ export * from './translate';
 export * from './translate-frames';
 export * from './translate-batch';
 export * from './lookup';
+export * from './find-orfs';

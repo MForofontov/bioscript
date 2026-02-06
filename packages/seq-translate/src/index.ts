@@ -15,6 +15,9 @@ export * from './translate-frames';
 export * from './translate-batch';
 export * from './lookup';
 
+// Export ORF finding
+export * from './find-orfs';
+
 // Export worker-based parallel translation (Node.js only)
 export {
   translateWorker,

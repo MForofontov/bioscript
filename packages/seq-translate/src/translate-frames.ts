@@ -4,7 +4,7 @@
  */
 
 import { getTable } from './tables';
-import { buildLookup } from './lookup';
+import { buildLookup, translateWithLookup } from './lookup';
 import { reverseComplement } from '@bioscript/seq-utils';
 import type { TranslationOptions } from './translate';
 
@@ -27,25 +27,10 @@ export function translateAllFrames(seq: string, options: TranslationOptions = {}
   const codonTable = getTable(table);
   const lookup = buildLookup(codonTable);
   const normalized = seq.trim().toUpperCase();
-  const results: string[] = [];
 
-  for (let frame = 0; frame < 3; frame++) {
-    const frameSeq: string[] = [];
-    for (let i = frame; i + 3 <= normalized.length; i += 3) {
-      const codon = normalized.slice(i, i + 3);
-      const aa = lookup.get(codon) ?? 'X';
-
-      if (aa === '*') {
-        frameSeq.push(stopSymbol);
-        if (breakOnStop) break;
-      } else {
-        frameSeq.push(aa);
-      }
-    }
-    results.push(frameSeq.join(''));
-  }
-
-  return results;
+  return [0, 1, 2].map(frame =>
+    translateWithLookup(normalized, lookup, stopSymbol, breakOnStop, frame)
+  );
 }
 
 /**
@@ -63,7 +48,26 @@ export function translateAllFrames(seq: string, options: TranslationOptions = {}
  * ```
  */
 export function translateSixFrames(seq: string, options: TranslationOptions = {}): string[] {
-  const forward = translateAllFrames(seq, options);
-  const reverse = translateAllFrames(reverseComplement(seq), options);
-  return [...forward, ...reverse];
+  const { table = 'standard', stopSymbol = '*', breakOnStop = true } = options;
+
+  // Build lookup once for all 6 frames (optimization)
+  const codonTable = getTable(table);
+  const lookup = buildLookup(codonTable);
+
+  const normalized = seq.trim().toUpperCase();
+  const revComp = reverseComplement(normalized);
+
+  const results: string[] = [];
+
+  // Forward frames (0, 1, 2)
+  for (let frame = 0; frame < 3; frame++) {
+    results.push(translateWithLookup(normalized, lookup, stopSymbol, breakOnStop, frame));
+  }
+
+  // Reverse frames (3, 4, 5)
+  for (let frame = 0; frame < 3; frame++) {
+    results.push(translateWithLookup(revComp, lookup, stopSymbol, breakOnStop, frame));
+  }
+
+  return results;
 }

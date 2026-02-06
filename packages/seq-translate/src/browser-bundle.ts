@@ -14,6 +14,7 @@ import { translateAllFrames, translateSixFrames } from './translate-frames';
 import { translateBatch } from './translate-batch';
 import { dnaToRna, rnaToDna, complement, reverseComplement } from '@bioscript/seq-utils';
 import { buildLookup } from './lookup';
+import { findOrfs } from './find-orfs';
 
 // Export everything explicitly
 export {
@@ -38,4 +39,7 @@ export {
   complement,
   reverseComplement,
   buildLookup,
+
+  // ORF finding
+  findOrfs,
 };
