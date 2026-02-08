@@ -1,0 +1,10 @@
+src
+*.test.ts
+*.spec.ts
+tsconfig.json
+tsconfig.test.json
+jest.config.ts
+.npmignore
+coverage
+node_modules
+.DS_Store

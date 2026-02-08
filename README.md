@@ -15,6 +15,17 @@ High-performance streaming parser and writer for FASTA and FASTQ bioinformatics 
 - 📊 Comprehensive sequence statistics
 - 🌐 Browser and Node.js support
 
+### [@bioscript/seq-align](./packages/seq-align)
+
+Pairwise sequence alignment algorithms for bioinformatics. Features include:
+
+- ✨ Global alignment (Needleman-Wunsch) for end-to-end alignment
+- 📍 Local alignment (Smith-Waterman) for finding conserved regions
+- 🧬 Multiple scoring matrices (BLOSUM62, BLOSUM80, PAM250, DNA)
+- ⚡ High-performance dynamic programming (~100k cell updates/sec)
+- 🔧 Full TypeScript support with comprehensive type definitions
+- 📦 Zero dependencies, pure TypeScript implementation
+
 ## Getting Started
 
 This is a monorepo using npm workspaces. To get started:
@@ -38,6 +49,7 @@ npm run test:browser
 Each package has its own README with specific documentation. Navigate to the package directory for more details:
 
 - [seq-stream package documentation](./packages/seq-stream/README.md)
+- [seq-align package documentation](./packages/seq-align/README.md)
 
 ## License
 
