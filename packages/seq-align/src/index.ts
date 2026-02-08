@@ -23,14 +23,31 @@
 // Core algorithms
 export { needlemanWunsch } from './needleman-wunsch';
 export { smithWaterman } from './smith-waterman';
+export { semiGlobal } from './semi-global';
+export { bandedAlign } from './banded';
+export { overlapAlign } from './overlap';
+export { hirschberg } from './hirschberg';
+
+// Export types from banded for convenience
+export type { BandedAlignmentOptions } from './banded';
 
 // Scoring matrices
 export {
+  // BLOSUM series
+  BLOSUM45,
+  BLOSUM50,
   BLOSUM62,
   BLOSUM80,
+  BLOSUM90,
+  // PAM series
+  PAM30,
+  PAM70,
+  PAM120,
   PAM250,
+  // DNA/RNA matrices
   DNA_SIMPLE,
   DNA_FULL,
+  // Registry and utilities
   MATRICES,
   getMatrix,
   getScore,
