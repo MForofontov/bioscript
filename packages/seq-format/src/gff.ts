@@ -38,14 +38,14 @@ export function parseGFFLine(line: string, version: GFFVersion = 'gff3'): GFFRec
   }
 
   const trimmed = line.trim();
-  
+
   // Skip comments and empty lines
   if (!trimmed || trimmed.startsWith('#')) {
     throw new Error('Cannot parse comment or empty line');
   }
 
   const fields = trimmed.split('\t');
-  
+
   if (fields.length !== 9) {
     throw new Error(`Invalid GFF format: expected 9 fields, got ${fields.length}`);
   }
@@ -65,17 +65,17 @@ export function parseGFFLine(line: string, version: GFFVersion = 'gff3'): GFFRec
 
   // Parse attributes
   const attributes: Record<string, string | string[]> = {};
-  
+
   if (version === 'gff3') {
     // GFF3: key=value;key=value
-    const pairs = attributesStr.split(';').filter(p => p.trim());
+    const pairs = attributesStr.split(';').filter((p) => p.trim());
     for (const pair of pairs) {
       const [key, ...valueParts] = pair.split('=');
       const value = valueParts.join('=').trim();
-      
+
       // Handle multiple values (comma-separated)
       if (value.includes(',')) {
-        attributes[key.trim()] = value.split(',').map(v => decodeURIComponent(v.trim()));
+        attributes[key.trim()] = value.split(',').map((v) => decodeURIComponent(v.trim()));
       } else {
         attributes[key.trim()] = decodeURIComponent(value);
       }
@@ -139,12 +139,12 @@ export function formatGFFLine(record: GFFRecord, version: GFFVersion = 'gff3'): 
 
   // Format attributes
   let attributesStr = '';
-  
+
   if (version === 'gff3') {
     // GFF3: key=value;key=value
     const pairs = Object.entries(record.attributes).map(([key, value]) => {
       if (Array.isArray(value)) {
-        const encoded = value.map(v => encodeURIComponent(v)).join(',');
+        const encoded = value.map((v) => encodeURIComponent(v)).join(',');
         return `${key}=${encoded}`;
       }
       return `${key}=${encodeURIComponent(value)}`;
@@ -188,7 +188,7 @@ export function formatGFFLine(record: GFFRecord, version: GFFVersion = 'gff3'): 
  * console.log(`Parsed ${records.length} annotations`);
  * ```
  *
- * @performance O(n) where n is number of lines. 
+ * @performance O(n) where n is number of lines.
  * Typical: 10K lines in ~50ms, 100K lines in ~500ms.
  */
 export function parseGFF(text: string, version: GFFVersion = 'gff3'): GFFRecord[] {
@@ -201,7 +201,7 @@ export function parseGFF(text: string, version: GFFVersion = 'gff3'): GFFRecord[
 
   for (const line of lines) {
     const trimmed = line.trim();
-    
+
     // Skip comments and empty lines
     if (!trimmed || trimmed.startsWith('#')) {
       continue;
@@ -210,7 +210,7 @@ export function parseGFF(text: string, version: GFFVersion = 'gff3'): GFFRecord[
     try {
       const record = parseGFFLine(trimmed, version);
       records.push(record);
-    } catch (error) {
+    } catch {
       // Skip malformed lines
       continue;
     }
@@ -235,7 +235,7 @@ export function parseGFF(text: string, version: GFFVersion = 'gff3'): GFFRecord[
  * fs.writeFileSync('output.gff3', gffText);
  * ```
  *
- * @performance O(n) where n is number of records. 
+ * @performance O(n) where n is number of records.
  * Typical: 10K records in ~50ms.
  */
 export function formatGFF(

@@ -178,3 +178,59 @@ export interface FastaRecord {
   description: string;
   sequence: string;
 }
+
+/**
+ * CIGAR operation type.
+ */
+export type CigarOperation =
+  | 'M' // Match/Mismatch
+  | 'I' // Insertion
+  | 'D' // Deletion
+  | 'N' // Skipped region
+  | 'S' // Soft clipping
+  | 'H' // Hard clipping
+  | 'P' // Padding
+  | '=' // Sequence match
+  | 'X'; // Sequence mismatch
+
+/**
+ * Parsed CIGAR operation.
+ */
+export interface CigarOp {
+  length: number;
+  operation: CigarOperation;
+}
+
+/**
+ * CIGAR alignment statistics.
+ */
+export interface CigarStats {
+  alignedLength: number;
+  matches: number;
+  mismatches: number;
+  insertions: number;
+  deletions: number;
+  softClipped: number;
+  hardClipped: number;
+  referenceLength: number;
+  queryLength: number;
+}
+
+/**
+ * Newick tree node.
+ */
+export interface NewickNode {
+  name?: string;
+  length?: number;
+  children?: NewickNode[];
+}
+
+/**
+ * Newick tree with metadata.
+ */
+export interface NewickTree {
+  root: NewickNode;
+  leafCount: number;
+  maxDepth: number;
+  hasLengths: boolean;
+}

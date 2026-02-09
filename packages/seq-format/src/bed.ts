@@ -45,14 +45,19 @@ export function parseBEDLine(line: string): BEDRecord {
   }
 
   const trimmed = line.trim();
-  
+
   // Skip comments and empty lines
-  if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('track') || trimmed.startsWith('browser')) {
+  if (
+    !trimmed ||
+    trimmed.startsWith('#') ||
+    trimmed.startsWith('track') ||
+    trimmed.startsWith('browser')
+  ) {
     throw new Error('Cannot parse comment, track, or browser line');
   }
 
   const fields = trimmed.split('\t');
-  
+
   if (fields.length < 3) {
     throw new Error(`Invalid BED format: expected at least 3 fields, got ${fields.length}`);
   }
@@ -107,11 +112,17 @@ export function parseBEDLine(line: string): BEDRecord {
   }
 
   if (fields.length >= 11) {
-    record.blockSizes = fields[10].split(',').filter(s => s).map(s => parseInt(s));
+    record.blockSizes = fields[10]
+      .split(',')
+      .filter((s) => s)
+      .map((s) => parseInt(s));
   }
 
   if (fields.length >= 12) {
-    record.blockStarts = fields[11].split(',').filter(s => s).map(s => parseInt(s));
+    record.blockStarts = fields[11]
+      .split(',')
+      .filter((s) => s)
+      .map((s) => parseInt(s));
   }
 
   return record;
@@ -147,11 +158,7 @@ export function formatBEDLine(record: BEDRecord): string {
     throw new TypeError(`record must be an object, got ${typeof record}`);
   }
 
-  const fields: string[] = [
-    record.chrom,
-    record.chromStart.toString(),
-    record.chromEnd.toString(),
-  ];
+  const fields: string[] = [record.chrom, record.chromStart.toString(), record.chromEnd.toString()];
 
   // Add optional fields if present
   if (record.name !== undefined) {
@@ -238,16 +245,21 @@ export function parseBED(text: string): BEDRecord[] {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    
+
     // Skip comments, track lines, browser lines, and empty lines
-    if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('track') || trimmed.startsWith('browser')) {
+    if (
+      !trimmed ||
+      trimmed.startsWith('#') ||
+      trimmed.startsWith('track') ||
+      trimmed.startsWith('browser')
+    ) {
       continue;
     }
 
     try {
       const record = parseBEDLine(trimmed);
       records.push(record);
-    } catch (error) {
+    } catch (_error) {
       // Skip malformed lines
       continue;
     }

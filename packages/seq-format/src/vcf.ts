@@ -61,7 +61,9 @@ export function parseVCFHeader(text: string): VCFHeader {
     }
 
     if (line.startsWith('##INFO=')) {
-      const match = line.match(/##INFO=<ID=([^,]+),Number=([^,]+),Type=([^,]+),Description="([^"]+)"/);
+      const match = line.match(
+        /##INFO=<ID=([^,]+),Number=([^,]+),Type=([^,]+),Description="([^"]+)"/
+      );
       if (match) {
         header.info.push({
           id: match[1],
@@ -85,7 +87,9 @@ export function parseVCFHeader(text: string): VCFHeader {
     }
 
     if (line.startsWith('##FORMAT=')) {
-      const match = line.match(/##FORMAT=<ID=([^,]+),Number=([^,]+),Type=([^,]+),Description="([^"]+)"/);
+      const match = line.match(
+        /##FORMAT=<ID=([^,]+),Number=([^,]+),Type=([^,]+),Description="([^"]+)"/
+      );
       if (match) {
         header.format.push({
           id: match[1],
@@ -138,19 +142,19 @@ export function parseVCFHeader(text: string): VCFHeader {
  *
  * @performance O(n) where n is line length. Typical: <0.2ms per line.
  */
-export function parseVCFLine(line: string, samples: string[] = []): VCFRecord {
+export function parseVCFLine(line: string, _samples: string[] = []): VCFRecord {
   if (typeof line !== 'string') {
     throw new TypeError(`line must be a string, got ${typeof line}`);
   }
 
   const trimmed = line.trim();
-  
+
   if (!trimmed || trimmed.startsWith('#')) {
     throw new Error('Cannot parse comment or empty line');
   }
 
   const fields = trimmed.split('\t');
-  
+
   if (fields.length < 8) {
     throw new Error(`Invalid VCF format: expected at least 8 fields, got ${fields.length}`);
   }
@@ -199,8 +203,8 @@ export function parseVCFLine(line: string, samples: string[] = []): VCFRecord {
       const sampleData = fields[i];
       const values = sampleData.split(':');
       const sampleObj: Record<string, string> = {};
-      
-      record.format!.forEach((key, idx) => {
+
+      record.format.forEach((key, idx) => {
         sampleObj[key] = values[idx] || '.';
       });
 
@@ -250,7 +254,7 @@ export function parseVCF(text: string): { header: VCFHeader; records: VCFRecord[
   // Parse data lines
   for (let i = dataStartIndex; i < lines.length; i++) {
     const line = lines[i].trim();
-    
+
     if (!line || line.startsWith('#')) {
       continue;
     }
@@ -258,7 +262,7 @@ export function parseVCF(text: string): { header: VCFHeader; records: VCFRecord[
     try {
       const record = parseVCFLine(line, header.samples);
       records.push(record);
-    } catch (error) {
+    } catch {
       // Skip malformed lines
       continue;
     }
@@ -314,9 +318,9 @@ export function formatVCFLine(record: VCFRecord): string {
   // Add FORMAT and sample columns
   if (record.format && record.samples) {
     fields.push(record.format.join(':'));
-    
+
     for (const sample of record.samples) {
-      const values = record.format.map(key => sample[key] || '.');
+      const values = record.format.map((key) => sample[key] || '.');
       fields.push(values.join(':'));
     }
   }

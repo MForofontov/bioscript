@@ -207,13 +207,13 @@ export function parseSAMLine(line: string): SAMRecord {
   }
 
   const trimmed = line.trim();
-  
+
   if (!trimmed || trimmed.startsWith('@')) {
     throw new Error('Cannot parse header or empty line');
   }
 
   const fields = trimmed.split('\t');
-  
+
   if (fields.length < 11) {
     throw new Error(`Invalid SAM format: expected at least 11 fields, got ${fields.length}`);
   }
@@ -293,7 +293,7 @@ export function parseSAM(text: string): { header: SAMHeader; records: SAMRecord[
   // Parse alignment lines
   for (let i = dataStartIndex; i < lines.length; i++) {
     const line = lines[i].trim();
-    
+
     if (!line || line.startsWith('@')) {
       continue;
     }
@@ -301,7 +301,7 @@ export function parseSAM(text: string): { header: SAMHeader; records: SAMRecord[
     try {
       const record = parseSAMLine(line);
       records.push(record);
-    } catch (error) {
+    } catch (_error) {
       // Skip malformed lines
       continue;
     }

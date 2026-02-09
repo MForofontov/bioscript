@@ -3,7 +3,7 @@
  * @module genbank
  */
 
-import type { GenBankRecord, GenBankFeature, GenBankQualifier, FastaRecord } from './types';
+import type { GenBankRecord, GenBankFeature, FastaRecord } from './types';
 
 /**
  * Parse GenBank format text into structured record.
@@ -45,7 +45,7 @@ export function parseGenBank(text: string): GenBankRecord {
 
   let currentSection = '';
   let currentFeature: Partial<GenBankFeature> | null = null;
-  let sequenceLines: string[] = [];
+  const sequenceLines: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -166,14 +166,14 @@ export function parseGenBank(text: string): GenBankRecord {
         if (qualMatch) {
           const key = qualMatch[1];
           let value = qualMatch[2]?.replace(/^"(.*)"$/, '$1') || '';
-          
+
           // Handle multi-line qualifier values
           let j = i + 1;
           while (j < lines.length && lines[j].match(/^\s{21}/) && !lines[j].includes('/')) {
             value += ' ' + lines[j].trim().replace(/^"(.*)"$/, '$1');
             j++;
           }
-          
+
           currentFeature.qualifiers!.push({ key, value });
           i = j - 1;
         }
@@ -255,9 +255,9 @@ export function genBankToFasta(
     for (const feature of record.features) {
       if (feature.type === 'CDS' || feature.type === 'gene') {
         // Extract product/gene name
-        const productQual = feature.qualifiers.find(q => q.key === 'product');
-        const geneQual = feature.qualifiers.find(q => q.key === 'gene');
-        const locusTagQual = feature.qualifiers.find(q => q.key === 'locus_tag');
+        const productQual = feature.qualifiers.find((q) => q.key === 'product');
+        const geneQual = feature.qualifiers.find((q) => q.key === 'gene');
+        const locusTagQual = feature.qualifiers.find((q) => q.key === 'locus_tag');
 
         const id = geneQual?.value || locusTagQual?.value || feature.type;
         const description = productQual?.value || feature.location;
@@ -317,11 +317,7 @@ export function fastaToGenBank(
     throw new TypeError(`record must be an object, got ${typeof record}`);
   }
 
-  const {
-    organism = 'Unknown',
-    moleculeType = 'DNA',
-    topology = 'linear',
-  } = options;
+  const { organism = 'Unknown', moleculeType = 'DNA', topology = 'linear' } = options;
 
   const seqLength = record.sequence.length;
   const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
@@ -361,11 +357,11 @@ export function fastaToGenBank(
   for (let i = 0; i < seq.length; i += 60) {
     const chunk = seq.substring(i, i + 60);
     const lineNum = (i + 1).toString().padStart(9);
-    
+
     // Split into 10-char groups
     const groups = chunk.match(/.{1,10}/g) || [];
     const formatted = groups.join(' ');
-    
+
     gb += `${lineNum} ${formatted}\n`;
   }
 

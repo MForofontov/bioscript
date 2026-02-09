@@ -43,7 +43,7 @@ export function parseEMBL(text: string): EMBLRecord {
 
   let currentSection = '';
   let currentFeature: Partial<GenBankFeature> | null = null;
-  let sequenceLines: string[] = [];
+  const sequenceLines: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -95,7 +95,7 @@ export function parseEMBL(text: string): EMBLRecord {
       case 'RX':
       case 'RA':
       case 'RT':
-      case 'RL':
+      case 'RL': {
         // Reference lines - collect as single string
         let refText = line.trim();
         let j = i + 1;
@@ -106,16 +106,17 @@ export function parseEMBL(text: string): EMBLRecord {
         record.references!.push(refText);
         i = j - 1;
         break;
+      }
 
       case 'FH':
         // FH   Key             Location/Qualifiers
         currentSection = 'features';
         break;
 
-      case 'FT':
+      case 'FT': {
         // FT   source          1..1859
         const ftContent = line.substring(5);
-        
+
         // New feature (starts with non-space at position 5)
         if (ftContent.match(/^\S/)) {
           if (currentFeature && currentFeature.type) {
@@ -133,19 +134,28 @@ export function parseEMBL(text: string): EMBLRecord {
         else if (currentFeature && ftContent.includes('/')) {
           const qualMatch = ftContent.match(/\/([^=]+)=?(.*)$/);
           if (qualMatch) {
-            const key = qualMatch[1];
+            const qualKey = qualMatch[1];
             let value = qualMatch[2]?.replace(/^"(.*)"$/, '$1') || '';
-            
+
             // Handle multi-line qualifier values
-            let j = i + 1;
-            while (j < lines.length && lines[j].substring(0, 2) === 'FT' && 
-                   !lines[j].includes('/') && lines[j].substring(5).match(/^\s{15}/)) {
-              value += ' ' + lines[j].substring(20).trim().replace(/^"(.*)"$/, '$1');
-              j++;
+            let qualJ = i + 1;
+            while (
+              qualJ < lines.length &&
+              lines[qualJ].substring(0, 2) === 'FT' &&
+              !lines[qualJ].includes('/') &&
+              lines[qualJ].substring(5).match(/^\s{15}/)
+            ) {
+              value +=
+                ' ' +
+                lines[qualJ]
+                  .substring(20)
+                  .trim()
+                  .replace(/^"(.*)"$/, '$1');
+              qualJ++;
             }
-            
-            currentFeature.qualifiers!.push({ key, value });
-            i = j - 1;
+
+            currentFeature.qualifiers!.push({ key: qualKey, value });
+            i = qualJ - 1;
           }
         }
         // Location continuation
@@ -153,6 +163,7 @@ export function parseEMBL(text: string): EMBLRecord {
           currentFeature.location += ftContent.trim();
         }
         break;
+      }
 
       case 'SQ':
         // SQ   Sequence 1859 BP; 609 A; 314 C; 355 G; 581 T; 0 other;
