@@ -515,6 +515,54 @@ const result = needlemanWunsch('ACGTACGT', 'ACGT', {
 3. For very large sequences, consider pre-filtering or windowing
 4. Gap penalties affect alignment quality but not performance
 
+## Parallel Processing
+
+This package exports pure functions - you bring your own parallelization strategy:
+
+### Using Worker Threads
+
+```typescript
+import { Worker } from 'worker_threads';
+import { needlemanWunsch } from '@bioscript/seq-align';
+
+// worker.js
+const { parentPort, workerData } = require('worker_threads');
+const { needlemanWunsch } = require('@bioscript/seq-align');
+
+const result = needlemanWunsch(workerData.seq1, workerData.seq2, workerData.options);
+parentPort.postMessage(result);
+
+// main.js
+const worker = new Worker('./worker.js', { workerData: { seq1, seq2, options } });
+worker.on('message', (result) => console.log(result));
+```
+
+### Using GNU Parallel
+
+```bash
+# Process 1000 alignments across 8 cores
+cat sequences.txt | parallel -j 8 --colsep '\t' \
+  'node -e "const {needlemanWunsch} = require(\"@bioscript/seq-align\"); \
+  console.log(JSON.stringify(needlemanWunsch(\"{1}\", \"{2}\")))"'
+```
+
+### Using Cluster Mode
+
+```typescript
+import cluster from 'cluster';
+import { cpus } from 'os';
+import { needlemanWunsch } from '@bioscript/seq-align';
+
+if (cluster.isPrimary) {
+  for (let i = 0; i < cpus().length; i++) {
+    cluster.fork();
+  }
+} else {
+  // Workers process tasks from queue
+  processTasks();
+}
+```
+
 ## Common Use Cases
 
 ### 1. Comparing Homologous Proteins
@@ -573,6 +621,292 @@ const result = smithWaterman(genome, pattern, {
 });
 
 console.log(`Match at position ${result.startPos1}: ${result.alignedSeq1}`);
+```
+
+## Real-World Workflows
+
+### Primer Design and Validation
+
+```typescript
+import { semiGlobal } from '@bioscript/seq-align';
+
+/**
+ * Validate primer binding to target sequence.
+ * Returns binding score and mismatch positions.
+ */
+function validatePrimer(
+  primer: string,
+  targetRegion: string
+): { binds: boolean; mismatches: number; position: number } {
+  const result = semiGlobal(primer, targetRegion, {
+    matrix: 'DNA_SIMPLE',
+    gapOpen: -8,    // Penalize gaps heavily in primers
+    gapExtend: -4,
+  });
+
+  // Good primers should have >90% identity
+  const binds = result.identityPercent >= 90;
+  const mismatches = result.alignmentLength - result.identity;
+
+  return {
+    binds,
+    mismatches,
+    position: result.startPos2,
+  };
+}
+
+// Example: Check if primer binds to target
+const forwardPrimer = 'ATGGCCATGGAACGTACG';
+const targetDNA = 'CGATCGATGGCCATGGAACGTACGTAGCTAGC';
+
+const validation = validatePrimer(forwardPrimer, targetDNA);
+console.log(`Primer binds: ${validation.binds}`);
+console.log(`Mismatches: ${validation.mismatches}`);
+console.log(`Binding position: ${validation.position}`);
+```
+
+### SNP Detection in Sequencing Reads
+
+```typescript
+import { bandedAlign } from '@bioscript/seq-align';
+
+/**
+ * Detect SNPs by aligning read to reference with narrow band.
+ * Fast alignment for nearly identical sequences.
+ */
+function detectSNPs(
+  read: string,
+  reference: string
+): Array<{ position: number; readBase: string; refBase: string }> {
+  const result = bandedAlign(read, reference, {
+    matrix: 'DNA_SIMPLE',
+    bandwidth: 5,  // Expect only point mutations, no large indels
+    gapOpen: -10,
+    gapExtend: -2,
+  });
+
+  const snps: Array<{ position: number; readBase: string; refBase: string }> = [];
+
+  for (let i = 0; i < result.alignmentLength; i++) {
+    const readBase = result.alignedSeq1[i];
+    const refBase = result.alignedSeq2[i];
+
+    if (readBase !== refBase && readBase !== '-' && refBase !== '-') {
+      snps.push({
+        position: i,
+        readBase,
+        refBase,
+      });
+    }
+  }
+
+  return snps;
+}
+
+// Example: Find SNPs in a read
+const read = 'ACGTACGTACGTACGT';
+const reference = 'ACGTACGTCCGTACGT';  // C→C SNP at position 8
+
+const snps = detectSNPs(read, reference);
+console.log(`Found ${snps.length} SNPs:`, snps);
+// Output: Found 1 SNPs: [{ position: 8, readBase: 'A', refBase: 'C' }]
+```
+
+### Protein Family Classification
+
+```typescript
+import { smithWaterman, needlemanWunsch } from '@bioscript/seq-align';
+
+/**
+ * Classify protein into family based on conserved domain presence.
+ * Uses local alignment to find domains, global for overall similarity.
+ */
+function classifyProtein(
+  query: string,
+  familySignature: string,
+  familyMember: string
+): {
+  hasDomain: boolean;
+  domainScore: number;
+  overallIdentity: number;
+  family: string | null;
+} {
+  // Step 1: Check for conserved domain using local alignment
+  const domainAlignment = smithWaterman(query, familySignature, {
+    matrix: 'BLOSUM62',
+    gapOpen: -10,
+    gapExtend: -1,
+    minScore: 50,  // Minimum score to consider domain present
+  });
+
+  const hasDomain = domainAlignment.score >= 50;
+
+  // Step 2: Compare to known family member using global alignment
+  const globalAlignment = needlemanWunsch(query, familyMember, {
+    matrix: 'BLOSUM62',
+    gapOpen: -10,
+    gapExtend: -1,
+  });
+
+  // Classification criteria:
+  // - Must have conserved domain (score ≥ 50)
+  // - Overall identity ≥ 30% to family member
+  const family = hasDomain && globalAlignment.identityPercent >= 30
+    ? 'Family Member'
+    : null;
+
+  return {
+    hasDomain,
+    domainScore: domainAlignment.score,
+    overallIdentity: globalAlignment.identityPercent,
+    family,
+  };
+}
+
+// Example: Classify a protein
+const unknownProtein = 'HEAGAWGHEEHEAGAWGHEE';
+const kinaseDomain = 'AWGHE';  // Simplified kinase signature
+const knownKinase = 'HEAGAWGHEEHEAGAWGHEE';
+
+const classification = classifyProtein(unknownProtein, kinaseDomain, knownKinase);
+console.log(`Has kinase domain: ${classification.hasDomain}`);
+console.log(`Domain score: ${classification.domainScore}`);
+console.log(`Overall identity: ${classification.overallIdentity.toFixed(1)}%`);
+console.log(`Classification: ${classification.family || 'Unknown'}`);
+```
+
+### Read Overlap Detection for Assembly
+
+```typescript
+import { overlapAlign } from '@bioscript/seq-align';
+
+/**
+ * Find overlapping reads for genome assembly.
+ * Returns overlap length and quality.
+ */
+function findOverlap(
+  read1: string,
+  read2: string,
+  minOverlap: number = 20
+): {
+  hasOverlap: boolean;
+  overlapLength: number;
+  overlapIdentity: number;
+  canMerge: boolean;
+} {
+  const result = overlapAlign(read1, read2, {
+    matrix: 'DNA_SIMPLE',
+    gapOpen: -5,
+    gapExtend: -2,
+  });
+
+  const overlapLength = result.identity;
+  const hasOverlap = overlapLength >= minOverlap;
+
+  // High-quality overlap: ≥95% identity in overlap region
+  const canMerge = hasOverlap && result.identityPercent >= 95;
+
+  return {
+    hasOverlap,
+    overlapLength,
+    overlapIdentity: result.identityPercent,
+    canMerge,
+  };
+}
+
+// Example: Check if two reads can be merged
+const read1 = 'ACGTACGTACGTACGT';
+const read2 = 'ACGTACGTTTTTTTTT';  // Overlaps first 8bp
+
+const overlap = findOverlap(read1, read2, 8);
+console.log(`Has overlap: ${overlap.hasOverlap}`);
+console.log(`Overlap length: ${overlap.overlapLength}bp`);
+console.log(`Overlap quality: ${overlap.overlapIdentity.toFixed(1)}%`);
+console.log(`Can merge: ${overlap.canMerge}`);
+```
+
+### Mutation Analysis Pipeline
+
+```typescript
+import { needlemanWunsch } from '@bioscript/seq-align';
+
+/**
+ * Analyze mutations between wildtype and mutant sequences.
+ * Returns detailed mutation report.
+ */
+interface Mutation {
+  type: 'substitution' | 'insertion' | 'deletion';
+  position: number;
+  wildtype: string;
+  mutant: string;
+}
+
+function analyzeMutations(
+  wildtype: string,
+  mutant: string
+): {
+  mutations: Mutation[];
+  totalMutations: number;
+  conservationPercent: number;
+} {
+  const result = needlemanWunsch(wildtype, mutant, {
+    matrix: 'BLOSUM62',
+    gapOpen: -10,
+    gapExtend: -1,
+  });
+
+  const mutations: Mutation[] = [];
+  let wtPos = 0;
+  let mutPos = 0;
+
+  for (let i = 0; i < result.alignmentLength; i++) {
+    const wtChar = result.alignedSeq1[i];
+    const mutChar = result.alignedSeq2[i];
+
+    if (wtChar !== mutChar) {
+      if (wtChar === '-') {
+        mutations.push({
+          type: 'insertion',
+          position: mutPos,
+          wildtype: '',
+          mutant: mutChar,
+        });
+      } else if (mutChar === '-') {
+        mutations.push({
+          type: 'deletion',
+          position: wtPos,
+          wildtype: wtChar,
+          mutant: '',
+        });
+      } else {
+        mutations.push({
+          type: 'substitution',
+          position: wtPos,
+          wildtype: wtChar,
+          mutant: mutChar,
+        });
+      }
+    }
+
+    if (wtChar !== '-') wtPos++;
+    if (mutChar !== '-') mutPos++;
+  }
+
+  return {
+    mutations,
+    totalMutations: mutations.length,
+    conservationPercent: result.identityPercent,
+  };
+}
+
+// Example: Analyze mutations
+const wildtype = 'HEAGAWGHEE';
+const mutant = 'HEAGCWGHEE';  // A→C mutation at position 4
+
+const analysis = analyzeMutations(wildtype, mutant);
+console.log(`Total mutations: ${analysis.totalMutations}`);
+console.log(`Conservation: ${analysis.conservationPercent.toFixed(1)}%`);
+console.log('Mutations:', analysis.mutations);
 ```
 
 ## Type Definitions
