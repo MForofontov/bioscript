@@ -2,7 +2,7 @@
  * Unit tests for batch translation
  */
 
-import { translateBatch } from '../translate-batch';
+import { translateBatch } from '../translate';
 
 describe('translateBatch', () => {
   // Test case 1: Translate multiple sequences efficiently

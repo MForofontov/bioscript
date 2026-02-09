@@ -2,7 +2,7 @@
  * Unit tests for frame translation functions
  */
 
-import { translateAllFrames, translateSixFrames } from '../translate-frames';
+import { translateAllFrames, translateSixFrames } from '../translate';
 
 /**
  * Unit tests for the translateAllFrames function.

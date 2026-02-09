@@ -1,6 +1,8 @@
 /**
- * Worker thread for parallel sequence translation
- * Used internally by worker-translate.ts
+ * Worker thread script for parallel sequence translation.
+ * Used internally by worker-translate.ts - runs inside worker threads.
+ *
+ * @module worker-script
  */
 
 import { parentPort, workerData } from 'worker_threads';
