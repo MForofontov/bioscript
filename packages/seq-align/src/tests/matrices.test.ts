@@ -14,8 +14,6 @@ import {
  * Tests cover: matrix structures, getMatrix function, getScore function.
  */
 describe('matrices', () => {
-  // SECTION 1: Normal/typical usage (60% of tests)
-
   it('1. should have BLOSUM62 matrix with correct dimensions', () => {
     expect(BLOSUM62).toBeDefined();
     expect(Object.keys(BLOSUM62)).toHaveLength(20);
@@ -78,8 +76,6 @@ describe('matrices', () => {
     expect(DNA_FULL.C.T).toBe(-1); // Transition
   });
 
-  // SECTION 2: Edge cases (30% of tests)
-
   it('11. should have all standard matrices in MATRICES registry', () => {
     expect(MATRICES.BLOSUM62).toBe(BLOSUM62);
     expect(MATRICES.BLOSUM80).toBe(BLOSUM80);
@@ -113,8 +109,6 @@ describe('matrices', () => {
     expect(BLOSUM62.A.A).toBe(4);
     // Different matrices have different scales
   });
-
-  // SECTION 3: Error cases (10% of tests - ALWAYS LAST)
 
   it('17. should throw Error for unknown matrix name', () => {
     expect(() => getMatrix('UNKNOWN')).toThrow(Error);

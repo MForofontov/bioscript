@@ -135,7 +135,6 @@ describe('smithWaterman', () => {
     expect(result.identityPercent).toBe(100);
   });
 
-  // SECTION 2: Edge cases (30% of tests)
 
   it('11. should handle single character sequences', () => {
     const result = smithWaterman('A', 'A', {
@@ -227,8 +226,6 @@ describe('smithWaterman', () => {
     expect(result.score).toBeGreaterThan(0);
     expect(duration).toBeLessThan(100); // Should complete in <100ms
   });
-
-  // SECTION 3: Error cases (10% of tests - ALWAYS LAST)
 
   it('18. should throw TypeError when seq1 is not a string', () => {
     expect(() => smithWaterman(123 as any, 'ACGT')).toThrow(TypeError);

@@ -7,8 +7,6 @@ import { overlapAlign } from '../overlap';
 import { DNA_SIMPLE } from '../matrices';
 
 describe('overlapAlign', () => {
-  // SECTION 1: Normal/typical usage (60% of tests)
-
   it('1. should find suffix-prefix overlap', () => {
     const result = overlapAlign('ACGTACGT', 'ACGTTTTT', {
       matrix: 'DNA_SIMPLE',
@@ -82,8 +80,6 @@ describe('overlapAlign', () => {
     expect(result.identity).toBeGreaterThanOrEqual(4);
   });
 
-  // SECTION 2: Edge cases (30% of tests)
-
   it('10. should handle identical sequences', () => {
     const result = overlapAlign('ACGTACGT', 'ACGTACGT');
 
@@ -134,8 +130,6 @@ describe('overlapAlign', () => {
 
     expect(result.score).toBeGreaterThanOrEqual(-10);
   });
-
-  // SECTION 3: Error cases (10% of tests - ALWAYS LAST)
 
   it('16. should throw TypeError when seq1 is not a string', () => {
     expect(() => overlapAlign(123 as any, 'ACGT')).toThrow(TypeError);

@@ -91,8 +91,6 @@ describe('semiGlobal', () => {
     expect(result.identity).toBe(0);
   });
 
-  // SECTION 2: Edge cases (30% of tests)
-
   it('10. should handle identical sequences', () => {
     const result = semiGlobal('ACGTACGT', 'ACGTACGT');
 
@@ -137,8 +135,6 @@ describe('semiGlobal', () => {
 
     expect(result.identity).toBe(5);
   });
-
-  // SECTION 3: Error cases (10% of tests - ALWAYS LAST)
 
   it('15. should throw TypeError when seq1 is not a string', () => {
     expect(() => semiGlobal(123 as any, 'ACGT')).toThrow(TypeError);

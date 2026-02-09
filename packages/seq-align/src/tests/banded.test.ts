@@ -98,8 +98,6 @@ describe('bandedAlign', () => {
     expect(result.identity).toBe(8);
   });
 
-  // SECTION 2: Edge cases (30% of tests)
-
   it('10. should handle identical sequences', () => {
     const result = bandedAlign('ACGTACGT', 'ACGTACGT', {
       bandwidth: 5,
@@ -150,7 +148,6 @@ describe('bandedAlign', () => {
     expect(result.identity).toBe(4);
   });
 
-  // SECTION 3: Error cases (10% of tests - ALWAYS LAST)
 
   it('15. should throw TypeError when seq1 is not a string', () => {
     expect(() => bandedAlign(123 as any, 'ACGT', { bandwidth: 2 })).toThrow(TypeError);

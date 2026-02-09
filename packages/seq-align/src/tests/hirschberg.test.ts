@@ -101,8 +101,6 @@ describe('hirschberg', () => {
     expect(result.alignedSeq1.length).toBe(result.alignedSeq2.length);
   });
 
-  // SECTION 2: Edge cases (30% of tests)
-
   it('10. should handle identical sequences', () => {
     const result = hirschberg('ACGTACGT', 'ACGTACGT');
 
@@ -158,7 +156,6 @@ describe('hirschberg', () => {
     expect(result.identity).toBeGreaterThanOrEqual(4);
   });
 
-  // SECTION 3: Error cases (10% of tests - ALWAYS LAST)
 
   it('16. should throw TypeError when seq1 is not a string', () => {
     expect(() => hirschberg(123 as any, 'ACGT')).toThrow(TypeError);

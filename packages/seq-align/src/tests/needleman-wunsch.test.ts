@@ -132,7 +132,6 @@ describe('needlemanWunsch', () => {
     expect(result.identityPercent).toBe(50);
   });
 
-  // SECTION 2: Edge cases (30% of tests)
 
   it('11. should handle single character sequences', () => {
     const result = needlemanWunsch('A', 'A', {
@@ -210,8 +209,6 @@ describe('needlemanWunsch', () => {
     expect(result.identity).toBe(100);
     expect(duration).toBeLessThan(100); // Should complete in <100ms
   });
-
-  // SECTION 3: Error cases (10% of tests - ALWAYS LAST)
 
   it('17. should throw TypeError when seq1 is not a string', () => {
     expect(() => needlemanWunsch(123 as any, 'ACGT')).toThrow(TypeError);
