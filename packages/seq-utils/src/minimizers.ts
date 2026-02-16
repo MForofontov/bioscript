@@ -21,6 +21,7 @@ export interface Minimizer {
 
 /**
  * Extract minimizers from a sequence using lexicographic ordering.
+ * Minimizers select the lexicographically smallest k-mer in each sliding window for efficient sketching.
  *
  * @param sequence - DNA/RNA sequence.
  * @param k - K-mer length (minimizer size).

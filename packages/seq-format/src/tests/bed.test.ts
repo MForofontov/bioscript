@@ -9,7 +9,7 @@ describe('parseBEDLine', () => {
   it('1. should parse BED3 line', () => {
     const line = 'chr1\t1000\t2000';
     const record = parseBEDLine(line);
-    
+
     expect(record.chrom).toBe('chr1');
     expect(record.chromStart).toBe(1000);
     expect(record.chromEnd).toBe(2000);
@@ -18,7 +18,7 @@ describe('parseBEDLine', () => {
   it('2. should parse BED6 line', () => {
     const line = 'chr1\t1000\t2000\tfeature1\t500\t+';
     const record = parseBEDLine(line);
-    
+
     expect(record.chrom).toBe('chr1');
     expect(record.name).toBe('feature1');
     expect(record.score).toBe(500);
@@ -28,7 +28,7 @@ describe('parseBEDLine', () => {
   it('3. should parse BED12 line', () => {
     const line = 'chr1\t1000\t5000\tgene1\t1000\t+\t1200\t4900\t0\t3\t300,400,200\t0,1500,3800';
     const record = parseBEDLine(line);
-    
+
     expect(record.blockCount).toBe(3);
     expect(record.blockSizes).toEqual([300, 400, 200]);
     expect(record.blockStarts).toEqual([0, 1500, 3800]);
@@ -38,7 +38,7 @@ describe('parseBEDLine', () => {
     const plus = parseBEDLine('chr1\t1\t10\ttest\t0\t+');
     const minus = parseBEDLine('chr1\t1\t10\ttest\t0\t-');
     const dot = parseBEDLine('chr1\t1\t10\ttest\t0\t.');
-    
+
     expect(plus.strand).toBe('+');
     expect(minus.strand).toBe('-');
     expect(dot.strand).toBe('.');
@@ -83,7 +83,7 @@ describe('formatBEDLine', () => {
       chromEnd: 2000,
     };
     const line = formatBEDLine(record);
-    
+
     expect(line).toBe('chr1\t1000\t2000');
   });
 
@@ -97,7 +97,7 @@ describe('formatBEDLine', () => {
       strand: '+',
     };
     const line = formatBEDLine(record);
-    
+
     expect(line).toBe('chr1\t1000\t2000\tfeature1\t500\t+');
   });
 
@@ -117,7 +117,7 @@ describe('formatBEDLine', () => {
       blockStarts: [0, 1500, 3800],
     };
     const line = formatBEDLine(record);
-    
+
     expect(line).toContain('chr1\t1000\t5000');
     expect(line).toContain('300,400,200');
     expect(line).toContain('0,1500,3800');
@@ -132,7 +132,7 @@ describe('formatBEDLine', () => {
       // score is undefined - should stop here
     };
     const line = formatBEDLine(record);
-    
+
     expect(line).toBe('chr1\t1000\t2000\tfeature1');
   });
 
@@ -151,7 +151,7 @@ chr2\t5000\t6000\tfeature3\t700\t+
 
   it('1. should parse multiple BED lines', () => {
     const records = parseBED(bedText);
-    
+
     expect(records.length).toBe(3);
     expect(records[0].name).toBe('feature1');
     expect(records[1].name).toBe('feature2');
@@ -160,8 +160,8 @@ chr2\t5000\t6000\tfeature3\t700\t+
 
   it('2. should skip track and comment lines', () => {
     const records = parseBED(bedText);
-    
-    records.forEach(record => {
+
+    records.forEach((record) => {
       expect(record.chrom).not.toContain('#');
       expect(record.chrom).not.toContain('track');
     });
@@ -200,19 +200,19 @@ describe('formatBED', () => {
   it('1. should format multiple records', () => {
     const bedText = formatBED(records, false);
     const lines = bedText.trim().split('\n');
-    
+
     expect(lines.length).toBe(2);
   });
 
   it('2. should include track header when requested', () => {
     const bedText = formatBED(records, true, 'myRegions');
-    
+
     expect(bedText).toContain('track name=myRegions');
   });
 
   it('3. should not include header when not requested', () => {
     const bedText = formatBED(records, false);
-    
+
     expect(bedText).not.toContain('track');
   });
 

@@ -28,7 +28,7 @@ ORIGIN
 
   it('1. should parse simple GenBank record', () => {
     const record = parseGenBank(simpleGenBank);
-    
+
     expect(record.locus).toBe('SEQ1');
     expect(record.definition).toBe('Test sequence');
     expect(record.accession).toBe('SEQ1');
@@ -39,14 +39,14 @@ ORIGIN
 
   it('2. should parse sequence correctly', () => {
     const record = parseGenBank(simpleGenBank);
-    
+
     expect(record.sequence).toMatch(/^[ATGC]+$/);
     expect(record.sequence.length).toBe(100);
   });
 
   it('3. should parse features', () => {
     const record = parseGenBank(simpleGenBank);
-    
+
     expect(record.features.length).toBe(2);
     expect(record.features[0].type).toBe('source');
     expect(record.features[1].type).toBe('CDS');
@@ -54,12 +54,12 @@ ORIGIN
 
   it('4. should parse feature qualifiers', () => {
     const record = parseGenBank(simpleGenBank);
-    
-    const cds = record.features.find(f => f.type === 'CDS');
+
+    const cds = record.features.find((f) => f.type === 'CDS');
     expect(cds).toBeDefined();
     expect(cds!.qualifiers.length).toBeGreaterThan(0);
-    
-    const geneQual = cds!.qualifiers.find(q => q.key === 'gene');
+
+    const geneQual = cds!.qualifiers.find((q) => q.key === 'gene');
     expect(geneQual?.value).toBe('testGene');
   });
 
@@ -142,7 +142,7 @@ describe('genBankToFasta', () => {
 
   it('1. should convert GenBank to FASTA', () => {
     const fastaRecords = genBankToFasta(gbRecord);
-    
+
     expect(fastaRecords.length).toBe(1);
     expect(fastaRecords[0].id).toBe('SEQ1');
     expect(fastaRecords[0].description).toBe('Test sequence');
@@ -151,7 +151,7 @@ describe('genBankToFasta', () => {
 
   it('2. should extract CDS features when includeFeatures is true', () => {
     const fastaRecords = genBankToFasta(gbRecord, true);
-    
+
     expect(fastaRecords.length).toBeGreaterThan(1);
     expect(fastaRecords[0].id).toBe('SEQ1'); // Main sequence
     expect(fastaRecords[1].id).toBe('testGene'); // CDS feature
@@ -160,7 +160,7 @@ describe('genBankToFasta', () => {
   it('3. should use locus when accession is empty', () => {
     const record = { ...gbRecord, accession: '' };
     const fastaRecords = genBankToFasta(record);
-    
+
     expect(fastaRecords[0].id).toBe('SEQ1');
   });
 
@@ -179,7 +179,7 @@ describe('fastaToGenBank', () => {
 
   it('1. should convert FASTA to GenBank format', () => {
     const gb = fastaToGenBank(fastaRecord);
-    
+
     expect(gb).toContain('LOCUS');
     expect(gb).toContain('seq1');
     expect(gb).toContain('DEFINITION');
@@ -191,7 +191,7 @@ describe('fastaToGenBank', () => {
 
   it('2. should include organism in GenBank output', () => {
     const gb = fastaToGenBank(fastaRecord, { organism: 'E. coli' });
-    
+
     expect(gb).toContain('E. coli');
     expect(gb).toContain('SOURCE');
     expect(gb).toContain('ORGANISM');
@@ -201,17 +201,17 @@ describe('fastaToGenBank', () => {
     const longSeq = 'A'.repeat(100);
     const fasta = { ...fastaRecord, sequence: longSeq };
     const gb = fastaToGenBank(fasta);
-    
+
     const lines = gb.split('\n');
-    const seqLines = lines.filter(l => l.match(/^\s+\d+/));
-    
+    const seqLines = lines.filter((l) => l.match(/^\s+\d+/));
+
     expect(seqLines.length).toBeGreaterThan(1);
   });
 
   it('4. should handle empty description', () => {
     const fasta = { ...fastaRecord, description: '' };
     const gb = fastaToGenBank(fasta);
-    
+
     expect(gb).toContain('No description');
   });
 

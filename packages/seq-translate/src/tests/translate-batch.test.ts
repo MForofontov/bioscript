@@ -86,7 +86,7 @@ describe('translateBatch', () => {
     const sequences = ['ATGATA', 'ATGATA'];
     const standard = translateBatch(sequences, { table: 'standard' });
     const mito = translateBatch(sequences, { table: 'vertebrate_mitochondrial' });
-    
+
     expect(standard[0]).toBe('MI');
     expect(standard[1]).toBe('MI');
     expect(mito[0]).toBe('MM');
@@ -98,7 +98,7 @@ describe('translateBatch', () => {
     const sequences = ['ATGCTA', 'ATGCTA'];
     const table1 = translateBatch(sequences, { table: '1' });
     const table3 = translateBatch(sequences, { table: '3' });
-    
+
     expect(table1[0]).toBe('ML');
     expect(table3[0]).toBe('MT');
   });
@@ -108,16 +108,16 @@ describe('translateBatch', () => {
     const sequences = Array(1000).fill('ATGGCCAAA');
     const results = translateBatch(sequences, { table: 'standard' });
     expect(results).toHaveLength(1000);
-    results.forEach(result => {
+    results.forEach((result) => {
       expect(result).toBe('MAK');
     });
   });
 
   // Test case 13: Handle varying sequence lengths in large batch
   it('13. should handle varying sequence lengths in large batch', () => {
-    const sequences = Array(100).fill(null).map((_, i) => 
-      'ATG' + 'GCC'.repeat(i + 1)
-    );
+    const sequences = Array(100)
+      .fill(null)
+      .map((_, i) => 'ATG' + 'GCC'.repeat(i + 1));
     const results = translateBatch(sequences);
     expect(results).toHaveLength(100);
     expect(results[0]).toBe('MA');
@@ -163,7 +163,7 @@ describe('translateBatch', () => {
     const start = Date.now();
     translateBatch(sequences, { table: 'standard' });
     const duration = Date.now() - start;
-    
+
     expect(duration).toBeLessThan(50);
   });
 });

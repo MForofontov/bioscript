@@ -6,7 +6,9 @@ test.describe('Browser Statistics Tests', () => {
     await page.waitForFunction(() => window.bioseqStream !== undefined);
   });
 
-  test('1. calculateStatsBrowser calculates comprehensive stats for small file', async ({ page }) => {
+  test('1. calculateStatsBrowser calculates comprehensive stats for small file', async ({
+    page,
+  }) => {
     const result = await page.evaluate(async () => {
       // Create test FASTA data
       const fastaContent = `>seq1 First sequence

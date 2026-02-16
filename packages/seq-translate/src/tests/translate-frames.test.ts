@@ -84,7 +84,7 @@ describe('translateAllFrames', () => {
   it('9. should handle empty sequence', () => {
     const frames = translateAllFrames('');
     expect(frames).toHaveLength(3);
-    frames.forEach(frame => expect(frame).toBe(''));
+    frames.forEach((frame) => expect(frame).toBe(''));
   });
 
   // Test case 10: Handle very short sequences
@@ -169,7 +169,7 @@ describe('translateSixFrames', () => {
   it('7. should handle empty sequence', () => {
     const frames = translateSixFrames('');
     expect(frames).toHaveLength(6);
-    frames.forEach(frame => expect(frame).toBe(''));
+    frames.forEach((frame) => expect(frame).toBe(''));
   });
 
   // Test case 8: Handle very short sequences

@@ -1,40 +1,35 @@
 /**
  * Smith-Waterman local sequence alignment algorithm.
- * 
+ *
  * Performs optimal local alignment of two sequences using dynamic programming.
  * Finds the best matching subsequence regions, ignoring mismatched ends.
- * 
+ *
  * Time complexity: O(m*n) where m and n are sequence lengths.
  * Space complexity: O(m*n) for the alignment matrix.
- * 
+ *
  * @module smith-waterman
- * @see {@link https://en.wikipedia.org/wiki/Smith%E2%80%93Waterman_algorithm}
  */
 
-import type {
-  AlignmentResult,
-  LocalAlignmentOptions,
-  ScoringMatrix,
-} from './types';
+import type { AlignmentResult, LocalAlignmentOptions, ScoringMatrix } from './types';
 import { Direction } from './types';
 import { getMatrix, getScore } from './matrices';
 
 /**
  * Performs local sequence alignment using the Smith-Waterman algorithm.
- * 
+ *
  * This function finds the best matching region(s) between two sequences,
  * ignoring poorly matching ends. Use this when looking for conserved
  * domains, motifs, or similar regions within longer sequences.
- * 
+ *
  * @param seq1 - First sequence to align (DNA, RNA, or protein).
  * @param seq2 - Second sequence to align (DNA, RNA, or protein).
  * @param options - Alignment configuration options.
  * @returns Alignment result with the best local alignment and statistics.
- * 
+ *
  * @throws {TypeError} If sequences are not strings.
  * @throws {Error} If sequences are empty or contain only whitespace.
  * @throws {Error} If gap penalties are positive values.
- * 
+ *
  * @example
  * ```typescript
  * // Find local alignment in protein sequences
@@ -48,13 +43,13 @@ import { getMatrix, getScore } from './matrices';
  *     minScore: 10,
  *   }
  * );
- * 
+ *
  * console.log(result.alignedSeq1);  // Local alignment region
  * console.log(result.alignedSeq2);  // Corresponding region
  * console.log(result.startPos1);    // Start position in seq1
  * console.log(result.startPos2);    // Start position in seq2
  * ```
- * 
+ *
  * @example
  * ```typescript
  * // Find conserved region in DNA sequences
@@ -68,27 +63,27 @@ import { getMatrix, getScore } from './matrices';
  *   }
  * );
  * ```
- * 
+ *
  * @performance
  * **Complexity:**
  * - Time: O(m×n) where m, n are sequence lengths
  * - Space: O(m×n) for alignment matrix (~16 bytes per cell)
- * 
+ *
  * **Benchmark Results (M1 Pro, Node.js 20):**
  * - 100bp × 100bp: ~0.6ms (10K cells, includes max search)
  * - 500bp × 500bp: ~14ms (250K cells)
  * - 1000bp × 1000bp: ~55ms (1M cells)
  * - 2000bp × 2000bp: ~220ms (4M cells)
  * - 10000bp × 10000bp: ~5.5s (100M cells)
- * 
+ *
  * **Throughput:** ~95,000 cell updates/second (slightly slower than NW due to max finding)
  * **Memory:** ~160KB per 10K cells
- * 
+ *
  * **Use Cases:**
  * - Finding protein domains: Query=50-500aa, Target=1000-5000aa (<100ms)
  * - Motif searching: Query=10-50bp, Target=1000-10000bp (<50ms)
  * - Conserved region detection: Both sequences 500-2000bp (~15-220ms)
- * 
+ *
  * @note For complete end-to-end alignment, use Needleman-Wunsch instead.
  * @note minScore parameter can dramatically reduce computation for large sequences.
  */
@@ -136,17 +131,14 @@ export function smithWaterman(
   }
 
   // Get scoring matrix
-  const scoringMatrix: ScoringMatrix =
-    typeof matrix === 'string' ? getMatrix(matrix) : matrix;
+  const scoringMatrix: ScoringMatrix = typeof matrix === 'string' ? getMatrix(matrix) : matrix;
 
   // Initialize alignment matrices
   const m = s1.length;
   const n = s2.length;
 
   // Score matrix
-  const scoreMatrix: number[][] = Array.from({ length: m + 1 }, () =>
-    Array(n + 1).fill(0)
-  );
+  const scoreMatrix: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
 
   // Direction matrix for traceback
   const directionMatrix: Direction[][] = Array.from({ length: m + 1 }, () =>
@@ -169,13 +161,11 @@ export function smithWaterman(
       const diagonal = scoreMatrix[i - 1][j - 1] + matchScore;
 
       // Gap in seq2 (moving up)
-      const gapCost2 =
-        directionMatrix[i - 1][j] === Direction.UP ? gapExtend : gapOpen;
+      const gapCost2 = directionMatrix[i - 1][j] === Direction.UP ? gapExtend : gapOpen;
       const up = scoreMatrix[i - 1][j] + gapCost2;
 
       // Gap in seq1 (moving left)
-      const gapCost1 =
-        directionMatrix[i][j - 1] === Direction.LEFT ? gapExtend : gapOpen;
+      const gapCost1 = directionMatrix[i][j - 1] === Direction.LEFT ? gapExtend : gapOpen;
       const left = scoreMatrix[i][j - 1] + gapCost1;
 
       // Choose the best score (or 0 for local alignment)
@@ -265,8 +255,7 @@ export function smithWaterman(
   }
 
   const alignmentLength = aligned1.length;
-  const identityPercent =
-    alignmentLength > 0 ? (identity / alignmentLength) * 100 : 0;
+  const identityPercent = alignmentLength > 0 ? (identity / alignmentLength) * 100 : 0;
 
   return {
     alignedSeq1,

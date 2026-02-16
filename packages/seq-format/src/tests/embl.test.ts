@@ -26,7 +26,7 @@ SQ   Sequence 1859 BP; 609 A; 314 C; 355 G; 581 T; 0 other;
 
   it('1. should parse simple EMBL record', () => {
     const record = parseEMBL(simpleEMBL);
-    
+
     expect(record.id).toBe('X56734');
     expect(record.accession).toBe('X56734');
     expect(record.version).toBe('X56734.1');
@@ -34,26 +34,26 @@ SQ   Sequence 1859 BP; 609 A; 314 C; 355 G; 581 T; 0 other;
 
   it('2. should parse description', () => {
     const record = parseEMBL(simpleEMBL);
-    
+
     expect(record.description).toContain('Trifolium repens');
     expect(record.description).toContain('beta-glucosidase');
   });
 
   it('3. should parse keywords', () => {
     const record = parseEMBL(simpleEMBL);
-    
+
     expect(record.keywords).toContain('beta-glucosidase');
   });
 
   it('4. should parse organism', () => {
     const record = parseEMBL(simpleEMBL);
-    
+
     expect(record.organism).toBe('Trifolium repens (white clover)');
   });
 
   it('5. should parse features', () => {
     const record = parseEMBL(simpleEMBL);
-    
+
     expect(record.features.length).toBe(2);
     expect(record.features[0].type).toBe('source');
     expect(record.features[1].type).toBe('CDS');
@@ -61,17 +61,17 @@ SQ   Sequence 1859 BP; 609 A; 314 C; 355 G; 581 T; 0 other;
 
   it('6. should parse feature qualifiers', () => {
     const record = parseEMBL(simpleEMBL);
-    
-    const cds = record.features.find(f => f.type === 'CDS');
+
+    const cds = record.features.find((f) => f.type === 'CDS');
     expect(cds).toBeDefined();
-    
-    const geneQual = cds!.qualifiers.find(q => q.key === 'gene');
+
+    const geneQual = cds!.qualifiers.find((q) => q.key === 'gene');
     expect(geneQual?.value).toBe('BGLU1');
   });
 
   it('7. should parse sequence', () => {
     const record = parseEMBL(simpleEMBL);
-    
+
     expect(record.sequence).toMatch(/^[ATGC]+$/);
     expect(record.sequence.length).toBeGreaterThan(100);
   });
@@ -116,7 +116,7 @@ describe('emblToFasta', () => {
 
   it('1. should convert EMBL to FASTA', () => {
     const fasta = emblToFasta(emblRecord);
-    
+
     expect(fasta.id).toBe('X56734');
     expect(fasta.description).toBe('Test sequence');
     expect(fasta.sequence).toBe('ATGCATGCATGC');
@@ -125,14 +125,14 @@ describe('emblToFasta', () => {
   it('2. should use ID when accession is empty', () => {
     const record = { ...emblRecord, accession: '' };
     const fasta = emblToFasta(record);
-    
+
     expect(fasta.id).toBe('X56734');
   });
 
   it('3. should handle empty description', () => {
     const record = { ...emblRecord, description: '' };
     const fasta = emblToFasta(record);
-    
+
     expect(fasta.description).toBe('');
   });
 

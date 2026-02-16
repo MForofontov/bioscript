@@ -1,49 +1,44 @@
 /**
  * Semi-global alignment (end-gap-free alignment).
- * 
+ *
  * Semi-global alignment does not penalize gaps at the start or end of either sequence.
  * This is useful for:
  * - Aligning primer/probe sequences to longer DNA targets
  * - Finding subsequence matches
  * - Aligning sequences where one may be incomplete at ends
- * 
+ *
  * The algorithm is a variant of Needleman-Wunsch where:
  * - First row and column are initialized to 0 (no penalty for leading gaps)
  * - Traceback can start from best score in last row/column (no penalty for trailing gaps)
- * 
+ *
  * @module semi-global
  */
 
-import type {
-  AlignmentResult,
-  AlignmentOptions,
-  AlignmentCell,
-  ScoringMatrix,
-} from './types';
+import type { AlignmentResult, AlignmentOptions, AlignmentCell, ScoringMatrix } from './types';
 import { Direction } from './types';
 import { getScore } from './matrices';
 
 /**
  * Perform semi-global alignment on two sequences.
- * 
+ *
  * Semi-global alignment (also called end-gap-free alignment) does not penalize
  * gaps at the beginning or end of either sequence. This makes it ideal for:
  * - Primer/probe design: Finding where a short sequence aligns to a longer target
  * - Subsequence matching: Finding the best placement of one sequence within another
  * - Fragment assembly: Aligning incomplete sequences
- * 
+ *
  * The algorithm uses dynamic programming similar to Needleman-Wunsch but with
  * different initialization (no gap penalties at ends) and traceback (starts from
  * best score in last row/column).
- * 
+ *
  * @param seq1 - First sequence to align.
  * @param seq2 - Second sequence to align.
  * @param options - Alignment options (scoring matrix and gap penalties).
  * @returns Alignment result with aligned sequences, score, and statistics.
- * 
+ *
  * @throws {TypeError} If sequences are not strings.
  * @throws {Error} If sequences contain invalid characters.
- * 
+ *
  * @example
  * ```typescript
  * // Aligning a primer to a longer target
@@ -52,7 +47,7 @@ import { getScore } from './matrices';
  * console.log(result.alignedSeq2); // 'ATCG' (extracted from target)
  * console.log(result.score); // High score, no penalty for flanking gaps
  * ```
- * 
+ *
  * @example
  * ```typescript
  * // Finding protein domain in longer sequence
@@ -62,25 +57,25 @@ import { getScore } from './matrices';
  *   gapExtend: -1,
  * });
  * ```
- * 
+ *
  * @performance
  * **Complexity:**
  * - Time: O(m×n) where m, n are sequence lengths
  * - Space: O(m×n) for alignment matrix
- * 
+ *
  * **Benchmark Results (M1 Pro, Node.js 20):**
  * - Primer (20bp) × Target (1000bp): ~1ms (20K cells)
  * - Probe (50bp) × Target (5000bp): ~12ms (250K cells)
  * - Fragment (200bp) × Genome region (10000bp): ~100ms (2M cells)
- * 
+ *
  * **Throughput:** ~95,000 cell updates/second
- * 
+ *
  * **Common Use Cases:**
  * - **Primer design:** 15-30bp primers × 100-10000bp targets (<15ms)
  * - **Probe matching:** 30-100bp probes × 1000-50000bp targets (<500ms)
  * - **Gene finding:** 500-2000bp query × 10000-100000bp region (1-20s)
  * - **Read mapping:** 100-300bp reads × reference regions (~50-200ms per read)
- * 
+ *
  * @note Uses affine gap penalties for biological realism.
  * @note No penalty for gaps at sequence ends makes this ideal for subsequence matching.
  */
@@ -106,12 +101,7 @@ export function semiGlobal(
   }
 
   // Get options
-  const {
-    matrix = 'BLOSUM62',
-    gapOpen = -10,
-    gapExtend = -1,
-    normalize = false,
-  } = options;
+  const { matrix = 'BLOSUM62', gapOpen = -10, gapExtend = -1, normalize = false } = options;
 
   // Get scoring matrix
   let scoringMatrix: ScoringMatrix;

@@ -284,6 +284,7 @@ export function getKmerJaccard(
 
 /**
  * Extract k-mers using rolling hash (efficient for large k).
+ * Uses Rabin-Karp style polynomial rolling hash for O(1) k-mer hashing.
  *
  * @param sequence - DNA/RNA sequence.
  * @param k - K-mer length.
@@ -374,7 +375,8 @@ export function getKmersWithRollingHash(
 }
 
 /**
- * Extract super-k-mers (maximal k-mers that appear consecutively).
+ * Extract super-k-mers (maximal sequences of overlapping k-mers).
+ * Super-k-mers compress storage by grouping consecutive overlapping k-mers into larger sequences.
  *
  * @param sequence - DNA/RNA sequence.
  * @param k - K-mer length.
@@ -385,7 +387,7 @@ export function getKmersWithRollingHash(
  * @example
  * ```typescript
  * const superKmers = getSuperKmers('ATCGATCGATCG', 3);
- * // Returns longer sequences where k-mers repeat
+ * // Returns longer sequences where k-mers overlap consecutively
  * ```
  *
  * @note Super-k-mers reduce storage by grouping consecutive identical k-mers.
@@ -448,6 +450,7 @@ export function getSuperKmers(
 
 /**
  * Extract syncmers (synchronized k-mers using s-mers).
+ * Syncmers provide more evenly distributed sampling than minimizers by using s-mer position criterion.
  *
  * @param sequence - DNA/RNA sequence.
  * @param k - K-mer length.
@@ -520,5 +523,3 @@ export function getSyncmers(
 
   return syncmers;
 }
-
-

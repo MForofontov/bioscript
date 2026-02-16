@@ -1,6 +1,7 @@
 /**
  * De Bruijn graph utilities for sequence assembly and analysis.
  * De Bruijn graphs represent k-mers as nodes with (k-1) overlaps as edges.
+ * Used extensively in genome assembly algorithms (Velvet, SPAdes, etc.).
  *
  * @module debruijn
  */
@@ -33,6 +34,7 @@ export interface DeBruijnGraph {
 
 /**
  * Build De Bruijn graph from sequences.
+ * Constructs graph with optimized reverse edge index for efficient incoming edge queries.
  *
  * @param sequences - Array of DNA/RNA sequences.
  * @param k - K-mer length.
@@ -134,7 +136,7 @@ export function buildDeBruijnGraph(
     }
 
     // Clean up reverse edges
-    for (const [_kmer, incoming] of reverseEdges) {
+    for (const [, incoming] of reverseEdges) {
       for (const source of incoming) {
         if (!nodes.has(source)) {
           incoming.delete(source);
@@ -341,13 +343,6 @@ export function removeLowCoverageNodes(graph: DeBruijnGraph, minCoverage: number
 }
 
 // Helper functions
-
-/**
- * Get incoming edges for a k-mer (O(1) lookup using reverse edge index).
- */
-function getIncomingEdges(graph: DeBruijnGraph, kmer: string): Set<string> {
-  return graph.reverseEdges.get(kmer) || new Set();
-}
 
 function getTipLength(graph: DeBruijnGraph, kmer: string): number {
   let length = 0;

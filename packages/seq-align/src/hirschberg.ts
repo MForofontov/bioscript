@@ -1,62 +1,58 @@
 /**
  * Hirschberg's algorithm for space-efficient sequence alignment.
- * 
+ *
  * Hirschberg's algorithm computes optimal global alignment using only O(min(m,n))
  * space instead of O(m×n), while maintaining O(m×n) time complexity. This is
  * crucial for aligning very long sequences where memory is limited.
- * 
+ *
  * The algorithm uses a divide-and-conquer approach:
  * 1. Divide: Find the midpoint using forward and backward DP
  * 2. Conquer: Recursively align left and right halves
  * 3. Combine: Concatenate the results
- * 
+ *
  * @module hirschberg
  */
 
-import type {
-  AlignmentResult,
-  AlignmentOptions,
-  ScoringMatrix,
-} from './types';
+import type { AlignmentResult, AlignmentOptions, ScoringMatrix } from './types';
 import { getScore } from './matrices';
 
 /**
  * Perform space-efficient global alignment using Hirschberg's algorithm.
- * 
+ *
  * Hirschberg's algorithm produces the same optimal global alignment as
  * Needleman-Wunsch but uses only O(min(m,n)) space. This makes it possible
  * to align sequences that are too large for standard algorithms.
- * 
+ *
  * **Key advantages:**
  * - Memory: O(min(m,n)) instead of O(m×n)
  * - Time: O(m×n) same as Needleman-Wunsch
  * - Optimality: Guaranteed to find optimal alignment
- * 
+ *
  * **Trade-offs:**
  * - Slightly slower than Needleman-Wunsch (2x in practice)
  * - More complex implementation
  * - Recursive approach (deep call stack for very long sequences)
- * 
+ *
  * **When to use:**
  * - Sequences are very long (>100kb)
  * - Memory is limited
  * - Need optimal global alignment (not local)
  * - Willing to trade some speed for memory
- * 
+ *
  * @param seq1 - First sequence to align.
  * @param seq2 - Second sequence to align.
  * @param options - Alignment options (scoring matrix and gap penalties).
  * @returns Optimal global alignment with minimal memory usage.
- * 
+ *
  * @throws {TypeError} If sequences are not strings.
  * @throws {Error} If sequences contain invalid characters.
- * 
+ *
  * @example
  * ```typescript
  * // Aligning long DNA sequences
  * const longSeq1 = 'ACGT'.repeat(50000); // 200kb sequence
  * const longSeq2 = 'ACGT'.repeat(50000);
- * 
+ *
  * // Hirschberg uses ~400kb memory instead of 40GB!
  * const result = hirschberg(longSeq1, longSeq2, {
  *   matrix: 'DNA_SIMPLE',
@@ -64,7 +60,7 @@ import { getScore } from './matrices';
  *   gapExtend: -1,
  * });
  * ```
- * 
+ *
  * @example
  * ```typescript
  * // Protein alignment with limited memory
@@ -73,22 +69,20 @@ import { getScore } from './matrices';
  *   gapOpen: -10,
  *   gapExtend: -1,
  * });
- * 
+ *
  * // Result is identical to Needleman-Wunsch
  * console.log(result.alignedSeq1);
  * console.log(result.alignedSeq2);
  * ```
- * 
- * @performance 
+ *
+ * @performance
  * - Time: O(m×n)
  * - Space: O(min(m,n))
  * - Practical speed: ~2x slower than Needleman-Wunsch
  * - Memory savings: Up to 1000x for long sequences
- * 
+ *
  * @note Does not support affine gap penalties in the current implementation.
  * Uses simple linear gap penalty model for space efficiency.
- * 
- * @see {@link needlemanWunsch} for the standard global alignment algorithm.
  */
 export function hirschberg(
   seq1: string,
@@ -127,11 +121,7 @@ export function hirschberg(
   /**
    * Compute last row of Needleman-Wunsch scores using O(n) space.
    */
-  function nwScore(
-    seq1: string,
-    seq2: string,
-    reverse: boolean = false
-  ): number[] {
+  function nwScore(seq1: string, seq2: string, reverse: boolean = false): number[] {
     const m = seq1.length;
     const n = seq2.length;
 
@@ -157,11 +147,7 @@ export function hirschberg(
       for (let j = 1; j <= n; j++) {
         // seq2 is already reversed when reverse=true, so just use j-1
         const jIdx = j - 1;
-        const matchScore = getScore(
-          scoringMatrix,
-          seq1[i],
-          seq2[jIdx]
-        );
+        const matchScore = getScore(scoringMatrix, seq1[i], seq2[jIdx]);
 
         const scores = [
           prev[j - 1] + matchScore, // Match/mismatch
@@ -203,9 +189,7 @@ export function hirschberg(
 
       for (let j = 0; j < n; j++) {
         const score =
-          j * gapPenalty +
-          getScore(scoringMatrix, seq1[0], seq2[j]) +
-          (n - j - 1) * gapPenalty;
+          j * gapPenalty + getScore(scoringMatrix, seq1[0], seq2[j]) + (n - j - 1) * gapPenalty;
 
         if (score > bestScore) {
           bestScore = score;

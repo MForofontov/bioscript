@@ -19,13 +19,13 @@ describe('parseVCFHeader', () => {
 
   it('1. should parse VCF header', () => {
     const header = parseVCFHeader(vcfText);
-    
+
     expect(header.fileformat).toBe('VCFv4.2');
   });
 
   it('2. should parse contigs', () => {
     const header = parseVCFHeader(vcfText);
-    
+
     expect(header.contigs.length).toBe(1);
     expect(header.contigs[0].id).toBe('20');
     expect(header.contigs[0].length).toBe(62435964);
@@ -33,7 +33,7 @@ describe('parseVCFHeader', () => {
 
   it('3. should parse INFO fields', () => {
     const header = parseVCFHeader(vcfText);
-    
+
     expect(header.info.length).toBe(2);
     expect(header.info[0].id).toBe('NS');
     expect(header.info[0].type).toBe('Integer');
@@ -41,14 +41,14 @@ describe('parseVCFHeader', () => {
 
   it('4. should parse FILTER fields', () => {
     const header = parseVCFHeader(vcfText);
-    
+
     expect(header.filter.length).toBe(1);
     expect(header.filter[0].id).toBe('PASS');
   });
 
   it('5. should parse FORMAT fields', () => {
     const header = parseVCFHeader(vcfText);
-    
+
     expect(header.format.length).toBe(2);
     expect(header.format[0].id).toBe('GT');
     expect(header.format[1].id).toBe('GQ');
@@ -56,7 +56,7 @@ describe('parseVCFHeader', () => {
 
   it('6. should parse sample names', () => {
     const header = parseVCFHeader(vcfText);
-    
+
     expect(header.samples).toEqual(['NA00001', 'NA00002']);
   });
 
@@ -75,7 +75,7 @@ describe('parseVCFLine', () => {
   it('1. should parse VCF record line', () => {
     const line = '20\t14370\trs6054257\tG\tA\t29\tPASS\tNS=3;DP=14';
     const record = parseVCFLine(line);
-    
+
     expect(record.chrom).toBe('20');
     expect(record.pos).toBe(14370);
     expect(record.id).toBe('rs6054257');
@@ -88,7 +88,7 @@ describe('parseVCFLine', () => {
   it('2. should parse INFO field', () => {
     const line = '20\t14370\trs6054257\tG\tA\t29\tPASS\tNS=3;DP=14;AF=0.5';
     const record = parseVCFLine(line);
-    
+
     expect(record.info.NS).toBe(3);
     expect(record.info.DP).toBe(14);
     expect(record.info.AF).toBe(0.5);
@@ -97,7 +97,7 @@ describe('parseVCFLine', () => {
   it('3. should handle INFO flags', () => {
     const line = '20\t14370\trs6054257\tG\tA\t29\tPASS\tDB;H2';
     const record = parseVCFLine(line);
-    
+
     expect(record.info.DB).toBe(true);
     expect(record.info.H2).toBe(true);
   });
@@ -105,21 +105,21 @@ describe('parseVCFLine', () => {
   it('4. should parse multiple ALT alleles', () => {
     const line = '20\t14370\trs6054257\tG\tA,T\t29\tPASS\tNS=3';
     const record = parseVCFLine(line);
-    
+
     expect(record.alt).toEqual(['A', 'T']);
   });
 
   it('5. should handle missing QUAL', () => {
     const line = '20\t14370\trs6054257\tG\tA\t.\tPASS\tNS=3';
     const record = parseVCFLine(line);
-    
+
     expect(record.qual).toBeNull();
   });
 
   it('6. should parse FORMAT and sample columns', () => {
     const line = '20\t14370\trs6054257\tG\tA\t29\tPASS\tNS=3\tGT:GQ:DP\t0|0:48:1\t1|0:48:8';
     const record = parseVCFLine(line, ['NA00001', 'NA00002']);
-    
+
     expect(record.format).toEqual(['GT', 'GQ', 'DP']);
     expect(record.samples).toBeDefined();
     expect(record.samples![0].GT).toBe('0|0');
@@ -154,7 +154,7 @@ describe('formatVCFLine', () => {
       info: { NS: 3, DP: 14 },
     };
     const line = formatVCFLine(record);
-    
+
     expect(line).toContain('20\t14370\trs6054257\tG\tA\t29\tPASS');
     expect(line).toContain('NS=3');
     expect(line).toContain('DP=14');
@@ -172,7 +172,7 @@ describe('formatVCFLine', () => {
       info: { DB: true, H2: true },
     };
     const line = formatVCFLine(record);
-    
+
     expect(line).toContain('DB');
     expect(line).toContain('H2');
   });
@@ -194,7 +194,7 @@ describe('formatVCFLine', () => {
       ],
     };
     const line = formatVCFLine(record);
-    
+
     expect(line).toContain('GT:GQ');
     expect(line).toContain('0|0:48');
     expect(line).toContain('1|0:48');
@@ -215,14 +215,14 @@ describe('parseVCF', () => {
 
   it('1. should parse complete VCF file', () => {
     const { header, records } = parseVCF(vcfText);
-    
+
     expect(header.fileformat).toBe('VCFv4.2');
     expect(records.length).toBe(2);
   });
 
   it('2. should parse all records', () => {
     const { records } = parseVCF(vcfText);
-    
+
     expect(records[0].id).toBe('rs1');
     expect(records[1].id).toBe('rs2');
   });
@@ -260,7 +260,7 @@ describe('formatVCF', () => {
 
   it('1. should format complete VCF file', () => {
     const vcfText = formatVCF(header, records);
-    
+
     expect(vcfText).toContain('##fileformat=VCFv4.2');
     expect(vcfText).toContain('##contig=<ID=20');
     expect(vcfText).toContain('#CHROM\tPOS');
@@ -268,7 +268,7 @@ describe('formatVCF', () => {
 
   it('2. should format all records', () => {
     const vcfText = formatVCF(header, records);
-    
+
     expect(vcfText).toContain('20\t14370\trs1');
   });
 

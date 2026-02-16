@@ -224,8 +224,8 @@ export class TranslationPool {
       this.initialize();
     }
 
-    return new Promise((resolve, reject) => {
-      this.taskQueue.push({ sequences, options, resolve, reject });
+    return new Promise((resolveTask, reject) => {
+      this.taskQueue.push({ sequences, options, resolve: resolveTask, reject });
       void this.processQueue();
     });
   }

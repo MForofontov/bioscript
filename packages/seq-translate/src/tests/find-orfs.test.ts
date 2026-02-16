@@ -82,7 +82,7 @@ describe('findOrfs', () => {
     // Check that we can find ORFs in both strands
     const forwardOrfs = orfsAll.filter((orf) => orf.strand === '+');
     const reverseOrfs = orfsAll.filter((orf) => orf.strand === '-');
-    
+
     expect(forwardOrfs.length).toBeGreaterThan(0);
     expect(reverseOrfs.length).toBeGreaterThan(0);
   });

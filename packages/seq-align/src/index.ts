@@ -1,22 +1,22 @@
 /**
  * @bioscript/seq-align
- * 
+ *
  * Pairwise sequence alignment algorithms for bioinformatics.
  * Supports global (Needleman-Wunsch) and local (Smith-Waterman) alignment.
- * 
+ *
  * @example
  * ```typescript
  * import { needlemanWunsch, smithWaterman } from '@bioscript/seq-align';
- * 
+ *
  * // Global alignment
  * const global = needlemanWunsch('HEAGAWGHEE', 'PAWHEAE');
  * console.log(global.alignedSeq1, global.alignedSeq2);
- * 
+ *
  * // Local alignment
  * const local = smithWaterman('HEAGAWGHEEHEAGAWGHEE', 'PAWHEAE');
  * console.log(local.alignedSeq1, local.alignedSeq2);
  * ```
- * 
+ *
  * @packageDocumentation
  */
 

@@ -2,13 +2,21 @@
  * Tests for SAM parser and formatter.
  */
 
-import { decodeSAMFlags, encodeSAMFlags, parseSAMHeader, parseSAMLine, parseSAM, formatSAMLine, formatSAM } from '../sam';
+import {
+  decodeSAMFlags,
+  encodeSAMFlags,
+  parseSAMHeader,
+  parseSAMLine,
+  parseSAM,
+  formatSAMLine,
+  formatSAM,
+} from '../sam';
 import type { SAMHeader, SAMRecord, SAMFlags } from '../types';
 
 describe('decodeSAMFlags', () => {
   it('1. should decode flag 163', () => {
     const flags = decodeSAMFlags(163);
-    
+
     expect(flags.paired).toBe(true);
     expect(flags.properPair).toBe(true);
     expect(flags.reverse).toBe(false);
@@ -19,7 +27,7 @@ describe('decodeSAMFlags', () => {
 
   it('2. should decode flag 0', () => {
     const flags = decodeSAMFlags(0);
-    
+
     expect(flags.paired).toBe(false);
     expect(flags.properPair).toBe(false);
     expect(flags.unmapped).toBe(false);
@@ -27,14 +35,14 @@ describe('decodeSAMFlags', () => {
 
   it('3. should decode unmapped read', () => {
     const flags = decodeSAMFlags(4);
-    
+
     expect(flags.unmapped).toBe(true);
     expect(flags.paired).toBe(false);
   });
 
   it('4. should decode secondary alignment', () => {
     const flags = decodeSAMFlags(256);
-    
+
     expect(flags.secondary).toBe(true);
   });
 
@@ -51,19 +59,19 @@ describe('encodeSAMFlags', () => {
       mateReverse: true,
       second: true,
     });
-    
+
     expect(flag).toBe(163);
   });
 
   it('2. should encode flag 0', () => {
     const flag = encodeSAMFlags({});
-    
+
     expect(flag).toBe(0);
   });
 
   it('3. should encode unmapped read', () => {
     const flag = encodeSAMFlags({ unmapped: true });
-    
+
     expect(flag).toBe(4);
   });
 
@@ -73,7 +81,7 @@ describe('encodeSAMFlags', () => {
       unmapped: true,
       mateUnmapped: true,
     });
-    
+
     expect(flag).toBe(13); // 1 + 4 + 8
   });
 
@@ -93,14 +101,14 @@ r001\t99\tref\t7\t30\t8M2I4M1D3M\t=\t37\t39\tTTAGATAAAGGATACTG\t*\tNM:i:1
 
   it('1. should parse SAM header', () => {
     const header = parseSAMHeader(samText);
-    
+
     expect(header.version).toBe('1.6');
     expect(header.sortOrder).toBe('coordinate');
   });
 
   it('2. should parse reference sequences', () => {
     const header = parseSAMHeader(samText);
-    
+
     expect(header.references.length).toBe(1);
     expect(header.references[0].name).toBe('ref');
     expect(header.references[0].length).toBe(45);
@@ -108,7 +116,7 @@ r001\t99\tref\t7\t30\t8M2I4M1D3M\t=\t37\t39\tTTAGATAAAGGATACTG\t*\tNM:i:1
 
   it('3. should parse read groups', () => {
     const header = parseSAMHeader(samText);
-    
+
     expect(header.readGroups.length).toBe(1);
     expect(header.readGroups[0].ID).toBe('group1');
     expect(header.readGroups[0].SM).toBe('sample1');
@@ -116,7 +124,7 @@ r001\t99\tref\t7\t30\t8M2I4M1D3M\t=\t37\t39\tTTAGATAAAGGATACTG\t*\tNM:i:1
 
   it('4. should parse programs', () => {
     const header = parseSAMHeader(samText);
-    
+
     expect(header.programs.length).toBe(1);
     expect(header.programs[0].ID).toBe('bwa');
     expect(header.programs[0].PN).toBe('bwa');
@@ -124,7 +132,7 @@ r001\t99\tref\t7\t30\t8M2I4M1D3M\t=\t37\t39\tTTAGATAAAGGATACTG\t*\tNM:i:1
 
   it('5. should parse comments', () => {
     const header = parseSAMHeader(samText);
-    
+
     expect(header.comments.length).toBe(1);
     expect(header.comments[0]).toBe('This is a comment');
   });
@@ -138,7 +146,7 @@ describe('parseSAMLine', () => {
   it('1. should parse SAM alignment line', () => {
     const line = 'r001\t99\tref\t7\t30\t8M2I4M1D3M\t=\t37\t39\tTTAGATAAAGGATACTG\t*';
     const record = parseSAMLine(line);
-    
+
     expect(record.qname).toBe('r001');
     expect(record.flag).toBe(99);
     expect(record.rname).toBe('ref');
@@ -150,7 +158,7 @@ describe('parseSAMLine', () => {
   it('2. should decode flags automatically', () => {
     const line = 'r001\t163\tref\t7\t30\t8M\t=\t37\t39\tTTAGATAA\t*';
     const record = parseSAMLine(line);
-    
+
     expect(record.flags).toBeDefined();
     expect(record.flags!.paired).toBe(true);
     expect(record.flags!.properPair).toBe(true);
@@ -161,7 +169,7 @@ describe('parseSAMLine', () => {
   it('3. should parse optional tags', () => {
     const line = 'r001\t99\tref\t7\t30\t8M\t=\t37\t39\tTTAGATAA\t*\tNM:i:1\tMD:Z:8\tAS:i:8';
     const record = parseSAMLine(line);
-    
+
     expect(record.tags.NM).toBe(1);
     expect(record.tags.MD).toBe('8');
     expect(record.tags.AS).toBe(8);
@@ -170,7 +178,7 @@ describe('parseSAMLine', () => {
   it('4. should parse integer tags', () => {
     const line = 'r001\t99\tref\t7\t30\t8M\t=\t37\t39\tTTAGATAA\t*\tNM:i:5';
     const record = parseSAMLine(line);
-    
+
     expect(typeof record.tags.NM).toBe('number');
     expect(record.tags.NM).toBe(5);
   });
@@ -178,7 +186,7 @@ describe('parseSAMLine', () => {
   it('5. should parse float tags', () => {
     const line = 'r001\t99\tref\t7\t30\t8M\t=\t37\t39\tTTAGATAA\t*\tAS:f:1.5';
     const record = parseSAMLine(line);
-    
+
     expect(typeof record.tags.AS).toBe('number');
     expect(record.tags.AS).toBe(1.5);
   });
@@ -215,7 +223,7 @@ describe('formatSAMLine', () => {
       tags: {},
     };
     const line = formatSAMLine(record);
-    
+
     expect(line).toBe('r001\t99\tref\t7\t30\t8M\t=\t37\t39\tTTAGATAA\t*');
   });
 
@@ -235,7 +243,7 @@ describe('formatSAMLine', () => {
       tags: { NM: 1, MD: '8' },
     };
     const line = formatSAMLine(record);
-    
+
     expect(line).toContain('NM:i:1');
     expect(line).toContain('MD:Z:8');
   });
@@ -256,7 +264,7 @@ describe('formatSAMLine', () => {
       tags: { AS: 1.5 },
     };
     const line = formatSAMLine(record);
-    
+
     expect(line).toContain('AS:f:1.5');
   });
 
@@ -274,14 +282,14 @@ r002\t0\tref\t9\t30\t3S6M\t*\t0\t0\tAAAAAGATAA\t*
 
   it('1. should parse complete SAM file', () => {
     const { header, records } = parseSAM(samText);
-    
+
     expect(header.version).toBe('1.6');
     expect(records.length).toBe(2);
   });
 
   it('2. should parse all records', () => {
     const { records } = parseSAM(samText);
-    
+
     expect(records[0].qname).toBe('r001');
     expect(records[1].qname).toBe('r002');
   });
@@ -320,7 +328,7 @@ describe('formatSAM', () => {
 
   it('1. should format complete SAM file', () => {
     const samText = formatSAM(header, records);
-    
+
     expect(samText).toContain('@HD\tVN:1.6\tSO:coordinate');
     expect(samText).toContain('@SQ\tSN:ref\tLN:45');
     expect(samText).toContain('r001\t99\tref');
@@ -328,19 +336,19 @@ describe('formatSAM', () => {
 
   it('2. should format read groups', () => {
     const samText = formatSAM(header, records);
-    
+
     expect(samText).toContain('@RG\tID:group1\tSM:sample1');
   });
 
   it('3. should format programs', () => {
     const samText = formatSAM(header, records);
-    
+
     expect(samText).toContain('@PG\tID:bwa\tPN:bwa');
   });
 
   it('4. should format comments', () => {
     const samText = formatSAM(header, records);
-    
+
     expect(samText).toContain('@CO\tThis is a comment');
   });
 
