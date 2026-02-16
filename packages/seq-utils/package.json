@@ -1,7 +1,7 @@
 {
   "name": "@bioscript/seq-utils",
-  "version": "0.1.0",
-  "description": "Core sequence manipulation utilities for DNA/RNA operations: conversion, complement, and reverse complement.",
+  "version": "0.2.0",
+  "description": "Core sequence manipulation utilities for DNA/RNA operations: conversion, complement, reverse complement, k-mer analysis, minimizers, and De Bruijn graphs.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "MIT",
@@ -21,9 +21,15 @@
     "rna",
     "complement",
     "reverse-complement",
-    "utilities"
+    "utilities",
+    "kmers",
+    "minimizers",
+    "debruijn-graph",
+    "rolling-hash",
+    "syncmers",
+    "super-kmers"
   ],
-  "author": "MForofontov",
+  "author": "Mykyta Forofontov",
   "files": [
     "dist",
     "README.md",
