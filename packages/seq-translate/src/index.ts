@@ -9,10 +9,8 @@
 // Export genetic code tables
 export * from './tables';
 
-// Export core translation (single function per file)
+// Export core translation functions (all in translate.ts)
 export * from './translate';
-export * from './translate-frames';
-export * from './translate-batch';
 export * from './lookup';
 
 // Export ORF finding

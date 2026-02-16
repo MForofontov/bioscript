@@ -128,7 +128,9 @@ test.describe('Browser Large File Tests', () => {
     expect(result.totalTime).toBeLessThan(10); // Should parse ~6MB in under 10 seconds
   });
 
-  test('3. parseFastaBrowser should handle 100MB file with performance metrics', async ({ page }) => {
+  test('3. parseFastaBrowser should handle 100MB file with performance metrics', async ({
+    page,
+  }) => {
     // Test with 100MB file - more realistic for browser environment
     const result = await page.evaluate(async () => {
       // Generate 100MB of FASTA data using Blob chunks (avoids string length limit)

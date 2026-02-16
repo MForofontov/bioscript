@@ -1,0 +1,67 @@
+{
+  "name": "@bioscript/seq-format",
+  "version": "0.1.0",
+  "description": "Bioinformatics file format converters and parsers (GenBank, EMBL, GFF/GTF, BED, VCF, SAM/BAM)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MForofontov/bioscript.git",
+    "directory": "packages/seq-format"
+  },
+  "homepage": "https://github.com/MForofontov/bioscript/tree/main/packages/seq-format#readme",
+  "bugs": {
+    "url": "https://github.com/MForofontov/bioscript/issues"
+  },
+  "keywords": [
+    "bioinformatics",
+    "genbank",
+    "embl",
+    "gff",
+    "gtf",
+    "bed",
+    "vcf",
+    "sam",
+    "bam",
+    "fasta",
+    "format-conversion",
+    "parser",
+    "streaming"
+  ],
+  "author": "Mykyta Forofontov",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src --ext .ts",
+    "clean": "rm -rf dist coverage"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

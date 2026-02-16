@@ -1,7 +1,13 @@
-import { FastaParser, FastaWriter, createFastaParser, createFastaWriter, type FastaRecord } from '../fasta';
+import {
+  FastaParser,
+  FastaWriter,
+  createFastaParser,
+  createFastaWriter,
+  type FastaRecord,
+} from '../fasta';
 import { Readable, Writable } from 'stream';
 import { pipeline } from 'stream/promises';
-import { createReadStream, createWriteStream, readFileSync, unlinkSync } from 'fs';
+import { unlinkSync } from 'fs';
 import { join } from 'path';
 
 describe('FastaParser', () => {

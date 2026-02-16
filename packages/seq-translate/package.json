@@ -1,6 +1,6 @@
 {
   "name": "@bioscript/seq-translate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Efficient sequence translation utilities supporting all NCBI genetic code tables.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -26,7 +26,7 @@
     "multiprocessing",
     "streaming"
   ],
-  "author": "MForofontov",
+  "author": "Mykyta Forofontov",
   "files": [
     "dist",
     "README.md",
@@ -49,7 +49,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@bioscript/seq-utils": "^0.1.0"
+    "@bioscript/seq-utils": "^0.2.0"
   },
   "scripts": {
     "build": "tsc",

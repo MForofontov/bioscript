@@ -308,5 +308,3 @@ function translateOrf(
 
   return protein.join('');
 }
-
-

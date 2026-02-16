@@ -4,16 +4,13 @@
  * @jest-environment jsdom
  */
 
-import {
-  translateBrowser,
-  translateBrowserBatch,
-} from '../browser-translate';
+import { translateBrowser, translateBrowserBatch } from '../browser-translate';
 
 describe('translateBrowser', () => {
   // Test case 1: Translate a simple sequence
   it('1. should translate a simple sequence', () => {
     const results = translateBrowser('ATGGCC', { table: 'standard' });
-    
+
     expect(results).toHaveLength(1);
     expect(results[0].sequence).toBe('MA');
     expect(results[0].frame).toBe(0);
@@ -27,7 +24,7 @@ describe('translateBrowser', () => {
       table: 'standard',
       allFrames: true,
     });
-    
+
     expect(results).toHaveLength(3);
     expect(results[0].frame).toBe(0);
     expect(results[1].frame).toBe(1);
@@ -40,7 +37,7 @@ describe('translateBrowser', () => {
       table: 'standard',
       includeReverse: true,
     });
-    
+
     expect(results).toHaveLength(2);
     expect(results[0].isReverse).toBe(false);
     expect(results[1].isReverse).toBe(true);
@@ -53,7 +50,7 @@ describe('translateBrowser', () => {
       allFrames: true,
       includeReverse: true,
     });
-    
+
     expect(results).toHaveLength(6);
     expect(results[0].frame).toBe(0);
     expect(results[3].frame).toBe(3);
@@ -66,7 +63,7 @@ describe('translateBrowser', () => {
       table: 'standard',
       breakOnStop: true,
     });
-    
+
     expect(results[0].sequence).toBe('M*');
   });
 
@@ -76,7 +73,7 @@ describe('translateBrowser', () => {
       table: 'standard',
       stopSymbol: 'X',
     });
-    
+
     expect(results[0].sequence).toBe('MAX');
   });
 
@@ -85,7 +82,7 @@ describe('translateBrowser', () => {
     const results = translateBrowser('ATGATA', {
       table: 'vertebrate_mitochondrial',
     });
-    
+
     expect(results[0].sequence).toBe('MM');
   });
 
@@ -125,7 +122,7 @@ describe('translateBrowserBatch', () => {
   it('1. should translate multiple sequences efficiently', () => {
     const sequences = ['ATGGCC', 'ATGTAA', 'ATGCCC'];
     const results = translateBrowserBatch(sequences, { table: 'standard' });
-    
+
     expect(results).toHaveLength(3);
     expect(results[0][0].sequence).toBe('MA');
     expect(results[1][0].sequence).toBe('M*');
@@ -139,7 +136,7 @@ describe('translateBrowserBatch', () => {
       table: 'standard',
       allFrames: true,
     });
-    
+
     expect(results).toHaveLength(2);
     expect(results[0]).toHaveLength(3);
     expect(results[1]).toHaveLength(3);
@@ -158,11 +155,9 @@ describe('translateBrowserBatch', () => {
       table: 'standard',
       includeReverse: true,
     });
-    
+
     expect(results[0]).toHaveLength(2);
     expect(results[0][0].isReverse).toBe(false);
     expect(results[0][1].isReverse).toBe(true);
   });
 });
-
-

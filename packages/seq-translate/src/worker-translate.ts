@@ -105,11 +105,11 @@ export async function translateWorker(
 
   const numWorkers = options.numWorkers || cpus().length;
   // Try dist first (production), fall back to src (development/testing)
-  let workerPath = resolve(__dirname, 'translate-worker.js');
+  let workerPath = resolve(__dirname, 'worker-script.js');
 
   // Check if we're in development/test mode (src directory)
   if (__dirname.includes('/src')) {
-    const distPath = resolve(__dirname, '../dist/translate-worker.js');
+    const distPath = resolve(__dirname, '../dist/worker-script.js');
     if (existsSync(distPath)) {
       workerPath = distPath;
     }
@@ -190,11 +190,11 @@ export class TranslationPool {
 
   constructor(numWorkers?: number) {
     this.numWorkers = numWorkers || cpus().length;
-    let workerPath = resolve(__dirname, 'translate-worker.js');
+    let workerPath = resolve(__dirname, 'worker-script.js');
 
     // Check if we're in development/test mode (src directory)
     if (__dirname.includes('/src')) {
-      const distPath = resolve(__dirname, '../dist/translate-worker.js');
+      const distPath = resolve(__dirname, '../dist/worker-script.js');
       if (existsSync(distPath)) {
         workerPath = distPath;
       }
@@ -224,8 +224,8 @@ export class TranslationPool {
       this.initialize();
     }
 
-    return new Promise((resolve, reject) => {
-      this.taskQueue.push({ sequences, options, resolve, reject });
+    return new Promise((resolveTask, reject) => {
+      this.taskQueue.push({ sequences, options, resolve: resolveTask, reject });
       void this.processQueue();
     });
   }
