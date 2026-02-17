@@ -294,5 +294,5 @@ interface OrfOptions extends TranslationOptions {
 
 ## License
 
-MIT
+MIT © 2026 [Mykyta Forofontov](https://github.com/MForofontov)
 
