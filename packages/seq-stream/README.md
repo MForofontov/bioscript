@@ -367,7 +367,7 @@ npm run test:watch
 
 ## License
 
-MIT
+MIT © 2026 [Mykyta Forofontov](https://github.com/MForofontov)
 
 ## Contributing
 

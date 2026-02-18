@@ -957,6 +957,7 @@ jobs:
 5. **Write tests first**: Consider TDD approach for complex functions
 6. **Document thoroughly**: JSDoc with examples and biological context
 7. **Test performance**: Ensure efficient algorithms and memory usage
+8. **Update CHANGELOG**: Immediately add entry to `[Unreleased]` section in package's CHANGELOG.md
 
 #### When Adding New Features
 
@@ -966,6 +967,65 @@ jobs:
 4. **Browser limitations**: Memory constraints, API availability
 5. **Backward compatibility**: Don't break existing APIs
 6. **Update documentation**: README, JSDoc, examples
+7. **Update CHANGELOG**: Immediately add entry to `[Unreleased]` section in package's CHANGELOG.md with Added/Changed/Fixed categories
+
+### CHANGELOG Management
+
+Each package maintains a CHANGELOG.md following [Keep a Changelog](https://keepachangelog.com/) format.
+
+#### Workflow
+
+**During Development:**
+1. **Always add changes to `[Unreleased]` section first**
+2. Use appropriate categories:
+   - `### Added` - New features, functions, parameters
+   - `### Changed` - Modifications to existing functionality
+   - `### Deprecated` - Features marked for removal
+   - `### Removed` - Deleted features or functions
+   - `### Fixed` - Bug fixes, error corrections
+   - `### Security` - Security vulnerability fixes
+
+**Example - Adding to Unreleased:**
+```markdown
+## [Unreleased]
+
+### Added
+- `calculateGCContent()` function for GC percentage calculation
+- Support for ambiguous IUPAC nucleotide codes
+
+### Changed
+- Improved performance of k-mer extraction by 2x
+
+### Fixed
+- Fixed off-by-one error in N50 calculation
+```
+
+**Before Publishing:**
+1. **Move `[Unreleased]` content to new version section**
+2. **Add version number and release date**
+3. **Leave `[Unreleased]` section empty for next cycle**
+
+**Example - On Release:**
+```markdown
+## [Unreleased]
+
+## [0.3.0] - 2026-02-20
+
+### Added
+- `calculateGCContent()` function for GC percentage calculation
+- Support for ambiguous IUPAC nucleotide codes
+
+### Changed
+- Improved performance of k-mer extraction by 2x
+
+### Fixed
+- Fixed off-by-one error in N50 calculation
+
+## [0.2.0] - 2026-02-17
+...
+```
+
+**CRITICAL:** Never publish without moving `[Unreleased]` to a versioned section. The CHANGELOG must reflect what's in each published version.
 
 #### Code Review Focus
 
