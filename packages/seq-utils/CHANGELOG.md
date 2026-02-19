@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `assertArray()` - Assert a value is an array, throwing `TypeError` if not
+- `assertObject()` - Assert a value is a non-null object, throwing `TypeError` if not
+- `assertPositiveInteger()` - Assert a number is a positive integer, throwing `Error` if not
+- `assertNonEmptySequences()` - Assert two normalized sequences are non-empty, throwing `Error` if either is empty (standardizes the "sequences cannot be empty" message across all callers)
+
+### Changed
+- `normalize.ts` no longer re-implements `rnaToDna`/`dnaToRna`; now imports them from `dna-rna.ts` (eliminates internal duplication)
+- `kmers.ts`: replaced inline `k < 1 || !Number.isInteger(k)` guards with `assertPositiveInteger()` in all 6 functions
+- `minimizers.ts`: replaced inline positive-integer guards for `k` and `w` with `assertPositiveInteger()`
+- `debruijn.ts`: replaced `!Array.isArray` + `typeof k !== 'number'` guards with `assertArray()` + `assertNumber()`
+
 ## [0.2.0] - 2026-02-17
 
 ### Added

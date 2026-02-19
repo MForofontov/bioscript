@@ -7,6 +7,8 @@
  */
 
 import { reverseComplement } from './reverse-complement';
+import { assertArray, assertNumber } from './validation';
+import { normalizeSequence } from './normalize';
 
 /**
  * De Bruijn graph node.
@@ -61,12 +63,8 @@ export function buildDeBruijnGraph(
   k: number,
   options: { canonical?: boolean; minCoverage?: number } = {}
 ): DeBruijnGraph {
-  if (!Array.isArray(sequences)) {
-    throw new TypeError(`sequences must be an array, got ${typeof sequences}`);
-  }
-  if (typeof k !== 'number') {
-    throw new TypeError(`k must be a number, got ${typeof k}`);
-  }
+  assertArray(sequences, 'sequences');
+  assertNumber(k, 'k');
   if (k < 2 || !Number.isInteger(k)) {
     throw new Error(`k must be an integer >= 2, got ${k}`);
   }
@@ -81,7 +79,7 @@ export function buildDeBruijnGraph(
       continue;
     }
 
-    const normalized = sequence.trim().toUpperCase();
+    const normalized = normalizeSequence(sequence);
 
     for (let i = 0; i <= normalized.length - k; i++) {
       let kmer = normalized.slice(i, i + k);

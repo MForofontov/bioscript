@@ -5,6 +5,7 @@
  */
 
 import type { SAMRecord, SAMHeader, SAMFlags } from './types';
+import { assertString, assertNumber, assertArray, assertObject } from '@bioscript/seq-utils';
 
 /**
  * Decode SAM bitwise flags into components.
@@ -24,9 +25,7 @@ import type { SAMRecord, SAMHeader, SAMFlags } from './types';
  * @performance O(1) time complexity. <0.01ms.
  */
 export function decodeSAMFlags(flag: number): SAMFlags {
-  if (typeof flag !== 'number') {
-    throw new TypeError(`flag must be a number, got ${typeof flag}`);
-  }
+  assertNumber(flag, 'flag');
 
   return {
     paired: (flag & 0x1) !== 0,
@@ -67,9 +66,7 @@ export function decodeSAMFlags(flag: number): SAMFlags {
  * @performance O(1) time complexity. <0.01ms.
  */
 export function encodeSAMFlags(flags: Partial<SAMFlags>): number {
-  if (typeof flags !== 'object' || flags === null) {
-    throw new TypeError(`flags must be an object, got ${typeof flags}`);
-  }
+  assertObject(flags, 'flags');
 
   let flag = 0;
   if (flags.paired) flag |= 0x1;
@@ -106,9 +103,7 @@ export function encodeSAMFlags(flags: Partial<SAMFlags>): number {
  * @performance O(h) where h is header lines. Typical: <1ms for standard headers.
  */
 export function parseSAMHeader(text: string): SAMHeader {
-  if (typeof text !== 'string') {
-    throw new TypeError(`text must be a string, got ${typeof text}`);
-  }
+  assertString(text, 'text');
 
   const lines = text.split('\n');
   const header: SAMHeader = {
@@ -202,9 +197,7 @@ export function parseSAMHeader(text: string): SAMHeader {
  * @performance O(n) where n is line length. Typical: <0.2ms per line.
  */
 export function parseSAMLine(line: string): SAMRecord {
-  if (typeof line !== 'string') {
-    throw new TypeError(`line must be a string, got ${typeof line}`);
-  }
+  assertString(line, 'line');
 
   const trimmed = line.trim();
 
@@ -273,9 +266,7 @@ export function parseSAMLine(line: string): SAMRecord {
  * Typical: 10K alignments in ~150ms, 100K alignments in ~1.5s.
  */
 export function parseSAM(text: string): { header: SAMHeader; records: SAMRecord[] } {
-  if (typeof text !== 'string') {
-    throw new TypeError(`text must be a string, got ${typeof text}`);
-  }
+  assertString(text, 'text');
 
   const header = parseSAMHeader(text);
   const lines = text.split('\n');
@@ -327,9 +318,7 @@ export function parseSAM(text: string): { header: SAMHeader; records: SAMRecord[
  * @performance O(n) where n is number of tags. Typical: <0.2ms.
  */
 export function formatSAMLine(record: SAMRecord): string {
-  if (typeof record !== 'object' || record === null) {
-    throw new TypeError(`record must be an object, got ${typeof record}`);
-  }
+  assertObject(record, 'record');
 
   const fields = [
     record.qname,
@@ -380,13 +369,8 @@ export function formatSAMLine(record: SAMRecord): string {
  * Typical: 10K records in ~150ms.
  */
 export function formatSAM(header: SAMHeader, records: SAMRecord[]): string {
-  if (typeof header !== 'object' || header === null) {
-    throw new TypeError(`header must be an object, got ${typeof header}`);
-  }
-
-  if (!Array.isArray(records)) {
-    throw new TypeError(`records must be an array, got ${typeof records}`);
-  }
+  assertObject(header, 'header');
+  assertArray(records, 'records');
 
   let output = '';
 

@@ -13,6 +13,7 @@
 import type { AlignmentResult, AlignmentOptions, ScoringMatrix, AlignmentCell } from './types';
 import { Direction } from './types';
 import { getMatrix, getScore, BLOSUM62 } from './matrices';
+import { assertTwoSequences, assertNonEmptySequences, normalizeSequence } from '@bioscript/seq-utils';
 
 /**
  * Performs global sequence alignment using the Needleman-Wunsch algorithm.
@@ -84,13 +85,7 @@ export function needlemanWunsch(
   options: AlignmentOptions = {}
 ): AlignmentResult {
   // Input validation
-  if (typeof seq1 !== 'string') {
-    throw new TypeError(`seq1 must be a string, got ${typeof seq1}`);
-  }
-
-  if (typeof seq2 !== 'string') {
-    throw new TypeError(`seq2 must be a string, got ${typeof seq2}`);
-  }
+  assertTwoSequences(seq1, seq2);
 
   // Extract and validate options
   const { matrix = 'BLOSUM62', gapOpen = -10, gapExtend = -1, normalize = true } = options;
@@ -104,16 +99,10 @@ export function needlemanWunsch(
   }
 
   // Normalize sequences
-  const s1 = normalize ? seq1.trim().toUpperCase() : seq1;
-  const s2 = normalize ? seq2.trim().toUpperCase() : seq2;
+  const s1 = normalize ? normalizeSequence(seq1) : seq1;
+  const s2 = normalize ? normalizeSequence(seq2) : seq2;
 
-  if (s1.length === 0) {
-    throw new Error('seq1 is empty or contains only whitespace');
-  }
-
-  if (s2.length === 0) {
-    throw new Error('seq2 is empty or contains only whitespace');
-  }
+  assertNonEmptySequences(s1, s2);
 
   // Get scoring matrix
   const scoringMatrix: ScoringMatrix = typeof matrix === 'string' ? getMatrix(matrix) : matrix;

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- All alignment functions now use `assertTwoSequences()` from `@bioscript/seq-utils` for input validation (replaces inline `typeof` checks)
+- All alignment functions now use `normalizeSequence()` from `@bioscript/seq-utils` instead of inline `.trim().toUpperCase()`
+- All alignment functions now use `assertNonEmptySequences()` from `@bioscript/seq-utils` after normalization (replaces inline `length === 0` checks; standardizes error message to `'sequences cannot be empty'` across all 6 algorithm files)
+- Added `@bioscript/seq-utils` as a dependency
+
 ## [0.1.0] - 2026-02-17
 
 ### Added

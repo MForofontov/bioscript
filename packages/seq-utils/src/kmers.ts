@@ -6,23 +6,8 @@
  */
 
 import { reverseComplement } from './reverse-complement';
-
-/**
- * Validate sequence contains only valid nucleotide characters.
- *
- * @param sequence - Sequence to validate.
- * @param strict - If true, throw error on invalid characters. If false, only warn.
- * @throws {Error} If strict mode and sequence contains invalid characters.
- */
-function validateSequence(sequence: string, strict: boolean = false): void {
-  const validPattern = /^[ACGTUN]*$/i;
-  if (!validPattern.test(sequence)) {
-    const message = 'Sequence contains invalid characters (expected: A, C, G, T, U, N)';
-    if (strict) {
-      throw new Error(message);
-    }
-  }
-}
+import { assertString, assertNumber, assertTwoSequences, assertPositiveInteger, validateSequence } from './validation';
+import { normalizeSequence } from './normalize';
 
 /**
  * Extract all k-mers from a sequence.
@@ -64,17 +49,11 @@ export function getKmers(
   k: number,
   options: { canonical?: boolean; strict?: boolean } = {}
 ): string[] {
-  if (typeof sequence !== 'string') {
-    throw new TypeError(`sequence must be a string, got ${typeof sequence}`);
-  }
-  if (typeof k !== 'number') {
-    throw new TypeError(`k must be a number, got ${typeof k}`);
-  }
-  if (k < 1 || !Number.isInteger(k)) {
-    throw new Error(`k must be a positive integer, got ${k}`);
-  }
+  assertString(sequence, 'sequence');
+  assertNumber(k, 'k');
+  assertPositiveInteger(k, 'k');
 
-  const normalized = sequence.trim().toUpperCase();
+  const normalized = normalizeSequence(sequence);
   const { canonical = false, strict = false } = options;
 
   if (strict) {
@@ -135,15 +114,9 @@ export function countKmers(
   k: number,
   options: { canonical?: boolean } = {}
 ): Map<string, number> {
-  if (typeof sequence !== 'string') {
-    throw new TypeError(`sequence must be a string, got ${typeof sequence}`);
-  }
-  if (typeof k !== 'number') {
-    throw new TypeError(`k must be a number, got ${typeof k}`);
-  }
-  if (k < 1 || !Number.isInteger(k)) {
-    throw new Error(`k must be a positive integer, got ${k}`);
-  }
+  assertString(sequence, 'sequence');
+  assertNumber(k, 'k');
+  assertPositiveInteger(k, 'k');
 
   const counts = new Map<string, number>();
   const kmers = getKmers(sequence, k, options);
@@ -183,15 +156,9 @@ export function getKmerSpectrum(
   k: number,
   options: { canonical?: boolean } = {}
 ): Map<number, number> {
-  if (typeof sequence !== 'string') {
-    throw new TypeError(`sequence must be a string, got ${typeof sequence}`);
-  }
-  if (typeof k !== 'number') {
-    throw new TypeError(`k must be a number, got ${typeof k}`);
-  }
-  if (k < 1 || !Number.isInteger(k)) {
-    throw new Error(`k must be a positive integer, got ${k}`);
-  }
+  assertString(sequence, 'sequence');
+  assertNumber(k, 'k');
+  assertPositiveInteger(k, 'k');
 
   const kmerCounts = countKmers(sequence, k, options);
   const spectrum = new Map<number, number>();
@@ -262,12 +229,7 @@ export function getKmerJaccard(
   k: number,
   options: { canonical?: boolean } = {}
 ): number {
-  if (typeof seq1 !== 'string') {
-    throw new TypeError(`seq1 must be a string, got ${typeof seq1}`);
-  }
-  if (typeof seq2 !== 'string') {
-    throw new TypeError(`seq2 must be a string, got ${typeof seq2}`);
-  }
+  assertTwoSequences(seq1, seq2);
 
   const kmers1 = new Set(getKmers(seq1, k, options));
   const kmers2 = new Set(getKmers(seq2, k, options));
@@ -309,17 +271,11 @@ export function getKmersWithRollingHash(
   k: number,
   options: { canonical?: boolean; strict?: boolean } = {}
 ): Map<string, number> {
-  if (typeof sequence !== 'string') {
-    throw new TypeError(`sequence must be a string, got ${typeof sequence}`);
-  }
-  if (typeof k !== 'number') {
-    throw new TypeError(`k must be a number, got ${typeof k}`);
-  }
-  if (k < 1 || !Number.isInteger(k)) {
-    throw new Error(`k must be a positive integer, got ${k}`);
-  }
+  assertString(sequence, 'sequence');
+  assertNumber(k, 'k');
+  assertPositiveInteger(k, 'k');
 
-  const normalized = sequence.trim().toUpperCase();
+  const normalized = normalizeSequence(sequence);
   const { canonical = false, strict = false } = options;
 
   if (strict) {
@@ -398,17 +354,11 @@ export function getSuperKmers(
   k: number,
   options: { canonical?: boolean } = {}
 ): string[] {
-  if (typeof sequence !== 'string') {
-    throw new TypeError(`sequence must be a string, got ${typeof sequence}`);
-  }
-  if (typeof k !== 'number') {
-    throw new TypeError(`k must be a number, got ${typeof k}`);
-  }
-  if (k < 1 || !Number.isInteger(k)) {
-    throw new Error(`k must be a positive integer, got ${k}`);
-  }
+  assertString(sequence, 'sequence');
+  assertNumber(k, 'k');
+  assertPositiveInteger(k, 'k');
 
-  const normalized = sequence.trim().toUpperCase();
+  const normalized = normalizeSequence(sequence);
   if (k > normalized.length) {
     return [];
   }
@@ -475,23 +425,15 @@ export function getSyncmers(
   s: number,
   options: { canonical?: boolean } = {}
 ): Array<{ kmer: string; position: number }> {
-  if (typeof sequence !== 'string') {
-    throw new TypeError(`sequence must be a string, got ${typeof sequence}`);
-  }
-  if (typeof k !== 'number') {
-    throw new TypeError(`k must be a number, got ${typeof k}`);
-  }
-  if (typeof s !== 'number') {
-    throw new TypeError(`s must be a number, got ${typeof s}`);
-  }
-  if (k < 1 || !Number.isInteger(k)) {
-    throw new Error(`k must be a positive integer, got ${k}`);
-  }
+  assertString(sequence, 'sequence');
+  assertNumber(k, 'k');
+  assertNumber(s, 's');
+  assertPositiveInteger(k, 'k');
   if (s < 1 || s >= k || !Number.isInteger(s)) {
     throw new Error(`s must be a positive integer less than k, got ${s}`);
   }
 
-  const normalized = sequence.trim().toUpperCase();
+  const normalized = normalizeSequence(sequence);
   if (k > normalized.length) {
     return [];
   }

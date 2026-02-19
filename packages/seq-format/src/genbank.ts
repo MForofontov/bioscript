@@ -4,6 +4,7 @@
  */
 
 import type { GenBankRecord, GenBankFeature, FastaRecord } from './types';
+import { assertString, assertObject } from '@bioscript/seq-utils';
 
 /**
  * Parse GenBank format text into structured record.
@@ -25,9 +26,7 @@ import type { GenBankRecord, GenBankFeature, FastaRecord } from './types';
  * Typical files: 1-10KB (genes) parse in <1ms, 100KB-1MB (genomes) in 5-50ms.
  */
 export function parseGenBank(text: string): GenBankRecord {
-  if (typeof text !== 'string') {
-    throw new TypeError(`text must be a string, got ${typeof text}`);
-  }
+  assertString(text, 'text');
 
   const lines = text.split('\n');
   const record: Partial<GenBankRecord> = {
@@ -237,9 +236,7 @@ export function genBankToFasta(
   record: GenBankRecord,
   includeFeatures: boolean = false
 ): FastaRecord[] {
-  if (typeof record !== 'object' || record === null) {
-    throw new TypeError(`record must be an object, got ${typeof record}`);
-  }
+  assertObject(record, 'record');
 
   const results: FastaRecord[] = [];
 
@@ -313,9 +310,7 @@ export function fastaToGenBank(
     topology?: string;
   } = {}
 ): string {
-  if (typeof record !== 'object' || record === null) {
-    throw new TypeError(`record must be an object, got ${typeof record}`);
-  }
+  assertObject(record, 'record');
 
   const { organism = 'Unknown', moleculeType = 'DNA', topology = 'linear' } = options;
 

@@ -46,6 +46,9 @@
   "engines": {
     "node": ">=16.0.0"
   },
+  "dependencies": {
+    "@bioscript/seq-utils": "^0.2.0"
+  },
   "scripts": {
     "build": "tsc",
     "test": "jest",

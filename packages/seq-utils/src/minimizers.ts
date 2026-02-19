@@ -6,6 +6,8 @@
  */
 
 import { reverseComplement } from './reverse-complement';
+import { assertString, assertNumber, assertTwoSequences, assertPositiveInteger } from './validation';
+import { normalizeSequence } from './normalize';
 
 /**
  * Minimizer with position information.
@@ -50,23 +52,13 @@ export function getMinimizers(
   w: number,
   options: { canonical?: boolean } = {}
 ): Minimizer[] {
-  if (typeof sequence !== 'string') {
-    throw new TypeError(`sequence must be a string, got ${typeof sequence}`);
-  }
-  if (typeof k !== 'number') {
-    throw new TypeError(`k must be a number, got ${typeof k}`);
-  }
-  if (typeof w !== 'number') {
-    throw new TypeError(`w must be a number, got ${typeof w}`);
-  }
-  if (k < 1 || !Number.isInteger(k)) {
-    throw new Error(`k must be a positive integer, got ${k}`);
-  }
-  if (w < 1 || !Number.isInteger(w)) {
-    throw new Error(`w must be a positive integer, got ${w}`);
-  }
+  assertString(sequence, 'sequence');
+  assertNumber(k, 'k');
+  assertNumber(w, 'w');
+  assertPositiveInteger(k, 'k');
+  assertPositiveInteger(w, 'w');
 
-  const normalized = sequence.trim().toUpperCase();
+  const normalized = normalizeSequence(sequence);
   const { canonical = false } = options;
 
   if (k > normalized.length || w > normalized.length - k + 1) {
@@ -135,17 +127,11 @@ export function getHashMinimizers(
   w: number,
   options: { canonical?: boolean; hashFunction?: (kmer: string) => number } = {}
 ): Minimizer[] {
-  if (typeof sequence !== 'string') {
-    throw new TypeError(`sequence must be a string, got ${typeof sequence}`);
-  }
-  if (typeof k !== 'number') {
-    throw new TypeError(`k must be a number, got ${typeof k}`);
-  }
-  if (typeof w !== 'number') {
-    throw new TypeError(`w must be a number, got ${typeof w}`);
-  }
+  assertString(sequence, 'sequence');
+  assertNumber(k, 'k');
+  assertNumber(w, 'w');
 
-  const normalized = sequence.trim().toUpperCase();
+  const normalized = normalizeSequence(sequence);
   const { canonical = false, hashFunction = defaultHash } = options;
 
   if (k > normalized.length || w > normalized.length - k + 1) {
@@ -239,12 +225,7 @@ export function getMinimizerJaccard(
   w: number,
   options: { canonical?: boolean } = {}
 ): number {
-  if (typeof seq1 !== 'string') {
-    throw new TypeError(`seq1 must be a string, got ${typeof seq1}`);
-  }
-  if (typeof seq2 !== 'string') {
-    throw new TypeError(`seq2 must be a string, got ${typeof seq2}`);
-  }
+  assertTwoSequences(seq1, seq2);
 
   const minimizers1 = new Set(getMinimizers(seq1, k, w, options).map((m) => m.kmer));
   const minimizers2 = new Set(getMinimizers(seq2, k, w, options).map((m) => m.kmer));

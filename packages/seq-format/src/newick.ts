@@ -6,6 +6,7 @@
  */
 
 import type { NewickNode, NewickTree } from './types';
+import { assertString, assertObject } from '@bioscript/seq-utils';
 
 /**
  * Parse Newick format string into tree structure.
@@ -34,9 +35,7 @@ import type { NewickNode, NewickTree } from './types';
  * @performance O(n) where n is string length.
  */
 export function parseNewick(newick: string): NewickTree {
-  if (typeof newick !== 'string') {
-    throw new TypeError(`newick must be a string, got ${typeof newick}`);
-  }
+  assertString(newick, 'newick');
 
   const trimmed = newick.trim();
   if (!trimmed.endsWith(';')) {
@@ -163,9 +162,7 @@ export function formatNewick(
   tree: NewickTree | NewickNode,
   options: { includeLengths?: boolean; precision?: number } = {}
 ): string {
-  if (typeof tree !== 'object' || tree === null) {
-    throw new TypeError(`tree must be an object, got ${typeof tree}`);
-  }
+  assertObject(tree, 'tree');
 
   const { includeLengths = true, precision = 6 } = options;
   const root = 'root' in tree ? tree.root : tree;

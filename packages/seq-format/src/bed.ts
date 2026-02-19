@@ -5,6 +5,7 @@
  */
 
 import type { BEDRecord } from './types';
+import { assertString, assertArray, assertObject } from '@bioscript/seq-utils';
 
 /**
  * Parse BED format line into structured record.
@@ -40,9 +41,7 @@ import type { BEDRecord } from './types';
  * @performance O(n) where n is line length. Typical: <0.1ms per line.
  */
 export function parseBEDLine(line: string): BEDRecord {
-  if (typeof line !== 'string') {
-    throw new TypeError(`line must be a string, got ${typeof line}`);
-  }
+  assertString(line, 'line');
 
   const trimmed = line.trim();
 
@@ -154,9 +153,7 @@ export function parseBEDLine(line: string): BEDRecord {
  * @performance O(1) for BED3/BED6, O(n) for BED12 where n is block count. <0.1ms.
  */
 export function formatBEDLine(record: BEDRecord): string {
-  if (typeof record !== 'object' || record === null) {
-    throw new TypeError(`record must be an object, got ${typeof record}`);
-  }
+  assertObject(record, 'record');
 
   const fields: string[] = [record.chrom, record.chromStart.toString(), record.chromEnd.toString()];
 
@@ -236,9 +233,7 @@ export function formatBEDLine(record: BEDRecord): string {
  * Typical: 10K lines in ~30ms, 100K lines in ~300ms.
  */
 export function parseBED(text: string): BEDRecord[] {
-  if (typeof text !== 'string') {
-    throw new TypeError(`text must be a string, got ${typeof text}`);
-  }
+  assertString(text, 'text');
 
   const lines = text.split('\n');
   const records: BEDRecord[] = [];
@@ -292,9 +287,7 @@ export function formatBED(
   includeHeader: boolean = false,
   trackName: string = 'track'
 ): string {
-  if (!Array.isArray(records)) {
-    throw new TypeError(`records must be an array, got ${typeof records}`);
-  }
+  assertArray(records, 'records');
 
   let output = '';
 

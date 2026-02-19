@@ -7,6 +7,7 @@ import { Worker } from 'worker_threads';
 import { cpus } from 'os';
 import { resolve } from 'path';
 import { existsSync } from 'fs';
+import { normalizeSequence } from '@bioscript/seq-utils';
 
 /**
  * Translation options for worker-based translation
@@ -158,7 +159,7 @@ export async function translateWorkerChunked(
   options: WorkerTranslationOptions & { chunkSize?: number } = {}
 ): Promise<TranslationResult[]> {
   const chunkSize = options.chunkSize || 30000; // 30kb chunks (10k codons)
-  const seq = sequence.trim().toUpperCase();
+  const seq = normalizeSequence(sequence);
 
   // Split sequence into overlapping chunks to maintain frame
   const chunks: string[] = [];

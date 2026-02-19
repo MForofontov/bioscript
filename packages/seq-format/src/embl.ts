@@ -4,6 +4,7 @@
  */
 
 import type { EMBLRecord, GenBankFeature, FastaRecord } from './types';
+import { assertString, assertObject } from '@bioscript/seq-utils';
 
 /**
  * Parse EMBL format text into structured record.
@@ -24,9 +25,7 @@ import type { EMBLRecord, GenBankFeature, FastaRecord } from './types';
  * @performance O(n) time complexity. Typical files: 1-10KB in <1ms.
  */
 export function parseEMBL(text: string): EMBLRecord {
-  if (typeof text !== 'string') {
-    throw new TypeError(`text must be a string, got ${typeof text}`);
-  }
+  assertString(text, 'text');
 
   const lines = text.split('\n');
   const record: Partial<EMBLRecord> = {
@@ -220,9 +219,7 @@ export function parseEMBL(text: string): EMBLRecord {
  * @performance O(1) time complexity (object transformation). <1ms.
  */
 export function emblToFasta(record: EMBLRecord): FastaRecord {
-  if (typeof record !== 'object' || record === null) {
-    throw new TypeError(`record must be an object, got ${typeof record}`);
-  }
+  assertObject(record, 'record');
 
   return {
     id: record.accession || record.id,

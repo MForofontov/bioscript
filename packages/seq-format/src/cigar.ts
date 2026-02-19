@@ -6,6 +6,7 @@
  */
 
 import type { CigarOp, CigarOperation, CigarStats } from './types';
+import { assertString, assertArray } from '@bioscript/seq-utils';
 
 /**
  * Parse CIGAR string into array of operations.
@@ -32,9 +33,7 @@ import type { CigarOp, CigarOperation, CigarStats } from './types';
  * @performance O(n) where n is CIGAR string length.
  */
 export function parseCIGAR(cigar: string): CigarOp[] {
-  if (typeof cigar !== 'string') {
-    throw new TypeError(`cigar must be a string, got ${typeof cigar}`);
-  }
+  assertString(cigar, 'cigar');
 
   if (cigar === '*') {
     return [];
@@ -81,9 +80,7 @@ export function parseCIGAR(cigar: string): CigarOp[] {
  * @performance O(n) where n is number of operations.
  */
 export function formatCIGAR(operations: CigarOp[]): string {
-  if (!Array.isArray(operations)) {
-    throw new TypeError(`operations must be an array, got ${typeof operations}`);
-  }
+  assertArray(operations, 'operations');
 
   if (operations.length === 0) {
     return '*';
@@ -132,9 +129,7 @@ export function formatCIGAR(operations: CigarOp[]): string {
  * @performance O(n) where n is number of operations.
  */
 export function getCIGARStats(operations: CigarOp[]): CigarStats {
-  if (!Array.isArray(operations)) {
-    throw new TypeError(`operations must be an array, got ${typeof operations}`);
-  }
+  assertArray(operations, 'operations');
 
   const stats: CigarStats = {
     alignedLength: 0,
@@ -221,12 +216,8 @@ export function cigarToAlignedSequence(
   cigar: string,
   querySeq: string
 ): { query: string; reference: string } {
-  if (typeof cigar !== 'string') {
-    throw new TypeError(`cigar must be a string, got ${typeof cigar}`);
-  }
-  if (typeof querySeq !== 'string') {
-    throw new TypeError(`querySeq must be a string, got ${typeof querySeq}`);
-  }
+  assertString(cigar, 'cigar');
+  assertString(querySeq, 'querySeq');
 
   const operations = parseCIGAR(cigar);
   const stats = getCIGARStats(operations);

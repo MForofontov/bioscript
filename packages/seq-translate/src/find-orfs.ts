@@ -5,7 +5,7 @@
 
 import { getTable } from './tables';
 import { buildLookup } from './lookup';
-import { reverseComplement } from '@bioscript/seq-utils';
+import { reverseComplement, assertString, assertValidSequence, normalizeToDna } from '@bioscript/seq-utils';
 import type { TranslationOptions } from './translate';
 
 /**
@@ -100,19 +100,11 @@ export interface OrfOptions extends TranslationOptions {
  */
 export function findOrfs(sequence: string, options: OrfOptions = {}): Orf[] {
   // Input validation
-  if (typeof sequence !== 'string') {
-    throw new TypeError(`sequence must be a string, got ${typeof sequence}`);
-  }
+  assertString(sequence, 'sequence');
 
-  const normalized = sequence.trim().toUpperCase();
-
-  // Validate sequence contains only valid bases
-  if (!/^[ACGTUN]*$/.test(normalized)) {
-    throw new Error('sequence contains invalid characters (expected: A, C, G, T, U, N)');
-  }
-
-  // Normalize to DNA (replace U with T) for consistent processing
-  const dnaSequence = normalized.replace(/U/g, 'T');
+  // Normalize to DNA (trim, uppercase, U→T) and validate
+  const dnaSequence = normalizeToDna(sequence);
+  assertValidSequence(dnaSequence);
 
   const {
     minLength = 75,

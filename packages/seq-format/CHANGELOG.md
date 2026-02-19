@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- All parser/formatter functions now use `assertString()`, `assertNumber()`, `assertArray()`, and `assertObject()` from `@bioscript/seq-utils` for input validation (replaces all inline `typeof` checks)
+- Added `@bioscript/seq-utils` as a dependency
+
 ## [0.1.0] - 2026-02-17
 
 ### Added

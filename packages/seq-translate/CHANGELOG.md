@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `translateWorkerChunked()` now uses `normalizeSequence()` from `@bioscript/seq-utils` instead of inline `.trim().toUpperCase()`
+- `translate.ts` uses `normalizeSequence()` from `@bioscript/seq-utils` instead of inline `.trim().toUpperCase()`
+- `find-orfs.ts` uses `assertString()`, `assertValidSequence()`, and `normalizeToDna()` from `@bioscript/seq-utils`
+
 ## [0.1.1] - 2026-02-17
 
 ### Changed

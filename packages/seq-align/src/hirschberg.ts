@@ -15,6 +15,7 @@
 
 import type { AlignmentResult, AlignmentOptions, ScoringMatrix } from './types';
 import { getScore } from './matrices';
+import { assertTwoSequences, assertNonEmptySequences, normalizeSequence } from '@bioscript/seq-utils';
 
 /**
  * Perform space-efficient global alignment using Hirschberg's algorithm.
@@ -90,20 +91,12 @@ export function hirschberg(
   options: AlignmentOptions = {}
 ): AlignmentResult {
   // Input validation
-  if (typeof seq1 !== 'string') {
-    throw new TypeError(`seq1 must be a string, got ${typeof seq1}`);
-  }
+  assertTwoSequences(seq1, seq2);
 
-  if (typeof seq2 !== 'string') {
-    throw new TypeError(`seq2 must be a string, got ${typeof seq2}`);
-  }
+  const s1 = normalizeSequence(seq1);
+  const s2 = normalizeSequence(seq2);
 
-  const s1 = seq1.trim().toUpperCase();
-  const s2 = seq2.trim().toUpperCase();
-
-  if (s1.length === 0 || s2.length === 0) {
-    throw new Error('sequences cannot be empty');
-  }
+  assertNonEmptySequences(s1, s2);
 
   // Get options (using simple gap penalty for space efficiency)
   const { matrix = 'BLOSUM62', gapOpen = -1, normalize = false } = options;

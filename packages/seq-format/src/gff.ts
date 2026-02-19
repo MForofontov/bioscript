@@ -4,6 +4,7 @@
  */
 
 import type { GFFRecord, GFFVersion } from './types';
+import { assertString, assertArray, assertObject } from '@bioscript/seq-utils';
 
 /**
  * Parse GFF3 or GTF format line into structured record.
@@ -33,9 +34,7 @@ import type { GFFRecord, GFFVersion } from './types';
  * @performance O(n) where n is line length. Typical: <0.1ms per line.
  */
 export function parseGFFLine(line: string, version: GFFVersion = 'gff3'): GFFRecord {
-  if (typeof line !== 'string') {
-    throw new TypeError(`line must be a string, got ${typeof line}`);
-  }
+  assertString(line, 'line');
 
   const trimmed = line.trim();
 
@@ -130,9 +129,7 @@ export function parseGFFLine(line: string, version: GFFVersion = 'gff3'): GFFRec
  * @performance O(n) where n is number of attributes. Typical: <0.1ms.
  */
 export function formatGFFLine(record: GFFRecord, version: GFFVersion = 'gff3'): string {
-  if (typeof record !== 'object' || record === null) {
-    throw new TypeError(`record must be an object, got ${typeof record}`);
-  }
+  assertObject(record, 'record');
 
   const score = record.score === null ? '.' : record.score.toString();
   const phase = record.phase === null ? '.' : record.phase.toString();
@@ -192,9 +189,7 @@ export function formatGFFLine(record: GFFRecord, version: GFFVersion = 'gff3'): 
  * Typical: 10K lines in ~50ms, 100K lines in ~500ms.
  */
 export function parseGFF(text: string, version: GFFVersion = 'gff3'): GFFRecord[] {
-  if (typeof text !== 'string') {
-    throw new TypeError(`text must be a string, got ${typeof text}`);
-  }
+  assertString(text, 'text');
 
   const lines = text.split('\n');
   const records: GFFRecord[] = [];
@@ -243,9 +238,7 @@ export function formatGFF(
   version: GFFVersion = 'gff3',
   includeHeader: boolean = true
 ): string {
-  if (!Array.isArray(records)) {
-    throw new TypeError(`records must be an array, got ${typeof records}`);
-  }
+  assertArray(records, 'records');
 
   let output = '';
 

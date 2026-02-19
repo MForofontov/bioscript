@@ -4,6 +4,7 @@
  */
 
 import type { VCFRecord, VCFHeader } from './types';
+import { assertString, assertArray, assertObject } from '@bioscript/seq-utils';
 
 /**
  * Parse VCF header section.
@@ -24,9 +25,7 @@ import type { VCFRecord, VCFHeader } from './types';
  * @performance O(h) where h is header lines. Typical: <1ms for standard headers.
  */
 export function parseVCFHeader(text: string): VCFHeader {
-  if (typeof text !== 'string') {
-    throw new TypeError(`text must be a string, got ${typeof text}`);
-  }
+  assertString(text, 'text');
 
   const lines = text.split('\n');
   const header: VCFHeader = {
@@ -143,9 +142,7 @@ export function parseVCFHeader(text: string): VCFHeader {
  * @performance O(n) where n is line length. Typical: <0.2ms per line.
  */
 export function parseVCFLine(line: string, _samples: string[] = []): VCFRecord {
-  if (typeof line !== 'string') {
-    throw new TypeError(`line must be a string, got ${typeof line}`);
-  }
+  assertString(line, 'line');
 
   const trimmed = line.trim();
 
@@ -234,9 +231,7 @@ export function parseVCFLine(line: string, _samples: string[] = []): VCFRecord {
  * Typical: 10K variants in ~100ms, 100K variants in ~1s.
  */
 export function parseVCF(text: string): { header: VCFHeader; records: VCFRecord[] } {
-  if (typeof text !== 'string') {
-    throw new TypeError(`text must be a string, got ${typeof text}`);
-  }
+  assertString(text, 'text');
 
   const header = parseVCFHeader(text);
   const lines = text.split('\n');
@@ -288,9 +283,7 @@ export function parseVCF(text: string): { header: VCFHeader; records: VCFRecord[
  * @performance O(n) where n is number of samples. Typical: <0.2ms.
  */
 export function formatVCFLine(record: VCFRecord): string {
-  if (typeof record !== 'object' || record === null) {
-    throw new TypeError(`record must be an object, got ${typeof record}`);
-  }
+  assertObject(record, 'record');
 
   const qual = record.qual === null ? '.' : record.qual.toString();
   const alt = record.alt.join(',');
@@ -347,13 +340,8 @@ export function formatVCFLine(record: VCFRecord): string {
  * Typical: 10K records in ~100ms.
  */
 export function formatVCF(header: VCFHeader, records: VCFRecord[]): string {
-  if (typeof header !== 'object' || header === null) {
-    throw new TypeError(`header must be an object, got ${typeof header}`);
-  }
-
-  if (!Array.isArray(records)) {
-    throw new TypeError(`records must be an array, got ${typeof records}`);
-  }
+  assertObject(header, 'header');
+  assertArray(records, 'records');
 
   let output = '';
 

@@ -7,7 +7,7 @@
 
 import { getTable } from './tables';
 import { buildLookup, translateWithLookup } from './lookup';
-import { reverseComplement } from '@bioscript/seq-utils';
+import { reverseComplement, normalizeSequence } from '@bioscript/seq-utils';
 
 /**
  * Translation options
@@ -42,7 +42,7 @@ export function translateSequence(seq: string, options: TranslationOptions = {})
 
   const codonTable = getTable(table);
   const lookup = buildLookup(codonTable);
-  const normalized = seq.trim().toUpperCase();
+  const normalized = normalizeSequence(seq);
 
   return translateWithLookup(normalized, lookup, stopSymbol, breakOnStop);
 }
@@ -68,7 +68,7 @@ export function translateAllFrames(seq: string, options: TranslationOptions = {}
 
   const codonTable = getTable(table);
   const lookup = buildLookup(codonTable);
-  const normalized = seq.trim().toUpperCase();
+  const normalized = normalizeSequence(seq);
 
   return [0, 1, 2].map((frame) =>
     translateWithLookup(normalized, lookup, stopSymbol, breakOnStop, frame)
@@ -98,7 +98,7 @@ export function translateSixFrames(seq: string, options: TranslationOptions = {}
   const codonTable = getTable(table);
   const lookup = buildLookup(codonTable);
 
-  const normalized = seq.trim().toUpperCase();
+  const normalized = normalizeSequence(seq);
   const revComp = reverseComplement(normalized);
 
   const results: string[] = [];
@@ -147,7 +147,7 @@ export function translateBatch(sequences: string[], options: TranslationOptions 
   const lookup = buildLookup(codonTable);
 
   return sequences.map((seq) => {
-    const normalized = seq.trim().toUpperCase();
+    const normalized = normalizeSequence(seq);
     return translateWithLookup(normalized, lookup, stopSymbol, breakOnStop);
   });
 }
