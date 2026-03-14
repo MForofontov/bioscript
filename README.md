@@ -67,4 +67,4 @@ Each package has its own README with specific documentation. Navigate to the pac
 
 ## License
 
-MIT
+MIT © 2026 [Mykyta Forofontov](https://github.com/MForofontov)

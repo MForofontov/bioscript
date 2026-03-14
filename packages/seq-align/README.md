@@ -158,4 +158,4 @@ interface AlignmentResult {
 
 ## License
 
-MIT © 2026 Mykyta Forofontov
+MIT © 2026 [Mykyta Forofontov](https://github.com/MForofontov)
