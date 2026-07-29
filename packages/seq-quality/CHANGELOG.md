@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 
-## [0.2.0] - 2026-07-29
+## [0.2.1] - 2026-07-29
 
 ### Changed
 - Dependency ranges for `@bioscript/seq-utils@^0.3.0` and `@bioscript/seq-stream@^0.2.0`
