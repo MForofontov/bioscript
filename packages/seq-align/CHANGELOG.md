@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Corrected reference validation fixtures to match verified optimal alignments (affine-gap convention)
+- Documented that semi-global results include free end-gap padding in alignment strings
+- Renamed internal module `banded.ts` → `banded-align.ts` (public API unchanged) so coverage tooling collects the file
+
 ### Changed
 - All alignment functions now use `assertTwoSequences()` from `@bioscript/seq-utils` for input validation (replaces inline `typeof` checks)
 - All alignment functions now use `normalizeSequence()` from `@bioscript/seq-utils` instead of inline `.trim().toUpperCase()`

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Corrected NCBI table 9 (echinoderm/flatworm): AUA remains Ile (was incorrectly Met)
+- Corrected tables 21–23 DNA codon keys to RNA (`AUA`/`UCA`/`UUA`) so RNA inputs resolve
+- `translateBrowserStreaming` now translates leftover buffer when input is shorter than `chunkSize`
+
 ### Changed
 - `translateWorkerChunked()` now uses `normalizeSequence()` from `@bioscript/seq-utils` instead of inline `.trim().toUpperCase()`
 - `translate.ts` uses `normalizeSequence()` from `@bioscript/seq-utils` instead of inline `.trim().toUpperCase()`

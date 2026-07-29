@@ -29,6 +29,19 @@ describe('semiGlobal', () => {
     expect(result.alignedSeq2).toContain('ACGT');
   });
 
+  it('2b. should include free end gaps in returned alignment strings', () => {
+    const result = semiGlobal('ACGTACGT', 'GTACGTAA', {
+      matrix: 'DNA_SIMPLE',
+      gapOpen: -2,
+      gapExtend: -1,
+    });
+
+    expect(result.alignedSeq1).toBe('ACGTACGT--');
+    expect(result.alignedSeq2).toBe('--GTACGTAA');
+    expect(result.score).toBe(30);
+    expect(result.identity).toBe(6);
+  });
+
   it('3. should align with custom matrix', () => {
     const result = semiGlobal('ACGT', 'ACGT', {
       matrix: DNA_SIMPLE,

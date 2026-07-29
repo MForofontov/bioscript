@@ -11,10 +11,6 @@
     "resolveJsonModule": true,
     "declaration": true,
     "types": ["node", "jest"],
-    "baseUrl": ".",
-    "paths": {
-      "@bioscript/seq-stream": ["packages/seq-stream/src"]
-    },
     "outDir": "dist"
   },
   "include": ["index.ts", "packages/*/src/**/*"],

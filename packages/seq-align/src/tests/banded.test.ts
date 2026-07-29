@@ -3,7 +3,7 @@
  * Tests cover: normal usage, edge cases, error handling.
  */
 
-import { bandedAlign } from '../banded';
+import { bandedAlign } from '../banded-align';
 import { DNA_SIMPLE } from '../matrices';
 
 describe('bandedAlign', () => {

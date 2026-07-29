@@ -24,12 +24,12 @@
 export { needlemanWunsch } from './needleman-wunsch';
 export { smithWaterman } from './smith-waterman';
 export { semiGlobal } from './semi-global';
-export { bandedAlign } from './banded';
+export { bandedAlign } from './banded-align';
 export { overlapAlign } from './overlap';
 export { hirschberg } from './hirschberg';
 
 // Export types from banded for convenience
-export type { BandedAlignmentOptions } from './banded';
+export type { BandedAlignmentOptions } from './banded-align';
 
 // Scoring matrices
 export {

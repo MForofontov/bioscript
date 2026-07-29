@@ -63,10 +63,11 @@ const referenceAlignments: ReferenceAlignment[] = [
     source: 'Smith & Waterman (1981) J Mol Biol',
   },
 
-  // 3. EMBOSS Needle protein alignment
-  // Reference: https://www.ebi.ac.uk/Tools/psa/emboss_needle/
+  // 3. Protein global alignment (BLOSUM62, affine gaps).
+  // Optimal under gap cost = gapOpen + (L-1)*gapExtend (same convention as this package).
+  // Note: EMBOSS Needle may differ due to gap-open semantics / path tie-breaking.
   {
-    name: 'EMBOSS Needle Protein',
+    name: 'BLOSUM62 Protein Global',
     description: 'Human vs Mouse p53 N-terminal domain',
     seq1: 'MEEPQSDPSVEPPLSQETFSDLWKLLPEN',
     seq2: 'MTAMEESQSDISLELPLSQETFSGLWKLLPPEDILP',
@@ -76,9 +77,10 @@ const referenceAlignments: ReferenceAlignment[] = [
       gapOpen: -10,
       gapExtend: -0.5,
     },
-    expectedAligned1: '---MEEPQSDPSVEPPLSQETFSDLWKLLP--EN----',
+    expectedAligned1: '---MEEPQSDPSVEPPLSQETFSDLWKLL-PEN---',
     expectedAligned2: 'MTAMEESQSDISLELPLSQETFSGLWKLLPPEDILP',
-    source: 'EMBOSS Needle (EBI)',
+    expectedScore: 81,
+    source: 'Verified optimal under package affine-gap convention',
   },
 
   // 4. Biopython example
@@ -118,7 +120,8 @@ const referenceAlignments: ReferenceAlignment[] = [
     source: 'Sequence assembly literature',
   },
 
-  // 6. Semi-global alignment for primer matching
+  // 6. Semi-global alignment for primer matching.
+  // Free end gaps are included in the returned alignment strings.
   {
     name: 'Semi-Global Primer',
     description: 'Primer alignment with end gaps free',
@@ -130,12 +133,14 @@ const referenceAlignments: ReferenceAlignment[] = [
       gapOpen: -2,
       gapExtend: -1,
     },
-    expectedAligned1: 'ACGTACGT',
-    expectedAligned2: 'GTACGTAA',
+    expectedAligned1: 'ACGTACGT--',
+    expectedAligned2: '--GTACGTAA',
+    expectedScore: 30,
     source: 'Primer design tools',
   },
 
-  // 7. PAM250 protein alignment
+  // 7. PAM250 protein alignment — terminal-gap path is optimal under these penalties.
+  // (Internal-gap textbook layouts can score worse with gapOpen=-8, gapExtend=-2.)
   {
     name: 'PAM250 Distant Homologs',
     description: 'Distantly related sequences with PAM250',
@@ -148,8 +153,9 @@ const referenceAlignments: ReferenceAlignment[] = [
       gapExtend: -2,
     },
     expectedAligned1: 'HEAGAWGHEE',
-    expectedAligned2: 'P-AW-HE-AE',
-    source: 'PAM matrices (Dayhoff et al.)',
+    expectedAligned2: '---PAWHEAE',
+    expectedScore: 10,
+    source: 'PAM matrices (Dayhoff et al.) — verified optimal score',
   },
 
   // 8. BLOSUM80 close homologs
@@ -289,7 +295,18 @@ function validateImplementations() {
         }
       }
 
-      if (validation.match && identityValid) {
+      // Validate score if specified
+      let scoreValid = true;
+      if (ref.expectedScore !== undefined) {
+        scoreValid = Math.abs(result.score - ref.expectedScore) < 1e-6;
+        if (!scoreValid) {
+          console.log(
+            `  ⚠️  Score mismatch: got ${result.score}, expected ${ref.expectedScore}`
+          );
+        }
+      }
+
+      if (validation.match && identityValid && scoreValid) {
         console.log(`  ✅ PASSED`);
         if (validation.reason) {
           console.log(`     (${validation.reason})`);

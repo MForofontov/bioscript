@@ -1,32 +1,27 @@
 {
-  "name": "@bioscript/seq-format",
-  "version": "0.1.1",
-  "description": "Bioinformatics file format converters and parsers (GenBank, EMBL, GFF/GTF, BED, VCF, SAM text)",
+  "name": "@bioscript/seq-search",
+  "version": "0.1.0",
+  "description": "Pattern matching, IUPAC motif search, restriction sites, and primer utilities for DNA/RNA sequences.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/MForofontov/bioscript.git",
-    "directory": "packages/seq-format"
+    "directory": "packages/seq-search"
   },
-  "homepage": "https://github.com/MForofontov/bioscript/tree/main/packages/seq-format#readme",
+  "homepage": "https://github.com/MForofontov/bioscript/tree/main/packages/seq-search#readme",
   "bugs": {
     "url": "https://github.com/MForofontov/bioscript/issues"
   },
   "keywords": [
     "bioinformatics",
-    "genbank",
-    "embl",
-    "gff",
-    "gtf",
-    "bed",
-    "vcf",
-    "sam",
-    "fasta",
-    "format-conversion",
-    "parser",
-    "streaming"
+    "motif",
+    "iupac",
+    "restriction",
+    "primer",
+    "pattern-matching",
+    "sequence-search"
   ],
   "author": "Mykyta Forofontov",
   "files": [
@@ -51,17 +46,15 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
-    "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "lint": "eslint src --ext .ts",
     "clean": "rm -rf dist coverage"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.14",
-    "@types/node": "^22.10.2",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.16",
     "jest": "^29.7.0",
-    "ts-jest": "^29.2.5",
-    "typescript": "^5.7.2"
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.3.3"
   },
   "publishConfig": {
     "access": "public"

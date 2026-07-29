@@ -209,16 +209,21 @@ export async function* translateBrowserStreaming(
       const { done, value } = await reader.read();
 
       if (done) {
-        // Process final buffer
-        if (remainder.length >= 3 && !stopped) {
-          const translated = translateFrame(remainder, lookup, stopSymbol, breakOnStop);
-          if (translated.length > 0) {
-            yield {
-              sequence: translated,
-              frame: 0,
-              isReverse: false,
-              sourceLength: remainder.length,
-            };
+        // Process any leftover buffer + codon remainder
+        if (!stopped) {
+          const leftover = remainder + buffer;
+          if (leftover.length >= 3) {
+            const processLength = Math.floor(leftover.length / 3) * 3;
+            const toTranslate = leftover.slice(0, processLength);
+            const translated = translateFrame(toTranslate, lookup, stopSymbol, breakOnStop);
+            if (translated.length > 0) {
+              yield {
+                sequence: translated,
+                frame: 0,
+                isReverse: false,
+                sourceLength: toTranslate.length,
+              };
+            }
           }
         }
         break;

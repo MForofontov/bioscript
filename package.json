@@ -22,13 +22,15 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "tsc && npm run build -w @bioscript/seq-utils && npm run build -w @bioscript/seq-stream && npm run build -w @bioscript/seq-translate",
+    "build": "tsc && npm run build -w @bioscript/seq-utils && npm run build -w @bioscript/seq-stream && npm run build -w @bioscript/seq-align && npm run build -w @bioscript/seq-format && npm run build -w @bioscript/seq-translate && npm run build -w @bioscript/seq-search && npm run build -w @bioscript/seq-quality",
+    "typecheck": "npm run build -w @bioscript/seq-utils && npx tsc --noEmit -p packages/seq-utils/tsconfig.json && npx tsc --noEmit -p packages/seq-stream/tsconfig.json && npx tsc --noEmit -p packages/seq-align/tsconfig.json && npx tsc --noEmit -p packages/seq-format/tsconfig.json && npx tsc --noEmit -p packages/seq-translate/tsconfig.json && npx tsc --noEmit -p packages/seq-search/tsconfig.json && npx tsc --noEmit -p packages/seq-quality/tsconfig.json",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:seq-stream": "npm test -w @bioscript/seq-stream",
     "test:coverage": "jest --coverage",
     "test:browser": "npm run test:browser --workspaces --if-present",
     "test:all": "npm test && npm run test:browser",
+    "validate:reference": "npm run validate:reference -w @bioscript/seq-align",
     "test:install:full": "./scripts/test-install-full.sh",
     "publish:all": "./scripts/publish-packages.sh",
     "lint": "eslint .",
