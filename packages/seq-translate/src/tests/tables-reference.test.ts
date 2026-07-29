@@ -76,4 +76,14 @@ describe('NCBI genetic code reference deviations', () => {
     expect(translateSequence('TAG', { table: '6', breakOnStop: false })).toBe('Q');
     expect(translateSequence('TGA', { table: '6', breakOnStop: false })).toBe('*');
   });
+
+  it('karyorelict nuclear (27): UAA/UAG→Q, UGA→W (productive dual-sense)', () => {
+    expect(translateSequence('TAA', { table: '27', breakOnStop: false })).toBe('Q');
+    expect(translateSequence('TGA', { table: '27', breakOnStop: false })).toBe('W');
+    expect(translateSequence('TGA', { table: '28', breakOnStop: false })).toBe('W');
+  });
+
+  it('throws on unknown table id', () => {
+    expect(() => getTable('not_a_real_table')).toThrow(/Unknown genetic code table/);
+  });
 });

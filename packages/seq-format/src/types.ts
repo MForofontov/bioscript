@@ -103,7 +103,7 @@ export interface VCFRecord {
   alt: string[];
   qual: number | null;
   filter: string;
-  info: Record<string, string | number | boolean>;
+  info: Record<string, string | number | boolean | number[]>;
   format?: string[];
   samples?: Record<string, string>[];
 }

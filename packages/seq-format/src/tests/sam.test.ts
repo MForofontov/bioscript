@@ -175,6 +175,13 @@ describe('parseSAMLine', () => {
     expect(record.tags.AS).toBe(8);
   });
 
+  it('3b. should preserve colons inside tag values', () => {
+    const line =
+      'r001\t99\tref\t7\t30\t8M\t=\t37\t39\tTTAGATAA\t*\tXA:Z:chr2,+1000,8M,0;chr3,-200,8M,1';
+    const record = parseSAMLine(line);
+    expect(record.tags.XA).toBe('chr2,+1000,8M,0;chr3,-200,8M,1');
+  });
+
   it('4. should parse integer tags', () => {
     const line = 'r001\t99\tref\t7\t30\t8M\t=\t37\t39\tTTAGATAA\t*\tNM:i:5';
     const record = parseSAMLine(line);

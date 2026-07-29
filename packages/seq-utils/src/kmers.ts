@@ -304,11 +304,14 @@ export function getKmersWithRollingHash(
   }
 
   let kmer = normalized.slice(0, k);
+  const initialHash = hash;
   if (canonical) {
     const revComp = reverseComplement(kmer);
     kmer = kmer < revComp ? kmer : revComp;
+    kmerHashes.set(kmer, hashStringKmer(kmer, baseMap, base, mod));
+  } else {
+    kmerHashes.set(kmer, initialHash);
   }
-  kmerHashes.set(kmer, hash);
 
   // Rolling hash for remaining k-mers
   for (let i = k; i < normalized.length; i++) {
@@ -319,15 +322,30 @@ export function getKmersWithRollingHash(
     hash = (hash - ((oldBase * power) % mod) + mod) % mod;
     hash = (hash * base + newBase) % mod;
 
-    kmer = normalized.slice(i - k + 1, i + 1);
+    const raw = normalized.slice(i - k + 1, i + 1);
     if (canonical) {
-      const revComp = reverseComplement(kmer);
-      kmer = kmer < revComp ? kmer : revComp;
+      const revComp = reverseComplement(raw);
+      kmer = raw < revComp ? raw : revComp;
+      kmerHashes.set(kmer, hashStringKmer(kmer, baseMap, base, mod));
+    } else {
+      kmerHashes.set(raw, hash);
     }
-    kmerHashes.set(kmer, hash);
   }
 
   return kmerHashes;
+}
+
+function hashStringKmer(
+  kmer: string,
+  baseMap: Record<string, number>,
+  base: number,
+  mod: number
+): number {
+  let h = 0;
+  for (let i = 0; i < kmer.length; i++) {
+    h = (h * base + (baseMap[kmer[i]] || 0)) % mod;
+  }
+  return h;
 }
 
 /**
@@ -365,37 +383,33 @@ export function getSuperKmers(
 
   const { canonical = false } = options;
   const superKmers: string[] = [];
+  // Super-k-mers follow the original sequence path (consecutive windows always overlap).
+  // Canonical mode labels k-mers for identity but must not break sequence adjacency.
   let currentSuper = normalized.slice(0, k);
-  let prevKmer = currentSuper;
-
-  if (canonical) {
-    const revComp = reverseComplement(prevKmer);
-    prevKmer = prevKmer < revComp ? prevKmer : revComp;
-  }
 
   for (let i = 1; i <= normalized.length - k; i++) {
-    let kmer = normalized.slice(i, i + k);
-    if (canonical) {
-      const revComp = reverseComplement(kmer);
-      kmer = kmer < revComp ? kmer : revComp;
-    }
-
-    // Check if this k-mer overlaps with previous
-    const prevSuffix = prevKmer.slice(1);
-    const currentPrefix = kmer.slice(0, k - 1);
+    const rawPrev = normalized.slice(i - 1, i - 1 + k);
+    const rawKmer = normalized.slice(i, i + k);
+    const prevSuffix = rawPrev.slice(1);
+    const currentPrefix = rawKmer.slice(0, k - 1);
 
     if (prevSuffix === currentPrefix) {
-      currentSuper += kmer[k - 1];
+      currentSuper += rawKmer[k - 1];
     } else {
-      superKmers.push(currentSuper);
-      currentSuper = normalized.slice(i, i + k);
+      superKmers.push(canonicalizeSuper(currentSuper, canonical, k));
+      currentSuper = rawKmer;
     }
-
-    prevKmer = kmer;
   }
 
-  superKmers.push(currentSuper);
+  superKmers.push(canonicalizeSuper(currentSuper, canonical, k));
   return superKmers;
+}
+
+function canonicalizeSuper(superKmer: string, canonical: boolean, k: number): string {
+  if (!canonical || superKmer.length < k) return superKmer;
+  // Prefer lexicographically smaller strand of the full super-k-mer string
+  const rc = reverseComplement(superKmer);
+  return superKmer < rc ? superKmer : rc;
 }
 
 /**

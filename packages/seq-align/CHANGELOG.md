@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-07-29
+
+### Fixed
+- Hirschberg divide step (no double-reverse); identical DNA matches Needleman–Wunsch under linear gaps
+- Overlap alignment uses classic suffix–prefix free ends
+- Semi-global reports real `startPos1` / `startPos2` for the scored region
+
 ## [Unreleased]
 
 ### Fixed

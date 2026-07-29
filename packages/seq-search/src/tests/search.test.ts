@@ -66,10 +66,9 @@ describe('findPattern / motifs', () => {
 describe('restriction', () => {
   it('finds EcoRI site', () => {
     const hits = findRestrictionSites('NNNGAATTCNNN', ['EcoRI']);
-    // Palindromic site reports on both strands
-    expect(hits.length).toBeGreaterThanOrEqual(1);
-    expect(hits.every((h) => h.enzyme === 'EcoRI')).toBe(true);
-    expect(hits.some((h) => h.start === 3 && h.strand === '+')).toBe(true);
+    // Palindromic site is reported once (deduped across strands)
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toMatchObject({ enzyme: 'EcoRI', start: 3, end: 9, strand: '+' });
   });
 
   it('searches common enzymes by default', () => {

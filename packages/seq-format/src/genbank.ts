@@ -181,7 +181,7 @@ export function parseGenBank(text: string): GenBankRecord {
 
     // Parse sequence
     if (currentSection === 'origin') {
-      const seqMatch = line.match(/^\s*\d+\s+([a-z\s]+)$/);
+      const seqMatch = line.match(/^\s*\d+\s+([a-zA-Z\s]+)$/);
       if (seqMatch) {
         sequenceLines.push(seqMatch[1].replace(/\s+/g, ''));
       }

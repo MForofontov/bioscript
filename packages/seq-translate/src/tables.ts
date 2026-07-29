@@ -266,11 +266,12 @@ export const pachysolenNuclear: CodonTable = {
 };
 
 // Table 27: Karyorelict Nuclear
+// NCBI: UAA/UAG→Gln; UGA is dual-sense (Trp or stop). Productive assignment matches Biopython (W).
 export const karyorelictNuclear: CodonTable = {
   ...standardTable,
   UAA: 'Q',
   UAG: 'Q',
-  UGA: '*',
+  UGA: 'W',
 };
 
 // Table 28: Condylostoma Nuclear
@@ -375,5 +376,11 @@ export const tables: Record<string, CodonTable> = {
 };
 
 export function getTable(name = 'standard'): CodonTable {
-  return tables[name] ?? standardTable;
+  const table = tables[name];
+  if (!table) {
+    throw new Error(
+      `Unknown genetic code table: ${name}. Use a NCBI id (e.g. '1', '2') or named key (e.g. 'standard').`
+    );
+  }
+  return table;
 }

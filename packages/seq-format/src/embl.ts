@@ -172,7 +172,7 @@ export function parseEMBL(text: string): EMBLRecord {
       case '  ':
         if (currentSection === 'sequence') {
           // Sequence line:   acaagatgcc attgtccccc ggcctcctgc tgctgctgct ctccggggcc acggccaccg
-          const seqMatch = line.match(/^\s+([a-z\s]+)/);
+          const seqMatch = line.match(/^\s+([a-zA-Z\s]+)/);
           if (seqMatch) {
             sequenceLines.push(seqMatch[1].replace(/\s+/g, ''));
           }

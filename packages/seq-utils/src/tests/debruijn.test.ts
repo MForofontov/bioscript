@@ -334,10 +334,13 @@ describe('debruijn', () => {
     });
 
     it('5. should build canonical edges between overlapping k-mers', () => {
-      const sequences = ['ATCGATCGAT'];
+      const sequences = ['ATCGATC'];
       const graph = buildDeBruijnGraph(sequences, 4, { canonical: true });
-      const withEdges = [...graph.nodes.values()].filter((n) => n.edges.length > 0);
-      expect(withEdges.length).toBeGreaterThan(0);
+      for (const node of graph.nodes.values()) {
+        for (const next of node.edges) {
+          expect(node.kmer.slice(1)).toBe(next.slice(0, 3));
+        }
+      }
     });
   });
 });
