@@ -76,6 +76,20 @@ SQ   Sequence 1859 BP; 609 A; 314 C; 355 G; 581 T; 0 other;
     expect(record.sequence.length).toBeGreaterThan(100);
   });
 
+  it('8. should stop at first record terminator in multi-record files', () => {
+    const multiRecord = `${simpleEMBL}ID   SECOND; SV 1; linear; mRNA; STD; PLN; 2 BP.
+AC   SECOND;
+DE   Second record
+SQ   Sequence 2 BP; 1 A; 0 C; 0 G; 1 T; 0 other;
+     at
+//
+`;
+    const firstOnly = parseEMBL(simpleEMBL);
+    const record = parseEMBL(multiRecord);
+    expect(record.id).toBe('X56734');
+    expect(record.sequence).toBe(firstOnly.sequence);
+  });
+
   it('8. should handle empty sequence', () => {
     const embl = `ID   TEST; SV 1; linear; mRNA; STD; PLN; 0 BP.
 AC   TEST;

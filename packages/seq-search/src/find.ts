@@ -10,6 +10,10 @@ export type SearchStrand = '+' | '-' | 'both';
 export interface PatternHit {
   start: number;
   end: number;
+  /**
+   * Matched substring in 5′→3′ coding orientation.
+   * For minus-strand hits this differs from `sequence.slice(start, end)`.
+   */
   match: string;
   strand: '+' | '-';
 }
@@ -47,11 +51,16 @@ export function findPattern(
   const searchOne = (haystack: string, hitStrand: '+' | '-') => {
     let regex: RegExp;
     if (pattern instanceof RegExp) {
-      const flags = pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g';
+      let flags = pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g';
+      if (ignoreCase && !flags.includes('i')) {
+        flags += 'i';
+      } else if (!ignoreCase) {
+        flags = flags.replace(/i/g, '');
+      }
       regex = new RegExp(pattern.source, flags);
     } else if (iupac) {
       assertIupacMotif(pattern);
-      regex = iupacToRegex(pattern, overlapping ? 'gi' : 'gi');
+      regex = iupacToRegex(pattern, ignoreCase ? 'gi' : 'g');
     } else {
       const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       regex = new RegExp(escaped, ignoreCase ? 'gi' : 'g');

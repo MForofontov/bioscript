@@ -326,6 +326,11 @@ describe('validateCIGAR', () => {
     expect(validateCIGAR('8M2')).toBe(false);
   });
 
+  it('rejects trailing garbage consistent with validateCIGAR', () => {
+    expect(() => parseCIGAR('8Mxxx')).toThrow(/Invalid CIGAR/);
+    expect(validateCIGAR('8Mxxx')).toBe(false);
+  });
+
   it('14. should invalidate non-string input', () => {
     expect(validateCIGAR(123 as any)).toBe(false);
   });

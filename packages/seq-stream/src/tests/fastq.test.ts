@@ -243,6 +243,13 @@ describe('FastqParser edge cases', () => {
     expect(records[0].quality).toBe('IIII');
   });
 
+  test('throws on incomplete trailing record', async () => {
+    const input = '@read\nACGT\n+\n';
+    const readable = Readable.from([input]);
+    const parser = new FastqParser();
+    await expect(pipeline(readable, parser)).rejects.toThrow(/Incomplete FASTQ record/);
+  });
+
   test('throws when header does not start with @', async () => {
     const input = 'seq1\nACGT\n+\nIIII\n';
     const readable = Readable.from([input]);

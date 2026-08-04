@@ -12,9 +12,42 @@
  */
 
 import type { AlignmentResult, AlignmentOptions, ScoringMatrix } from './types';
-import { Direction } from './types';
 import { getScore } from './matrices';
+import { TraceState } from './gotoh';
 import { assertTwoSequences, assertNonEmptySequences, normalizeSequence } from '@bioscript/seq-utils';
+
+/** Dense banded matrix stored in a typed array (O(m·k) space). */
+class BandMatrix {
+  private readonly width: number;
+  private readonly data: Float64Array;
+  private readonly defaultValue: number;
+
+  constructor(rows: number, bandwidth: number, defaultValue = -Infinity) {
+    this.width = 2 * bandwidth + 1;
+    this.data = new Float64Array(rows * this.width).fill(defaultValue);
+    this.defaultValue = defaultValue;
+  }
+
+  private index(i: number, j: number, k: number): number | null {
+    const offset = j - i;
+    if (Math.abs(offset) > k) return null;
+    return i * this.width + (offset + k);
+  }
+
+  get(i: number, j: number, k: number): number {
+    const idx = this.index(i, j, k);
+    return idx === null ? this.defaultValue : this.data[idx];
+  }
+
+  set(i: number, j: number, k: number, value: number): void {
+    const idx = this.index(i, j, k);
+    if (idx !== null) this.data[idx] = value;
+  }
+
+  has(i: number, j: number, k: number): boolean {
+    return this.index(i, j, k) !== null;
+  }
+}
 
 /**
  * Options for banded alignment.
@@ -168,27 +201,28 @@ export function bandedAlign(
     return Math.abs(diagonal) <= k;
   };
 
-  // Initialize DP matrices (only within band)
-  const H = new Map<string, number>();
-  const E = new Map<string, number>();
-  const F = new Map<string, number>();
-  const traceback = new Map<string, Direction>();
+  const H = new BandMatrix(m + 1, k);
+  const E = new BandMatrix(m + 1, k);
+  const F = new BandMatrix(m + 1, k);
 
-  const key = (i: number, j: number): string => `${i},${j}`;
+  const getH = (i: number, j: number): number => H.get(i, j, k);
+  const getE = (i: number, j: number): number => E.get(i, j, k);
+  const getF = (i: number, j: number): number => F.get(i, j, k);
 
   // Initialize
-  H.set(key(0, 0), 0);
-  traceback.set(key(0, 0), Direction.NONE);
+  H.set(0, 0, k, 0);
 
   // Initialize first row and column within band
   for (let i = 1; i <= m && i <= k; i++) {
-    H.set(key(i, 0), gapOpen + (i - 1) * gapExtend);
-    traceback.set(key(i, 0), Direction.UP);
+    const score = gapOpen + (i - 1) * gapExtend;
+    H.set(i, 0, k, score);
+    E.set(i, 0, k, score);
   }
 
   for (let j = 1; j <= n && j <= k; j++) {
-    H.set(key(0, j), gapOpen + (j - 1) * gapExtend);
-    traceback.set(key(0, j), Direction.LEFT);
+    const score = gapOpen + (j - 1) * gapExtend;
+    H.set(0, j, k, score);
+    F.set(0, j, k, score);
   }
 
   // Fill matrices within band
@@ -203,25 +237,25 @@ export function bandedAlign(
       const matchScore = getScore(scoringMatrix, s1[i - 1], s2[j - 1]);
 
       // Get previous scores (default to -Infinity if outside band)
-      const hDiag = H.get(key(i - 1, j - 1)) ?? -Infinity;
-      const hUp = H.get(key(i - 1, j)) ?? -Infinity;
-      const hLeft = H.get(key(i, j - 1)) ?? -Infinity;
-      const ePrev = E.get(key(i - 1, j)) ?? -Infinity;
-      const fPrev = F.get(key(i, j - 1)) ?? -Infinity;
+      const hDiag = H.get(i - 1, j - 1, k);
+      const hUp = H.get(i - 1, j, k);
+      const hLeft = H.get(i, j - 1, k);
+      const ePrev = E.get(i - 1, j, k);
+      const fPrev = F.get(i, j - 1, k);
 
       // E: gap in seq2 (vertical)
       const eScore = Math.max(
         hUp + gapOpen, // Open new gap
         ePrev + gapExtend // Extend existing gap
       );
-      E.set(key(i, j), eScore);
+      E.set(i, j, k, eScore);
 
       // F: gap in seq1 (horizontal)
       const fScore = Math.max(
         hLeft + gapOpen, // Open new gap
         fPrev + gapExtend // Extend existing gap
       );
-      F.set(key(i, j), fScore);
+      F.set(i, j, k, fScore);
 
       // H: best alignment
       const scores = [
@@ -231,52 +265,87 @@ export function bandedAlign(
       ];
 
       const maxScore = Math.max(...scores);
-      H.set(key(i, j), maxScore);
-
-      // Set direction
-      if (maxScore === scores[0]) {
-        traceback.set(key(i, j), Direction.DIAGONAL);
-      } else if (maxScore === scores[1]) {
-        traceback.set(key(i, j), Direction.UP);
-      } else {
-        traceback.set(key(i, j), Direction.LEFT);
-      }
+      H.set(i, j, k, maxScore);
     }
   }
 
   // Check if we reached the end
-  const finalScore = H.get(key(m, n));
-  if (finalScore === undefined) {
+  if (!H.has(m, n, k)) {
     throw new Error(
       `Alignment could not reach end position - sequences may diverge ` +
         `beyond bandwidth (${k}). Increase bandwidth or use standard alignment.`
     );
   }
-
-  // Traceback
+  const finalScore = H.get(m, n, k);
   const aligned1: string[] = [];
   const aligned2: string[] = [];
   let i = m;
   let j = n;
+  let state = TraceState.H;
+
+  if (
+    i > 0 &&
+    j > 0 &&
+    getH(i, j) === getE(i, j) &&
+    getH(i, j) > getH(i - 1, j - 1) + getScore(scoringMatrix, s1[i - 1], s2[j - 1])
+  ) {
+    state = TraceState.E;
+  } else if (
+    i > 0 &&
+    j > 0 &&
+    getH(i, j) === getF(i, j) &&
+    getH(i, j) > getH(i - 1, j - 1) + getScore(scoringMatrix, s1[i - 1], s2[j - 1])
+  ) {
+    state = TraceState.F;
+  } else if (i > 0 && j === 0 && getH(i, j) === getE(i, j)) {
+    state = TraceState.E;
+  } else if (j > 0 && i === 0 && getH(i, j) === getF(i, j)) {
+    state = TraceState.F;
+  }
 
   while (i > 0 || j > 0) {
-    const dir = traceback.get(key(i, j)) ?? Direction.NONE;
-
-    if (dir === Direction.DIAGONAL && i > 0 && j > 0) {
-      aligned1.unshift(s1[i - 1]);
-      aligned2.unshift(s2[j - 1]);
-      i--;
-      j--;
-    } else if (dir === Direction.UP && i > 0) {
+    if (state === TraceState.E) {
+      if (i <= 0) break;
       aligned1.unshift(s1[i - 1]);
       aligned2.unshift('-');
-      i--;
-    } else if (dir === Direction.LEFT && j > 0) {
+      if (i > 0 && getE(i, j) === getE(i - 1, j) + gapExtend) {
+        i--;
+        state = TraceState.E;
+      } else {
+        i--;
+        state = TraceState.H;
+      }
+      continue;
+    }
+
+    if (state === TraceState.F) {
+      if (j <= 0) break;
       aligned1.unshift('-');
       aligned2.unshift(s2[j - 1]);
+      if (j > 0 && getF(i, j) === getF(i, j - 1) + gapExtend) {
+        j--;
+        state = TraceState.F;
+      } else {
+        j--;
+        state = TraceState.H;
+      }
+      continue;
+    }
+
+    if (
+      i > 0 &&
+      j > 0 &&
+      getH(i, j) === getH(i - 1, j - 1) + getScore(scoringMatrix, s1[i - 1], s2[j - 1])
+    ) {
+      aligned1.unshift(s1[i - 1]);
+      aligned2.unshift(s2[j - 1]);
+      i--;
       j--;
+    } else if (i > 0 && getH(i, j) === getE(i, j)) {
+      state = TraceState.E;
+    } else if (j > 0 && getH(i, j) === getF(i, j)) {
+      state = TraceState.F;
     } else {
-      // Should not happen with valid band
       throw new Error(
         `Traceback failed at position (${i},${j}). ` + `This may indicate bandwidth is too small.`
       );

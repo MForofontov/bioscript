@@ -17,6 +17,7 @@
 import type { AlignmentResult, AlignmentOptions, AlignmentCell, ScoringMatrix } from './types';
 import { Direction } from './types';
 import { getScore } from './matrices';
+import { gotohTraceback } from './gotoh';
 import { assertTwoSequences, assertNonEmptySequences, normalizeSequence } from '@bioscript/seq-utils';
 
 /**
@@ -219,31 +220,30 @@ export function semiGlobal(
   i = maxI;
   j = maxJ;
 
-  while (i > 0 || j > 0) {
-    const current = H[i][j];
+  const Hscores = H.map((row) => row.map((cell) => cell.score));
+  const { aligned1: tb1, aligned2: tb2, startI, startJ } = gotohTraceback(
+    Hscores,
+    E,
+    F,
+    s1,
+    s2,
+    maxI,
+    maxJ,
+    scoringMatrix,
+    gapOpen,
+    gapExtend
+  );
 
-    if (current.direction === Direction.DIAGONAL && i > 0 && j > 0) {
-      aligned1.unshift(s1[i - 1]);
-      aligned2.unshift(s2[j - 1]);
-      i--;
-      j--;
-    } else if (current.direction === Direction.UP && i > 0) {
-      aligned1.unshift(s1[i - 1]);
-      aligned2.unshift('-');
-      i--;
-    } else if (current.direction === Direction.LEFT && j > 0) {
-      aligned1.unshift('-');
-      aligned2.unshift(s2[j - 1]);
-      j--;
-    } else {
-      // Reached start, break
-      break;
-    }
+  for (let t = tb1.length - 1; t >= 0; t--) {
+    aligned1.unshift(tb1[t]);
+    aligned2.unshift(tb2[t]);
   }
 
   // Start of scored alignment region (before free leading end-gaps)
-  const startPos1 = i;
-  const startPos2 = j;
+  const startPos1 = startI;
+  const startPos2 = startJ;
+  i = startI;
+  j = startJ;
 
   // Add leading gaps
   while (i > 0) {

@@ -3,7 +3,7 @@
  * Identifies potential protein-coding sequences
  */
 
-import { getTable } from './tables';
+import { getTable, type CodonTable } from './tables';
 import { buildLookup } from './lookup';
 import { reverseComplement, assertString, assertValidSequence, normalizeToDna } from '@bioscript/seq-utils';
 import type { TranslationOptions } from './translate';
@@ -12,7 +12,11 @@ import type { TranslationOptions } from './translate';
  * Open Reading Frame representation
  */
 export interface Orf {
-  /** The ORF nucleotide sequence */
+  /**
+   * ORF nucleotide sequence in 5′→3′ coding orientation.
+   * For minus-strand ORFs this is reverse-complemented relative to
+   * `sequence.slice(start, end)` on the forward reference.
+   */
   sequence: string;
   /** Start position (0-indexed, relative to input sequence) */
   start: number;
@@ -42,67 +46,29 @@ export interface OrfOptions extends TranslationOptions {
   allFrames?: boolean;
   /** Automatically translate ORFs to protein (default: false) */
   translate?: boolean;
-  /** Alternative start codons (default: only ATG/AUG) */
+  /** Alternative start codons (default: all codons encoding Met in the genetic table) */
   startCodons?: string[];
 }
 
 /**
+ * Derive default start codons from a genetic code table (all codons encoding Met).
+ */
+export function getDefaultStartCodons(table: CodonTable): string[] {
+  const codons: string[] = [];
+  for (const [codon, aa] of Object.entries(table)) {
+    if (aa === 'M') {
+      codons.push(codon.toUpperCase().replace(/U/g, 'T'));
+    }
+  }
+  return codons.length > 0 ? codons : ['ATG'];
+}
+
+/**
  * Find all Open Reading Frames (ORFs) in a nucleotide sequence.
- * An ORF is defined as a sequence starting with a start codon (typically ATG)
- * and ending with a stop codon (* in the genetic code table).
- *
- * @param sequence - DNA or RNA sequence to search for ORFs.
- * @param options - ORF finding and translation options.
- * @returns Array of ORF objects sorted by position.
- *
- * @throws {TypeError} If sequence is not a string.
- * @throws {Error} If sequence contains invalid characters.
- *
- * @example
- * ```typescript
- * // Find ORFs in a simple sequence
- * const orfs = findOrfs('ATGGCCAAATAA');
- * console.log(orfs[0]);
- * // {
- * //   sequence: 'ATGGCCAAATAA',
- * //   start: 0,
- * //   end: 12,
- * //   frame: 0,
- * //   strand: '+',
- * //   length: 12,
- * //   hasStopCodon: true
- * // }
- * ```
- *
- * @example
- * ```typescript
- * // Find ORFs with translation
- * const orfs = findOrfs('ATGGCCAAA', {
- *   translate: true,
- *   minLength: 9
- * });
- * console.log(orfs[0].protein); // 'MAK'
- * ```
- *
- * @example
- * ```typescript
- * // Find ORFs in all 6 frames with custom genetic code
- * const orfs = findOrfs('ATGAGAATGGCC', {
- *   table: 'vertebrate_mitochondrial',
- *   allFrames: true,
- *   minLength: 9,
- *   translate: true
- * });
- * ```
- *
- * @note Default start codon is ATG (methionine). Use startCodons option for alternatives.
- * @performance O(n) time complexity. Processes ~10-50 MB/s depending on sequence complexity.
  */
 export function findOrfs(sequence: string, options: OrfOptions = {}): Orf[] {
-  // Input validation
   assertString(sequence, 'sequence');
 
-  // Normalize to DNA (trim, uppercase, U→T) and validate
   const dnaSequence = normalizeToDna(sequence);
   assertValidSequence(dnaSequence);
 
@@ -114,19 +80,17 @@ export function findOrfs(sequence: string, options: OrfOptions = {}): Orf[] {
     table = 'standard',
     stopSymbol = '*',
     breakOnStop = true,
-    startCodons = ['ATG', 'AUG'],
+    startCodons,
   } = options;
 
-  // Build lookup table once
   const codonTable = getTable(table);
   const lookup = buildLookup(codonTable);
-
-  // Normalize start codons
-  const normalizedStartCodons = new Set(startCodons.map((c) => c.toUpperCase().replace(/U/g, 'T')));
+  const normalizedStartCodons = new Set(
+    (startCodons ?? getDefaultStartCodons(codonTable)).map((c) => c.toUpperCase().replace(/U/g, 'T'))
+  );
 
   const orfs: Orf[] = [];
 
-  // Search forward frames (0, 1, 2)
   for (let frame = 0; frame < 3; frame++) {
     const frameOrfs = findOrfsInFrame(
       dnaSequence,
@@ -143,7 +107,6 @@ export function findOrfs(sequence: string, options: OrfOptions = {}): Orf[] {
     orfs.push(...frameOrfs);
   }
 
-  // Search reverse frames (-1, -2, -3) if requested
   if (allFrames) {
     const revComp = reverseComplement(dnaSequence);
     const seqLength = dnaSequence.length;
@@ -162,27 +125,21 @@ export function findOrfs(sequence: string, options: OrfOptions = {}): Orf[] {
         breakOnStop
       );
 
-      // Convert positions back to forward strand coordinates
       for (const orf of frameOrfs) {
         const revStart = orf.start;
         const revEnd = orf.end;
         orf.start = seqLength - revEnd;
         orf.end = seqLength - revStart;
-        orf.frame = -(frame + 1); // -1, -2, -3
+        orf.frame = -(frame + 1);
       }
 
       orfs.push(...frameOrfs);
     }
   }
 
-  // Sort by start position
   return orfs.sort((a, b) => a.start - b.start);
 }
 
-/**
- * Find ORFs in a single reading frame.
- * Internal helper function.
- */
 function findOrfsInFrame(
   sequence: string,
   frame: number,
@@ -198,65 +155,58 @@ function findOrfsInFrame(
   const orfs: Orf[] = [];
   let inOrf = false;
   let orfStart = -1;
-  let orfCodons: string[] = [];
 
   for (let i = frame; i + 3 <= sequence.length; i += 3) {
     const codon = sequence.slice(i, i + 3);
     const aa = lookup.get(codon) ?? 'X';
 
     if (!inOrf) {
-      // Check for start codon
       if (startCodons.has(codon)) {
         inOrf = true;
         orfStart = i;
-        orfCodons = [codon];
       }
-    } else {
-      // Inside an ORF
-      orfCodons.push(codon);
+    } else if (aa === '*') {
+      const orfEnd = i + 3;
+      const orfLength = orfEnd - orfStart;
 
-      if (aa === '*') {
-        // Found stop codon - complete ORF
-        const orfSeq = orfCodons.join('');
-        const orfLength = orfSeq.length;
+      if (orfLength >= minLength) {
+        const orfSeq = sequence.slice(orfStart, orfEnd);
+        const orf: Orf = {
+          sequence: orfSeq,
+          start: orfStart,
+          end: orfEnd,
+          frame: strand === '+' ? frame : -(frame + 1),
+          strand,
+          length: orfLength,
+          hasStopCodon: true,
+        };
 
-        if (orfLength >= minLength) {
-          const orf: Orf = {
-            sequence: orfSeq,
-            start: orfStart,
-            end: orfStart + orfLength,
-            frame: strand === '+' ? frame : -(frame + 1),
-            strand,
-            length: orfLength,
-            hasStopCodon: true,
-          };
-
-          // Add translation if requested
-          if (translate) {
-            orf.protein = translateOrf(orfCodons, lookup, stopSymbol, breakOnStop);
-          }
-
-          orfs.push(orf);
+        if (translate) {
+          orf.protein = translateOrf(orfSeq, lookup, stopSymbol, breakOnStop);
         }
 
-        // Reset for next ORF
-        inOrf = false;
-        orfStart = -1;
-        orfCodons = [];
+        orfs.push(orf);
+      }
+
+      inOrf = false;
+      orfStart = -1;
+
+      if (breakOnStop) {
+        break;
       }
     }
   }
 
-  // Handle partial ORF (no stop codon found)
   if (inOrf && includePartial) {
-    const orfSeq = orfCodons.join('');
-    const orfLength = orfSeq.length;
+    const orfEnd = sequence.length - ((sequence.length - frame) % 3 || 0);
+    const orfLength = orfEnd - orfStart;
 
     if (orfLength >= minLength) {
+      const orfSeq = sequence.slice(orfStart, orfEnd);
       const orf: Orf = {
         sequence: orfSeq,
         start: orfStart,
-        end: orfStart + orfLength,
+        end: orfEnd,
         frame: strand === '+' ? frame : -(frame + 1),
         strand,
         length: orfLength,
@@ -264,7 +214,7 @@ function findOrfsInFrame(
       };
 
       if (translate) {
-        orf.protein = translateOrf(orfCodons, lookup, stopSymbol, breakOnStop);
+        orf.protein = translateOrf(orfSeq, lookup, stopSymbol, breakOnStop);
       }
 
       orfs.push(orf);
@@ -274,20 +224,16 @@ function findOrfsInFrame(
   return orfs;
 }
 
-/**
- * Translate an ORF's codons to protein sequence.
- * Internal helper function that reuses the pre-built lookup table.
- * More efficient than calling translateSequence which rebuilds the lookup.
- */
 function translateOrf(
-  codons: string[],
+  orfSeq: string,
   lookup: Map<string, string>,
   stopSymbol: string,
   breakOnStop: boolean
 ): string {
   const protein: string[] = [];
 
-  for (const codon of codons) {
+  for (let i = 0; i + 3 <= orfSeq.length; i += 3) {
+    const codon = orfSeq.slice(i, i + 3);
     const aa = lookup.get(codon) ?? 'X';
 
     if (aa === '*') {

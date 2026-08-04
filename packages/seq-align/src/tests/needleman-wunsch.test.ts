@@ -1,5 +1,6 @@
 import { needlemanWunsch } from '../needleman-wunsch';
 import { BLOSUM62, DNA_SIMPLE } from '../matrices';
+import { scoreAlignmentPair } from '../gotoh';
 
 /**
  * Unit tests for Needleman-Wunsch global alignment.
@@ -250,5 +251,23 @@ describe('needlemanWunsch', () => {
     expect(() =>
       needlemanWunsch('ACGT', 'ACGT', { gapExtend: 5 })
     ).toThrow('gapExtend must be ≤ 0');
+  });
+
+  it('23. should find optimal affine alignment for AACG/CGGA', () => {
+    const result = needlemanWunsch('AACG', 'CGGA', {
+      matrix: 'DNA_SIMPLE',
+      gapOpen: -10,
+      gapExtend: -1,
+    });
+
+    expect(result.score).toBe(-12);
+    const affineScore = scoreAlignmentPair(
+      result.alignedSeq1,
+      result.alignedSeq2,
+      DNA_SIMPLE,
+      -10,
+      -1
+    );
+    expect(affineScore).toBe(result.score);
   });
 });

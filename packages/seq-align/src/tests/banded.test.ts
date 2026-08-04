@@ -5,6 +5,7 @@
 
 import { bandedAlign } from '../banded-align';
 import { DNA_SIMPLE } from '../matrices';
+import { scoreAlignmentPair } from '../gotoh';
 
 describe('bandedAlign', () => {
   // SECTION 1: Normal/typical usage (60% of tests)
@@ -171,5 +172,23 @@ describe('bandedAlign', () => {
 
   it('20. should throw Error for invalid matrix name', () => {
     expect(() => bandedAlign('ACGT', 'ACGT', { matrix: 'INVALID', bandwidth: 2 })).toThrow(Error);
+  });
+
+  it('21. should return alignment whose affine score matches reported score', () => {
+    const result = bandedAlign('AACG', 'CGGA', {
+      matrix: 'DNA_SIMPLE',
+      gapOpen: -10,
+      gapExtend: -1,
+      bandwidth: 4,
+    });
+
+    const affineScore = scoreAlignmentPair(
+      result.alignedSeq1,
+      result.alignedSeq2,
+      DNA_SIMPLE,
+      -10,
+      -1
+    );
+    expect(affineScore).toBe(result.score);
   });
 });

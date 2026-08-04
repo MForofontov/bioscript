@@ -47,9 +47,19 @@ export class FastqParser extends Transform {
   }
 
   _flush(callback: TransformCallback): void {
-    // Process any remaining data
     if (this.buffer) {
       this.processLine(this.buffer);
+      this.buffer = '';
+    }
+
+    const position = this.lineNumber % 4;
+    if (position !== 0 || this.currentRecord.id) {
+      callback(
+        new Error(
+          `Incomplete FASTQ record at end of stream (stopped after line ${this.lineNumber}, expected 4 lines per record)`
+        )
+      );
+      return;
     }
 
     callback();

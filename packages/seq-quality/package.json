@@ -1,6 +1,6 @@
 {
   "name": "@bioscript/seq-quality",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "FASTQ quality control: filtering, trimming, adapter removal, and FastQC-lite reports.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

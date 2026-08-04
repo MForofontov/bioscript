@@ -4,7 +4,7 @@
  */
 
 import type { GenBankRecord, GenBankFeature, FastaRecord } from './types';
-import { assertString, assertObject } from '@bioscript/seq-utils';
+import { assertString, assertObject, reverseComplement } from '@bioscript/seq-utils';
 
 /**
  * Parse GenBank format text into structured record.
@@ -259,12 +259,16 @@ export function genBankToFasta(
         const id = geneQual?.value || locusTagQual?.value || feature.type;
         const description = productQual?.value || feature.location;
 
-        // Extract sequence from location (simplified - handles single ranges)
+        // Extract sequence from location (handles simple ranges and complement)
+        const isComplement = feature.location.includes('complement');
         const locationMatch = feature.location.match(/(\d+)\.\.(\d+)/);
         if (locationMatch) {
-          const start = parseInt(locationMatch[1]) - 1; // 0-based
-          const end = parseInt(locationMatch[2]);
-          const featureSeq = record.sequence.substring(start, end);
+          const start = parseInt(locationMatch[1], 10) - 1; // 0-based
+          const end = parseInt(locationMatch[2], 10);
+          let featureSeq = record.sequence.substring(start, end);
+          if (isComplement) {
+            featureSeq = reverseComplement(featureSeq);
+          }
 
           if (featureSeq) {
             results.push({

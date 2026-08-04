@@ -7,7 +7,6 @@ import {
   decodeQualityScores,
   type FastqRecord,
 } from '@bioscript/seq-stream';
-import { meanQuality } from './encode';
 
 export interface QualityReport {
   readCount: number;
@@ -38,7 +37,7 @@ export function qualityReport(
   let totalBases = 0;
   let totalGc = 0;
   let totalN = 0;
-  let qualitySum = 0;
+  let totalQualitySum = 0;
   let minLength = Infinity;
   let maxLength = 0;
   const posSums: number[] = [];
@@ -50,7 +49,11 @@ export function qualityReport(
     minLength = Math.min(minLength, len);
     maxLength = Math.max(maxLength, len);
     totalBases += len;
-    qualitySum += meanQuality(record.quality, encoding) * (len > 0 ? 1 : 0);
+
+    const scores = decodeQualityScores(record.quality, encoding);
+    for (const q of scores) {
+      totalQualitySum += q;
+    }
 
     for (let i = 0; i < len; i++) {
       const b = record.sequence[i].toUpperCase();
@@ -58,7 +61,6 @@ export function qualityReport(
       if (b === 'N') totalN++;
     }
 
-    const scores = decodeQualityScores(record.quality, encoding);
     for (let i = 0; i < scores.length; i++) {
       posSums[i] = (posSums[i] ?? 0) + scores[i];
       posCounts[i] = (posCounts[i] ?? 0) + 1;
@@ -76,7 +78,7 @@ export function qualityReport(
     maxLength: readCount === 0 ? 0 : maxLength,
     meanGcPercent: totalBases === 0 ? 0 : (totalGc / totalBases) * 100,
     meanNPercent: totalBases === 0 ? 0 : (totalN / totalBases) * 100,
-    meanQuality: readCount === 0 ? 0 : qualitySum / readCount,
+    meanQuality: totalBases === 0 ? 0 : totalQualitySum / totalBases,
     perPositionMeanQuality,
     lengthHistogram,
   };

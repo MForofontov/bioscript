@@ -36,6 +36,10 @@ export function findExact(
  * Build a simple consensus string from equal-length aligned sequences.
  * Uses IUPAC ambiguity when bases disagree (N if fully mixed).
  */
+/**
+ * Build consensus IUPAC motif from equal-length sequences.
+ * Only A/C/G/T bases are counted; ambiguous bases (N, IUPAC codes) are ignored.
+ */
 export function findConsensus(sequences: string[], threshold = 0.5): string {
   if (!Array.isArray(sequences) || sequences.length === 0) {
     throw new Error('sequences must be a non-empty array');

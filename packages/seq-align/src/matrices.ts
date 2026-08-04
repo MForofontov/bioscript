@@ -4138,7 +4138,7 @@ export function getScore(matrix: ScoringMatrix, char1: string, char2: string): n
   const c1 = char1.toUpperCase();
   const c2 = char2.toUpperCase();
 
-  if (!matrix[c1] || !matrix[c1][c2]) {
+  if (!matrix[c1] || !(c2 in matrix[c1])) {
     return 0;
   }
 
