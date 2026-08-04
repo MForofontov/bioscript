@@ -98,8 +98,8 @@ AATT
 
     console.log('FASTQ quality stats:', result);
 
-    expect(result.totalSequences).toBe(2); // actual parsed sequences
-    expect(result.totalBases).toBe(8); // 4+4 bases
+    expect(result.totalSequences).toBe(3);
+    expect(result.totalBases).toBe(12);
     expect(result.meanQuality).toBeGreaterThan(0);
     expect(result.minQuality).toBe(2); // # = Q2
     expect(result.maxQuality).toBe(40); // I = Q40
@@ -215,5 +215,20 @@ AATTNNRR`;
     expect(result.totalBases).toBe(24);
     expect(result.gcContent).toBe(50); // actual calculated value
     expect(result.atContent).toBeCloseTo(33.33, 1);
+  });
+
+  test('5. calculateStatsSync uses correct median for odd sequence count', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const records = [
+        { id: 'a', sequence: 'ACGT' },
+        { id: 'b', sequence: 'ACGTACGT' },
+        { id: 'c', sequence: 'ACGTACGTACGT' },
+      ];
+      // @ts-expect-error - Browser bundle types
+      const stats = window.bioseqStream.calculateStatsSync(records);
+      return { medianLength: stats.medianLength, n50: stats.n50 };
+    });
+
+    expect(result.medianLength).toBe(8);
   });
 });

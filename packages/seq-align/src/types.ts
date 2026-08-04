@@ -97,6 +97,14 @@ export interface AlignmentOptions {
    * @default true
    */
   normalize?: boolean;
+
+  /**
+   * Divide alignment score by alignment length (banded, semi-global, overlap only).
+   * Prefer this over `normalize` for score scaling; `normalize` is retained for
+   * backward compatibility on those algorithms.
+   * @default false
+   */
+  normalizeScore?: boolean;
 }
 
 /**

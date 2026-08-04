@@ -15,6 +15,7 @@ import type { AlignmentResult, AlignmentOptions, ScoringMatrix } from './types';
 import { getScore } from './matrices';
 import { TraceState } from './gotoh';
 import { assertTwoSequences, assertNonEmptySequences, normalizeSequence } from '@bioscript/seq-utils';
+import { assertGapPenalties, resolveNormalizeScore } from './alignment-utils';
 
 /** Dense banded matrix stored in a typed array (O(m·k) space). */
 class BandMatrix {
@@ -167,7 +168,11 @@ export function bandedAlign(
     gapExtend = -1,
     bandwidth = 10,
     normalize = false,
+    normalizeScore,
   } = options;
+
+  assertGapPenalties(gapOpen, gapExtend);
+  const shouldNormalizeScore = resolveNormalizeScore(normalizeScore, normalize);
 
   if (bandwidth < 0) {
     throw new Error('bandwidth must be non-negative');
@@ -371,7 +376,7 @@ export function bandedAlign(
   const identityPercent = (identity / alignmentLength) * 100;
 
   let score = finalScore;
-  if (normalize) {
+  if (shouldNormalizeScore) {
     const maxLength = Math.max(alignedSeq1.length, alignedSeq2.length);
     score = finalScore / maxLength;
   }

@@ -45,14 +45,26 @@ describe('findPattern / motifs', () => {
   });
 
   it('finds IUPAC motifs on both strands', () => {
-    const hits = findMotif('GAATTC', 'GAATTC', { strand: 'both' });
+    const hits = findMotif('AAAAATGGATCCCCATCCATCCCC', 'ATGGAT', { strand: 'both' });
     expect(hits.some((h) => h.strand === '+')).toBe(true);
     expect(hits.some((h) => h.strand === '-')).toBe(true);
+  });
+
+  it('deduplicates palindromic motifs found on both strands', () => {
+    const hits = findMotif('GAATTC', 'GAATTC', { strand: 'both' });
+    expect(hits).toHaveLength(1);
   });
 
   it('accepts RegExp patterns', () => {
     const hits = findPattern('ACGTACGT', /CGT/g);
     expect(hits).toHaveLength(2);
+  });
+
+  it('finds RNA patterns after U→T normalization', () => {
+    const hits = findPattern('AUGCAUGC', 'ATG', { strand: '+' });
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0].match).toBe('ATG');
+    expect(hits[0].start).toBe(0);
   });
 
   it('honors ignoreCase for literal and RegExp patterns', () => {

@@ -173,6 +173,23 @@ describe('genBankToFasta', () => {
     expect(feature?.sequence).toBe('GCATGCATGCA');
   });
 
+  it('2c. should extract join() feature locations', () => {
+    const record: GenBankRecord = {
+      ...gbRecord,
+      sequence: 'AAATGCATGCAAA',
+      features: [
+        {
+          type: 'CDS',
+          location: 'join(4..10,11..13)',
+          qualifiers: [{ key: 'gene', value: 'joinedGene' }],
+        },
+      ],
+    };
+    const fastaRecords = genBankToFasta(record, true);
+    const feature = fastaRecords.find((r) => r.id === 'joinedGene');
+    expect(feature?.sequence).toBe('TGCATGCAAA');
+  });
+
   it('3. should use locus when accession is empty', () => {
     const record = { ...gbRecord, accession: '' };
     const fastaRecords = genBankToFasta(record);

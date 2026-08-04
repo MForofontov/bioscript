@@ -126,6 +126,11 @@ describe('minimizers', () => {
     it('8. should throw TypeError for non-number w', () => {
       expect(() => getHashMinimizers('ATCG', 3, null as any)).toThrow(TypeError);
     });
+
+    it('9. should throw for invalid k or w', () => {
+      expect(() => getHashMinimizers('ATCG', 0, 4)).toThrow('k must be a positive integer');
+      expect(() => getHashMinimizers('ATCG', 3, 0)).toThrow('w must be a positive integer');
+    });
   });
 
   describe('getMinimizerDensity', () => {
@@ -138,6 +143,10 @@ describe('minimizers', () => {
     it('2. should return 0 for empty sequence', () => {
       const density = getMinimizerDensity('', 2, 3);
       expect(Math.abs(density)).toBe(0); // Handle -0 vs 0
+    });
+
+    it('2b. should return 0 when k exceeds sequence length', () => {
+      expect(getMinimizerDensity('AT', 5, 2)).toBe(0);
     });
 
     it('3. should vary with window size', () => {

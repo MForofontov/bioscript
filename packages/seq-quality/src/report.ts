@@ -44,7 +44,15 @@ export function qualityReport(
   const posCounts: number[] = [];
 
   for (const record of records) {
-    const len = record.sequence.length;
+    const seqLen = record.sequence.length;
+    const qualLen = record.quality.length;
+    if (seqLen !== qualLen) {
+      throw new TypeError(
+        `sequence and quality length mismatch for ${record.id}: ${seqLen} vs ${qualLen}`
+      );
+    }
+
+    const len = seqLen;
     lengthHistogram[len] = (lengthHistogram[len] ?? 0) + 1;
     minLength = Math.min(minLength, len);
     maxLength = Math.max(maxLength, len);
@@ -61,7 +69,7 @@ export function qualityReport(
       if (b === 'N') totalN++;
     }
 
-    for (let i = 0; i < scores.length; i++) {
+    for (let i = 0; i < len; i++) {
       posSums[i] = (posSums[i] ?? 0) + scores[i];
       posCounts[i] = (posCounts[i] ?? 0) + 1;
     }

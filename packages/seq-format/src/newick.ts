@@ -69,17 +69,29 @@ export function parseNewick(newick: string): NewickTree {
       position++; // Skip ')'
     }
 
-    // Parse node name (optional)
+    // Parse node name (optional, supports quoted labels)
     let name = '';
-    while (
-      position < treeString.length &&
-      treeString[position] !== ':' &&
-      treeString[position] !== ',' &&
-      treeString[position] !== ')' &&
-      treeString[position] !== ';'
-    ) {
-      name += treeString[position];
+    if (treeString[position] === "'") {
       position++;
+      while (position < treeString.length && treeString[position] !== "'") {
+        name += treeString[position];
+        position++;
+      }
+      if (treeString[position] !== "'") {
+        throw new Error(`Unterminated quoted label at position ${position}`);
+      }
+      position++;
+    } else {
+      while (
+        position < treeString.length &&
+        treeString[position] !== ':' &&
+        treeString[position] !== ',' &&
+        treeString[position] !== ')' &&
+        treeString[position] !== ';'
+      ) {
+        name += treeString[position];
+        position++;
+      }
     }
     if (name) {
       node.name = name;
@@ -111,6 +123,12 @@ export function parseNewick(newick: string): NewickTree {
 
   try {
     const root = parseNode();
+
+    if (position < treeString.length) {
+      throw new Error(
+        `Unexpected trailing content at position ${position}: "${treeString.slice(position, position + 20)}"`
+      );
+    }
 
     // Calculate tree metadata
     const leafCount = countLeaves(root);

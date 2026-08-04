@@ -106,6 +106,15 @@ describe('parseNewick', () => {
     expect(() => parseNewick('(A:xyz,B);')).toThrow(Error);
     expect(() => parseNewick('(A:xyz,B);')).toThrow('Invalid branch length');
   });
+
+  it('rejects trailing junk after tree', () => {
+    expect(() => parseNewick('(A,B);(C,D);')).toThrow('Unexpected trailing content');
+  });
+
+  it('parses quoted node labels', () => {
+    const tree = parseNewick("('sp A',B);");
+    expect(tree.root.children?.[0].name).toBe('sp A');
+  });
 });
 
 describe('formatNewick', () => {

@@ -137,7 +137,13 @@ r001\t99\tref\t7\t30\t8M2I4M1D3M\t=\t37\t39\tTTAGATAAAGGATACTG\t*\tNM:i:1
     expect(header.comments[0]).toBe('This is a comment');
   });
 
-  it('6. should throw TypeError when input is not a string', () => {
+  it('6. should preserve reference names containing colons', () => {
+    const header = parseSAMHeader('@SQ\tSN:chr1:extra\tLN:1000\n');
+    expect(header.references[0].name).toBe('chr1:extra');
+    expect(header.references[0].length).toBe(1000);
+  });
+
+  it('7. should throw TypeError when input is not a string', () => {
     expect(() => parseSAMHeader(123 as any)).toThrow(TypeError);
   });
 });

@@ -120,4 +120,38 @@ test.describe('Browser FASTQ Parser', () => {
     expect(result[1].sequence).toBe('TGCA');
     expect(result[1].quality).toBe('HHHH');
   });
+
+  test('8. parseFastqBrowser flushes final record without trailing newline', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const fastqContent = '@read1\nACGT\n+\nIIII';
+      const blob = new Blob([fastqContent], { type: 'text/plain' });
+      const records = [];
+      // @ts-expect-error - Browser bundle types
+      for await (const record of window.bioseqStream.parseFastqBrowser(blob)) {
+        records.push(record);
+      }
+      return records;
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].sequence).toBe('ACGT');
+  });
+
+  test('9. parseFastqBrowser rejects incomplete record at EOF', async ({ page }) => {
+    const error = await page.evaluate(async () => {
+      const fastqContent = '@read1\nACGT\n+';
+      const blob = new Blob([fastqContent], { type: 'text/plain' });
+      try {
+        // @ts-expect-error - Browser bundle types
+        for await (const _record of window.bioseqStream.parseFastqBrowser(blob)) {
+          // consume
+        }
+        return null;
+      } catch (e) {
+        return e instanceof Error ? e.message : String(e);
+      }
+    });
+
+    expect(error).toContain('Incomplete FASTQ record');
+  });
 });

@@ -82,7 +82,10 @@ export function parseBEDLine(line: string): BEDRecord {
   }
 
   if (fields.length >= 5) {
-    record.score = parseInt(fields[4]);
+    record.score = fields[4] === '.' ? undefined : parseInt(fields[4], 10);
+    if (record.score !== undefined && isNaN(record.score)) {
+      throw new Error(`Invalid BED score: ${fields[4]}`);
+    }
   }
 
   if (fields.length >= 6) {
@@ -232,8 +235,9 @@ export function formatBEDLine(record: BEDRecord): string {
  * @performance O(n) where n is number of lines.
  * Typical: 10K lines in ~30ms, 100K lines in ~300ms.
  */
-export function parseBED(text: string): BEDRecord[] {
+export function parseBED(text: string, options: { strict?: boolean } = {}): BEDRecord[] {
   assertString(text, 'text');
+  const { strict = false } = options;
 
   const lines = text.split('\n');
   const records: BEDRecord[] = [];
@@ -241,7 +245,6 @@ export function parseBED(text: string): BEDRecord[] {
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // Skip comments, track lines, browser lines, and empty lines
     if (
       !trimmed ||
       trimmed.startsWith('#') ||
@@ -251,11 +254,15 @@ export function parseBED(text: string): BEDRecord[] {
       continue;
     }
 
+    if (strict) {
+      records.push(parseBEDLine(trimmed));
+      continue;
+    }
+
     try {
       const record = parseBEDLine(trimmed);
       records.push(record);
-    } catch (_error) {
-      // Skip malformed lines
+    } catch {
       continue;
     }
   }

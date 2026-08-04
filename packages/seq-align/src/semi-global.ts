@@ -19,6 +19,7 @@ import { Direction } from './types';
 import { getScore } from './matrices';
 import { gotohTraceback } from './gotoh';
 import { assertTwoSequences, assertNonEmptySequences, normalizeSequence } from '@bioscript/seq-utils';
+import { assertGapPenalties, resolveNormalizeScore } from './alignment-utils';
 
 /**
  * Perform semi-global alignment on two sequences.
@@ -95,7 +96,16 @@ export function semiGlobal(
   assertNonEmptySequences(s1, s2);
 
   // Get options
-  const { matrix = 'BLOSUM62', gapOpen = -10, gapExtend = -1, normalize = false } = options;
+  const {
+    matrix = 'BLOSUM62',
+    gapOpen = -10,
+    gapExtend = -1,
+    normalize = false,
+    normalizeScore,
+  } = options;
+
+  assertGapPenalties(gapOpen, gapExtend);
+  const shouldNormalizeScore = resolveNormalizeScore(normalizeScore, normalize);
 
   // Get scoring matrix
   let scoringMatrix: ScoringMatrix;
@@ -277,7 +287,7 @@ export function semiGlobal(
   const identityPercent = (identity / alignmentLength) * 100;
 
   let finalScore = maxScore;
-  if (normalize) {
+  if (shouldNormalizeScore) {
     const maxLength = Math.max(alignedSeq1.length, alignedSeq2.length);
     finalScore = maxScore / maxLength;
   }
@@ -285,6 +295,7 @@ export function semiGlobal(
   return {
     alignedSeq1,
     alignedSeq2,
+    /** Optimal score at (maxI, maxJ); excludes free end-gaps by design. */
     score: finalScore,
     startPos1,
     startPos2,

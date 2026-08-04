@@ -85,8 +85,11 @@ export function parseEMBL(text: string): EMBLRecord {
         break;
 
       case 'OS':
-        // OS   Trifolium repens (white clover)
-        record.organism = content;
+        if (record.organism) {
+          record.organism += ' ' + content;
+        } else {
+          record.organism = content;
+        }
         break;
 
       case 'RN':

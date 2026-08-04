@@ -7,6 +7,14 @@
 import type { SAMRecord, SAMHeader, SAMFlags } from './types';
 import { assertString, assertNumber, assertArray, assertObject } from '@bioscript/seq-utils';
 
+function parseSamTag(field: string): [string, string] {
+  const colonIdx = field.indexOf(':');
+  if (colonIdx === -1) {
+    return [field, ''];
+  }
+  return [field.substring(0, colonIdx), field.substring(colonIdx + 1)];
+}
+
 /**
  * Decode SAM bitwise flags into components.
  *
@@ -125,7 +133,7 @@ export function parseSAMHeader(text: string): SAMHeader {
     if (tag === '@HD') {
       // Header line
       for (let i = 1; i < fields.length; i++) {
-        const [key, value] = fields[i].split(':');
+        const [key, value] = parseSamTag(fields[i]);
         if (key === 'VN') header.version = value;
         if (key === 'SO') header.sortOrder = value;
       }
@@ -136,9 +144,9 @@ export function parseSAMHeader(text: string): SAMHeader {
       // Reference sequence
       const ref: { name: string; length: number } = { name: '', length: 0 };
       for (let i = 1; i < fields.length; i++) {
-        const [key, value] = fields[i].split(':');
+        const [key, value] = parseSamTag(fields[i]);
         if (key === 'SN') ref.name = value;
-        if (key === 'LN') ref.length = parseInt(value);
+        if (key === 'LN') ref.length = parseInt(value, 10);
       }
       if (ref.name && ref.length) {
         header.references.push(ref);
@@ -150,7 +158,7 @@ export function parseSAMHeader(text: string): SAMHeader {
       // Read group
       const rg: Record<string, string> = {};
       for (let i = 1; i < fields.length; i++) {
-        const [key, value] = fields[i].split(':');
+        const [key, value] = parseSamTag(fields[i]);
         rg[key] = value;
       }
       header.readGroups.push(rg);
@@ -161,7 +169,7 @@ export function parseSAMHeader(text: string): SAMHeader {
       // Program
       const pg: Record<string, string> = {};
       for (let i = 1; i < fields.length; i++) {
-        const [key, value] = fields[i].split(':');
+        const [key, value] = parseSamTag(fields[i]);
         pg[key] = value;
       }
       header.programs.push(pg);
