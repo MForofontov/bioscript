@@ -1,8 +1,9 @@
+import { validatePenalties } from './affine';
 /**
  * Hirschberg's algorithm for space-efficient sequence alignment.
  *
- * Hirschberg's algorithm computes optimal global alignment using only O(min(m,n))
- * space instead of O(m×n), while maintaining O(m×n) time complexity. This is
+ * Hirschberg's algorithm computes optimal global alignment using linear scoring
+ * rows instead of an O(m×n) matrix, while maintaining O(m×n) time complexity. This is
  * crucial for aligning very long sequences where memory is limited.
  *
  * The algorithm uses a divide-and-conquer approach:
@@ -14,17 +15,17 @@
  */
 
 import type { AlignmentResult, AlignmentOptions, ScoringMatrix } from './types';
-import { getScore } from './matrices';
+import { getScore, getMatrix } from './matrices';
 
 /**
  * Perform space-efficient global alignment using Hirschberg's algorithm.
  *
- * Hirschberg's algorithm produces the same optimal global alignment as
- * Needleman-Wunsch but uses only O(min(m,n)) space. This makes it possible
+ * Hirschberg's algorithm finds an optimal global alignment with linear gaps.
+ * Scoring rows have O(n) entries for the second sequence. This makes it possible
  * to align sequences that are too large for standard algorithms.
  *
  * **Key advantages:**
- * - Memory: O(min(m,n)) instead of O(m×n)
+ * - Memory: linear scoring rows instead of an O(m×n) matrix, plus recursion and output
  * - Time: O(m×n) same as Needleman-Wunsch
  * - Optimality: Guaranteed to find optimal alignment
  *
@@ -70,14 +71,14 @@ import { getScore } from './matrices';
  *   gapExtend: -1,
  * });
  *
- * // Result is identical to Needleman-Wunsch
+ * // This uses gapOpen per gap base; gapExtend is ignored.
  * console.log(result.alignedSeq1);
  * console.log(result.alignedSeq2);
  * ```
  *
  * @performance
  * - Time: O(m×n)
- * - Space: O(min(m,n))
+ * - Scoring row space: O(n); returned alignment requires O(m+n) space
  * - Practical speed: ~2x slower than Needleman-Wunsch
  * - Memory savings: Up to 1000x for long sequences
  *
@@ -107,12 +108,12 @@ export function hirschberg(
 
   // Get options (using simple gap penalty for space efficiency)
   const { matrix = 'BLOSUM62', gapOpen = -1, normalize = false } = options;
+  validatePenalties(options);
   const gapPenalty = gapOpen;
 
   // Get scoring matrix
   let scoringMatrix: ScoringMatrix;
   if (typeof matrix === 'string') {
-    const { getMatrix } = require('./matrices');
     scoringMatrix = getMatrix(matrix);
   } else {
     scoringMatrix = matrix;
@@ -149,13 +150,11 @@ export function hirschberg(
         const jIdx = j - 1;
         const matchScore = getScore(scoringMatrix, seq1[i], seq2[jIdx]);
 
-        const scores = [
+        curr[j] = Math.max(
           prev[j - 1] + matchScore, // Match/mismatch
           prev[j] + gapPenalty, // Gap in seq2
-          curr[j - 1] + gapPenalty, // Gap in seq1
-        ];
-
-        curr[j] = Math.max(...scores);
+          curr[j - 1] + gapPenalty // Gap in seq1
+        );
       }
 
       [prev, curr] = [curr, prev];
@@ -184,7 +183,7 @@ export function hirschberg(
 
     if (m === 1) {
       // Align single character of seq1 to seq2
-      let bestJ = 0;
+      let bestJ = -1;
       let bestScore = gapPenalty + n * gapPenalty;
 
       for (let j = 0; j < n; j++) {
@@ -197,6 +196,7 @@ export function hirschberg(
         }
       }
 
+      if (bestJ === -1) return [seq1 + '-'.repeat(n), '-' + seq2];
       const aligned1 = '-'.repeat(bestJ) + seq1[0] + '-'.repeat(n - bestJ - 1);
       const aligned2 = seq2;
 
@@ -215,7 +215,7 @@ export function hirschberg(
     // Backward scores from bottom-right (reverse both sequences)
     const seq1RightRev = seq1Right.split('').reverse().join('');
     const seq2Rev = seq2.split('').reverse().join('');
-    const scoreR = nwScore(seq1RightRev, seq2Rev, true);
+    const scoreR = nwScore(seq1RightRev, seq2Rev, false);
 
     // Find partition point that maximizes total score
     let maxScore = -Infinity;

@@ -12,12 +12,18 @@ export const baseConfig: Config = {
     resultsDir: 'allure-results',
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
-  reporters: [
-    'default',
-    ['jest-allure', { outputDir: 'allure-results' }],
-  ],
+  reporters: ['default'],
   collectCoverage: true,
   coverageReporters: ['json', 'lcov', 'text', 'clover', 'html'],
+  // Generated reports can contain thousands of JSON files; do not crawl them as modules.
+  modulePathIgnorePatterns: [
+    '/allure-results/',
+    '/allure-report/',
+    '/coverage/',
+    '/dist/',
+    '/playwright-report/',
+    '/test-results/',
+  ],
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/',

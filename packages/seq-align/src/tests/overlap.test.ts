@@ -61,7 +61,7 @@ describe('overlapAlign', () => {
     });
 
     expect(result.score).toBe(40); // 8 matches, no gaps
-    expect(result.alignedSeq1.split("-").length - 1).toBe(0);
+    expect(result.alignedSeq1.split('-').length - 1).toBe(0);
   });
 
   it('7. should handle sequences with mismatches', () => {
@@ -69,7 +69,9 @@ describe('overlapAlign', () => {
       matrix: 'DNA_SIMPLE',
     });
 
-    expect((result.alignmentLength - result.identity - (result.alignedSeq1.split("-").length - 1))).toBeGreaterThan(0);
+    expect(
+      result.alignmentLength - result.identity - (result.alignedSeq1.split('-').length - 1)
+    ).toBeGreaterThan(0);
   });
 
   it('8. should find best overlap region', () => {
@@ -84,8 +86,10 @@ describe('overlapAlign', () => {
     const result = overlapAlign('ACGTACGT', 'ACGTACGT');
 
     expect(result.identity).toBe(8);
-    expect(result.alignedSeq1.split("-").length - 1).toBe(0);
-    expect((result.alignmentLength - result.identity - (result.alignedSeq1.split("-").length - 1))).toBe(0);
+    expect(result.alignedSeq1.split('-').length - 1).toBe(0);
+    expect(
+      result.alignmentLength - result.identity - (result.alignedSeq1.split('-').length - 1)
+    ).toBe(0);
   });
 
   it('11. should handle one sequence fully contained in another', () => {

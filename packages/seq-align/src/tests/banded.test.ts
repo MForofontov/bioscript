@@ -25,7 +25,9 @@ describe('bandedAlign', () => {
     });
 
     expect(result.identity).toBeGreaterThanOrEqual(7);
-    expect((result.alignmentLength - result.identity - (result.alignedSeq1.split("-").length - 1))).toBeLessThanOrEqual(1);
+    expect(
+      result.alignmentLength - result.identity - (result.alignedSeq1.split('-').length - 1)
+    ).toBeLessThanOrEqual(1);
   });
 
   it('3. should work with custom matrix', () => {
@@ -46,7 +48,7 @@ describe('bandedAlign', () => {
     });
 
     expect(result.identity).toBe(10);
-    expect(result.alignedSeq1.split("-").length - 1).toBe(0);
+    expect(result.alignedSeq1.split('-').length - 1).toBe(0);
   });
 
   it('5. should return alignment metadata', () => {
@@ -104,8 +106,10 @@ describe('bandedAlign', () => {
     });
 
     expect(result.identity).toBe(8);
-    expect(result.alignedSeq1.split("-").length - 1).toBe(0);
-    expect((result.alignmentLength - result.identity - (result.alignedSeq1.split("-").length - 1))).toBe(0);
+    expect(result.alignedSeq1.split('-').length - 1).toBe(0);
+    expect(
+      result.alignmentLength - result.identity - (result.alignedSeq1.split('-').length - 1)
+    ).toBe(0);
   });
 
   it('11. should handle sequences of different lengths', () => {
@@ -148,15 +152,18 @@ describe('bandedAlign', () => {
     expect(result.identity).toBe(4);
   });
 
-
   it('15. should throw TypeError when seq1 is not a string', () => {
     expect(() => bandedAlign(123 as any, 'ACGT', { bandwidth: 2 })).toThrow(TypeError);
-    expect(() => bandedAlign(123 as any, 'ACGT', { bandwidth: 2 })).toThrow('seq1 must be a string');
+    expect(() => bandedAlign(123 as any, 'ACGT', { bandwidth: 2 })).toThrow(
+      'seq1 must be a string'
+    );
   });
 
   it('16. should throw TypeError when seq2 is not a string', () => {
     expect(() => bandedAlign('ACGT', 123 as any, { bandwidth: 2 })).toThrow(TypeError);
-    expect(() => bandedAlign('ACGT', 123 as any, { bandwidth: 2 })).toThrow('seq2 must be a string');
+    expect(() => bandedAlign('ACGT', 123 as any, { bandwidth: 2 })).toThrow(
+      'seq2 must be a string'
+    );
   });
 
   it('17. should throw Error for empty seq1', () => {

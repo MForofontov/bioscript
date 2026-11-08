@@ -12,6 +12,7 @@ import { baseConfig } from './jest.config.base';
 
 const config: Config = {
   ...baseConfig,
+  maxWorkers: 2,
   // Map @bioscript/* imports to package source
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',

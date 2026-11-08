@@ -4138,9 +4138,9 @@ export function getScore(matrix: ScoringMatrix, char1: string, char2: string): n
   const c1 = char1.toUpperCase();
   const c2 = char2.toUpperCase();
 
-  if (!matrix[c1] || !matrix[c1][c2]) {
+  if (matrix[c1]?.[c2] === undefined) {
     return 0;
   }
-
+  if (!Number.isFinite(matrix[c1][c2])) throw new Error('Scoring matrix entries must be finite');
   return matrix[c1][c2];
 }

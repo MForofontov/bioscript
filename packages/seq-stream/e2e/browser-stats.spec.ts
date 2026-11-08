@@ -21,10 +21,7 @@ AATTNNRR
 ACGTACGTACGT`;
 
       const blob = new Blob([fastaContent], { type: 'text/plain' });
-
-      // @ts-expect-error - Browser bundle types
       const parser = window.bioseqStream.parseFastaBrowser(blob);
-      // @ts-expect-error - Browser bundle types
       const stats = await window.bioseqStream.calculateStatsBrowser(parser);
 
       return {
@@ -79,10 +76,7 @@ AATT
 5555`;
 
       const blob = new Blob([fastqContent], { type: 'text/plain' });
-
-      // @ts-expect-error - Browser bundle types
       const parser = window.bioseqStream.parseFastqBrowser(blob);
-      // @ts-expect-error - Browser bundle types
       const stats = await window.bioseqStream.calculateStatsBrowser(parser);
 
       return {
@@ -98,8 +92,8 @@ AATT
 
     console.log('FASTQ quality stats:', result);
 
-    expect(result.totalSequences).toBe(2); // actual parsed sequences
-    expect(result.totalBases).toBe(8); // 4+4 bases
+    expect(result.totalSequences).toBe(3); // Includes the final record without a newline.
+    expect(result.totalBases).toBe(12);
     expect(result.meanQuality).toBeGreaterThan(0);
     expect(result.minQuality).toBe(2); // # = Q2
     expect(result.maxQuality).toBe(40); // I = Q40
@@ -135,10 +129,7 @@ AATT
       console.log(`Blob size: ${(blob.size / (1024 * 1024)).toFixed(2)} MB`);
 
       const startTime = performance.now();
-
-      // @ts-expect-error - Browser bundle types
       const parser = window.bioseqStream.parseFastaBrowser(blob);
-      // @ts-expect-error - Browser bundle types
       const stats = await window.bioseqStream.calculateStatsBrowser(parser);
 
       const totalTime = (performance.now() - startTime) / 1000;
@@ -187,8 +178,6 @@ GGCCGGCC
 AATTNNRR`;
 
       const blob = new Blob([fastaContent], { type: 'text/plain' });
-
-      // @ts-expect-error - Browser bundle types
       const parser = window.bioseqStream.parseFastaBrowser(blob);
       const records = [];
       for await (const record of parser) {
@@ -196,7 +185,6 @@ AATTNNRR`;
       }
 
       // Calculate stats synchronously
-      // @ts-expect-error - Browser bundle types
       const stats = window.bioseqStream.calculateStatsSync(records);
 
       return {

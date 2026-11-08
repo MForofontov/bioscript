@@ -1,4 +1,5 @@
-import { Transform, type TransformCallback } from 'stream';
+import { LineParser } from './line-parser';
+import { Transform, pipeline, type TransformCallback } from 'stream';
 import { createReadStream, createWriteStream } from 'fs';
 import { createGunzip, createGzip } from 'zlib';
 
@@ -14,43 +15,16 @@ export interface FastaRecord {
 /**
  * Stream transformer that parses FASTA format into FastaRecord objects
  */
-export class FastaParser extends Transform {
-  private buffer: string = '';
+export class FastaParser extends LineParser {
   private currentRecord: Partial<FastaRecord> | null = null;
 
-  constructor() {
-    super({ objectMode: true });
-  }
-
-  _transform(chunk: Buffer, encoding: string, callback: TransformCallback): void {
-    this.buffer += chunk.toString();
-    const lines = this.buffer.split('\n');
-
-    // Keep the last incomplete line in the buffer
-    this.buffer = lines.pop() || '';
-
-    for (const line of lines) {
-      this.processLine(line);
-    }
-
-    callback();
-  }
-
-  _flush(callback: TransformCallback): void {
-    // Process any remaining data
-    if (this.buffer) {
-      this.processLine(this.buffer);
-    }
-
-    // Emit the last record if it exists
+  protected finish(): void {
     if (this.currentRecord && this.currentRecord.id) {
-      this.push(this.currentRecord as FastaRecord);
+      this.emitRecord(this.currentRecord);
     }
-
-    callback();
   }
 
-  private processLine(line: string): void {
+  protected processLine(line: string): void {
     const trimmed = line.trim();
 
     if (!trimmed) return;
@@ -58,7 +32,7 @@ export class FastaParser extends Transform {
     if (trimmed.startsWith('>')) {
       // New sequence - emit previous record if it exists
       if (this.currentRecord && this.currentRecord.id) {
-        this.push(this.currentRecord as FastaRecord);
+        this.emitRecord(this.currentRecord as FastaRecord);
       }
 
       // Parse header
@@ -88,7 +62,14 @@ export class FastaWriter extends Transform {
   private lineWidth: number;
 
   constructor(lineWidth: number = 80) {
-    super({ objectMode: true, writableObjectMode: true, readableObjectMode: false });
+    super({
+      objectMode: true,
+      writableObjectMode: true,
+      readableObjectMode: false,
+      autoDestroy: false,
+    });
+    if (!Number.isInteger(lineWidth) || lineWidth <= 0)
+      throw new Error('lineWidth must be a positive integer');
     this.lineWidth = lineWidth;
   }
 
@@ -125,11 +106,13 @@ export function createFastaParser(filePath: string): NodeJS.ReadableStream {
   const fileStream = createReadStream(filePath);
   const parser = new FastaParser();
 
+  const onComplete = (): void => {};
   if (filePath.endsWith('.gz')) {
-    return fileStream.pipe(createGunzip()).pipe(parser);
+    pipeline(fileStream, createGunzip(), parser, onComplete);
+  } else {
+    pipeline(fileStream, parser, onComplete);
   }
-
-  return fileStream.pipe(parser);
+  return parser;
 }
 
 /**
@@ -140,10 +123,13 @@ export function createFastaWriter(filePath: string, lineWidth: number = 80): Nod
   const writer = new FastaWriter(lineWidth);
   const fileStream = createWriteStream(filePath);
 
+  const onComplete = (error: NodeJS.ErrnoException | null): void => {
+    writer.destroy(error ?? undefined);
+  };
   if (filePath.endsWith('.gz')) {
-    writer.pipe(createGzip()).pipe(fileStream);
+    pipeline(writer, createGzip(), fileStream, onComplete);
   } else {
-    writer.pipe(fileStream);
+    pipeline(writer, fileStream, onComplete);
   }
 
   return writer;

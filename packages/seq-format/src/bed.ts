@@ -1,3 +1,4 @@
+import { integer } from './validation';
 /**
  * BED format parser and writer.
  * Supports BED3, BED6, and BED12 formats.
@@ -64,8 +65,8 @@ export function parseBEDLine(line: string): BEDRecord {
 
   const record: BEDRecord = {
     chrom: fields[0],
-    chromStart: parseInt(fields[1]),
-    chromEnd: parseInt(fields[2]),
+    chromStart: integer(fields[1], 'BED start'),
+    chromEnd: integer(fields[2], 'BED end'),
   };
 
   // Validate coordinates
@@ -83,7 +84,7 @@ export function parseBEDLine(line: string): BEDRecord {
   }
 
   if (fields.length >= 5) {
-    record.score = parseInt(fields[4]);
+    record.score = integer(fields[4], 'BED score');
   }
 
   if (fields.length >= 6) {
@@ -96,11 +97,11 @@ export function parseBEDLine(line: string): BEDRecord {
 
   // BED12 fields
   if (fields.length >= 7) {
-    record.thickStart = parseInt(fields[6]);
+    record.thickStart = integer(fields[6], 'BED thickStart');
   }
 
   if (fields.length >= 8) {
-    record.thickEnd = parseInt(fields[7]);
+    record.thickEnd = integer(fields[7], 'BED thickEnd');
   }
 
   if (fields.length >= 9) {
@@ -108,23 +109,29 @@ export function parseBEDLine(line: string): BEDRecord {
   }
 
   if (fields.length >= 10) {
-    record.blockCount = parseInt(fields[9]);
+    record.blockCount = integer(fields[9], 'BED blockCount');
   }
 
   if (fields.length >= 11) {
     record.blockSizes = fields[10]
       .split(',')
       .filter((s) => s)
-      .map((s) => parseInt(s));
+      .map((s) => integer(s, 'BED block value'));
   }
 
   if (fields.length >= 12) {
     record.blockStarts = fields[11]
       .split(',')
       .filter((s) => s)
-      .map((s) => parseInt(s));
+      .map((s) => integer(s, 'BED block value'));
   }
 
+  if (record.score !== undefined && record.score > 1000)
+    throw new Error('BED score must be <= 1000');
+  if (record.blockSizes && record.blockSizes.length !== record.blockCount)
+    throw new Error('BED blockSizes must match blockCount');
+  if (record.blockStarts && record.blockStarts.length !== record.blockCount)
+    throw new Error('BED blockStarts must match blockCount');
   return record;
 }
 

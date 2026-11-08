@@ -43,15 +43,23 @@ export function parseCIGAR(cigar: string): CigarOp[] {
   const operations: CigarOp[] = [];
   const pattern = /(\d+)([MIDNSHP=X])/g;
   let match: RegExpExecArray | null;
+  let consumed = 0;
 
   while ((match = pattern.exec(cigar)) !== null) {
+    if (
+      match.index !== consumed ||
+      !Number.isSafeInteger(Number(match[1])) ||
+      Number(match[1]) <= 0
+    )
+      throw new Error(`Invalid CIGAR string: ${cigar}`);
+    consumed = pattern.lastIndex;
     operations.push({
       length: parseInt(match[1], 10),
       operation: match[2] as CigarOperation,
     });
   }
 
-  if (operations.length === 0) {
+  if (operations.length === 0 || consumed !== cigar.length) {
     throw new Error(`Invalid CIGAR string: ${cigar}`);
   }
 

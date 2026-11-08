@@ -8,7 +8,6 @@ test.describe('Browser Translation - Basic', () => {
 
   test('1. translateBrowser should translate simple sequence', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-expect-error - browser bundle
       return window.bioseqTranslate.translateBrowser('ATGGCCAAA', { table: 'standard' });
     });
 
@@ -20,7 +19,6 @@ test.describe('Browser Translation - Basic', () => {
 
   test('2. translateBrowser should handle all frames', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-expect-error - browser bundle
       return window.bioseqTranslate.translateBrowser('ATGGCCAAA', {
         table: 'standard',
         allFrames: true,
@@ -35,7 +33,6 @@ test.describe('Browser Translation - Basic', () => {
 
   test('3. translateBrowser should handle reverse complement', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-expect-error - browser bundle
       return window.bioseqTranslate.translateBrowser('ATGGCCAAA', {
         table: 'standard',
         includeReverse: true,
@@ -49,7 +46,6 @@ test.describe('Browser Translation - Basic', () => {
 
   test('4. translateBrowser should handle all 6 frames', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-expect-error - browser bundle
       return window.bioseqTranslate.translateBrowser('ATGGCCAAA', {
         table: 'standard',
         allFrames: true,
@@ -65,7 +61,6 @@ test.describe('Browser Translation - Basic', () => {
 
   test('5. translateBrowser should respect breakOnStop', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-expect-error - browser bundle
       return window.bioseqTranslate.translateBrowser('ATGTAAGGGGCC', {
         table: 'standard',
         breakOnStop: true,
@@ -77,7 +72,6 @@ test.describe('Browser Translation - Basic', () => {
 
   test('6. translateBrowser should use custom stop symbol', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-expect-error - browser bundle
       return window.bioseqTranslate.translateBrowser('ATGGCCTAA', {
         table: 'standard',
         stopSymbol: 'X',
@@ -100,10 +94,9 @@ test.describe('Browser Translation - Streaming', () => {
       const blob = new Blob([sequence], { type: 'text/plain' });
 
       const chunks = [];
-      // @ts-expect-error - browser bundle
       for await (const chunk of window.bioseqTranslate.translateBrowserStreaming(blob, {
         table: 'standard',
-        chunkSize: 300
+        chunkSize: 300,
       })) {
         chunks.push(chunk);
       }
@@ -111,7 +104,7 @@ test.describe('Browser Translation - Streaming', () => {
       return {
         chunkCount: chunks.length,
         totalLength: chunks.reduce((sum, c) => sum + c.sequence.length, 0),
-        firstChunk: chunks[0]
+        firstChunk: chunks[0],
       };
     });
 
@@ -130,11 +123,9 @@ test.describe('Browser Translation - Streaming', () => {
 
       const chunks = [];
       const startTime = performance.now();
-
-      // @ts-expect-error - browser bundle
       for await (const chunk of window.bioseqTranslate.translateBrowserStreaming(blob, {
         table: 'standard',
-        chunkSize: 10000
+        chunkSize: 10000,
       })) {
         chunks.push(chunk);
       }
@@ -144,7 +135,7 @@ test.describe('Browser Translation - Streaming', () => {
       return {
         chunkCount: chunks.length,
         totalLength: chunks.reduce((sum, c) => sum + c.sequence.length, 0),
-        duration: endTime - startTime
+        duration: endTime - startTime,
       };
     });
 
@@ -160,18 +151,17 @@ test.describe('Browser Translation - Streaming', () => {
       const blob = new Blob([sequence], { type: 'text/plain' });
 
       const chunks = [];
-      // @ts-expect-error - browser bundle
       for await (const chunk of window.bioseqTranslate.translateBrowserStreaming(blob, {
         table: 'standard',
         breakOnStop: true,
-        chunkSize: 15
+        chunkSize: 15,
       })) {
         chunks.push(chunk);
       }
 
       return {
-        chunks: chunks.map(c => c.sequence),
-        stopped: chunks.some(c => c.sequence.includes('*'))
+        chunks: chunks.map((c) => c.sequence),
+        stopped: chunks.some((c) => c.sequence.includes('*')),
       };
     });
 
@@ -185,20 +175,19 @@ test.describe('Browser Translation - Streaming', () => {
       const blob = new Blob([sequence], { type: 'text/plain' });
 
       const chunks = [];
-      // @ts-expect-error - browser bundle
       for await (const chunk of window.bioseqTranslate.translateBrowserStreaming(blob, {
         table: 'standard',
         stopSymbol: 'X',
         breakOnStop: false, // Don't break on stop
-        chunkSize: 3 // Small chunk size to ensure it's processed
+        chunkSize: 3, // Small chunk size to ensure it's processed
       })) {
         chunks.push(chunk);
       }
 
       return {
-        fullSequence: chunks.map(c => c.sequence).join(''),
+        fullSequence: chunks.map((c) => c.sequence).join(''),
         chunkCount: chunks.length,
-        chunks: chunks.map(c => c.sequence)
+        chunks: chunks.map((c) => c.sequence),
       };
     });
 
@@ -212,17 +201,16 @@ test.describe('Browser Translation - Streaming', () => {
       const blob = new Blob([sequence], { type: 'text/plain' });
 
       const chunks = [];
-      // @ts-expect-error - browser bundle
       for await (const chunk of window.bioseqTranslate.translateBrowserStreaming(blob, {
         table: 'standard',
-        chunkSize: 1500 // Custom chunk size
+        chunkSize: 1500, // Custom chunk size
       })) {
         chunks.push(chunk);
       }
 
       return {
         chunkCount: chunks.length,
-        totalBases: chunks.reduce((sum, c) => sum + c.sourceLength, 0)
+        totalBases: chunks.reduce((sum, c) => sum + c.sourceLength, 0),
       };
     });
 
@@ -235,9 +223,8 @@ test.describe('Browser Translation - Streaming', () => {
       const blob = new Blob([''], { type: 'text/plain' });
 
       const chunks = [];
-      // @ts-expect-error - browser bundle
       for await (const chunk of window.bioseqTranslate.translateBrowserStreaming(blob, {
-        table: 'standard'
+        table: 'standard',
       })) {
         chunks.push(chunk);
       }

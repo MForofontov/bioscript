@@ -12,7 +12,6 @@ test.describe('Browser FASTA Parser', () => {
       const blob = new Blob([fastaContent], { type: 'text/plain' });
 
       const records = [];
-      // @ts-expect-error - browser bundle
       for await (const record of window.bioseqStream.parseFastaBrowser(blob)) {
         records.push(record);
       }
@@ -31,7 +30,6 @@ test.describe('Browser FASTA Parser', () => {
       const blob = new Blob([fastaContent], { type: 'text/plain' });
 
       const records = [];
-      // @ts-expect-error - Browser bundle types
       for await (const record of window.bioseqStream.parseFastaBrowser(blob)) {
         records.push(record);
       }
@@ -54,8 +52,6 @@ test.describe('Browser FASTA Parser', () => {
         { id: 'seq1', sequence: 'ACGTACGT' },
         { id: 'seq2', sequence: 'TGCATGCA', description: 'test' },
       ];
-
-      // @ts-expect-error - Browser bundle types
       const blob = window.bioseqStream.writeFastaBrowser(records, 80);
       const text = await blob.text();
       return text;
@@ -67,8 +63,6 @@ test.describe('Browser FASTA Parser', () => {
   test('4. writeFastaBrowser should handle line wrapping', async ({ page }) => {
     const result = await page.evaluate(async () => {
       const records = [{ id: 'seq1', sequence: 'ACGTACGT' }];
-
-      // @ts-expect-error - Browser bundle types
       const blob = window.bioseqStream.writeFastaBrowser(records, 4);
       const text = await blob.text();
       return text;
@@ -80,8 +74,6 @@ test.describe('Browser FASTA Parser', () => {
   test('5. parseFastaText should parse FASTA from string', async ({ page }) => {
     const result = await page.evaluate(() => {
       const fastaContent = '>seq1\nACGTACGT\n>seq2\nTGCATGCA\n';
-
-      // @ts-expect-error - Browser bundle types
       return window.bioseqStream.parseFastaText(fastaContent);
     });
 
@@ -98,7 +90,6 @@ test.describe('Browser FASTA Parser', () => {
       const file = new File([arrayBuffer], 'test.fasta.gz', { type: 'application/gzip' });
 
       const records = [];
-      // @ts-expect-error - Browser bundle types
       for await (const record of window.bioseqStream.parseFastaBrowser(file)) {
         records.push(record);
       }

@@ -7,9 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Strip CRLF carriage returns from SAM header values and comments.
+- Reject incomplete Newick parses, malformed numeric branch lengths, and nonfinite lengths.
+- Reject reserved opening parentheses inside unquoted Newick labels, keeping parsing consistent with validation.
+
 ## [0.1.0] - 2026-02-17
 
 ### Added
+
 - Initial release
 - GenBank format parser and writer
 - EMBL format parser and writer

@@ -12,7 +12,6 @@ test.describe('Browser FASTQ Parser', () => {
       const blob = new Blob([fastqContent], { type: 'text/plain' });
 
       const records = [];
-      // @ts-expect-error - Browser bundle types
       for await (const record of window.bioseqStream.parseFastqBrowser(blob)) {
         records.push(record);
       }
@@ -31,7 +30,6 @@ test.describe('Browser FASTQ Parser', () => {
       const blob = new Blob([fastqContent], { type: 'text/plain' });
 
       const records = [];
-      // @ts-expect-error - Browser bundle types
       for await (const record of window.bioseqStream.parseFastqBrowser(blob)) {
         records.push(record);
       }
@@ -54,8 +52,6 @@ test.describe('Browser FASTQ Parser', () => {
         { id: 'read1', sequence: 'ACGT', quality: 'IIII' },
         { id: 'read2', sequence: 'TGCA', quality: 'JJJJ', description: 'test' },
       ];
-
-      // @ts-expect-error - Browser bundle types
       const blob = window.bioseqStream.writeFastqBrowser(records);
       const text = await blob.text();
       return text;
@@ -67,8 +63,6 @@ test.describe('Browser FASTQ Parser', () => {
   test('4. parseFastqText should parse FASTQ from string', async ({ page }) => {
     const result = await page.evaluate(() => {
       const fastqContent = '@read1\nACGT\n+\nIIII\n@read2\nTGCA\n+\nJJJJ\n';
-
-      // @ts-expect-error - Browser bundle types
       return window.bioseqStream.parseFastqText(fastqContent);
     });
 
@@ -79,7 +73,6 @@ test.describe('Browser FASTQ Parser', () => {
 
   test('5. convertQualityBrowser should convert Phred+33 to Phred+64', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-expect-error - Use numeric values: 33 for Phred+33, 64 for Phred+64
       return window.bioseqStream.convertQualityBrowser('IIII', 33, 64);
     });
 
@@ -88,7 +81,6 @@ test.describe('Browser FASTQ Parser', () => {
 
   test('6. convertQualityBrowser should convert Phred+64 to Phred+33', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-expect-error - Use numeric values: 64 for Phred+64, 33 for Phred+33
       return window.bioseqStream.convertQualityBrowser('hhhh', 64, 33);
     });
 
@@ -103,7 +95,6 @@ test.describe('Browser FASTQ Parser', () => {
       const file = new File([arrayBuffer], 'test.fastq.gz', { type: 'application/gzip' });
 
       const records = [];
-      // @ts-expect-error - Browser bundle types
       for await (const record of window.bioseqStream.parseFastqBrowser(file)) {
         records.push(record);
       }

@@ -12,17 +12,23 @@ export default tseslint.config(
       'dist/**',
       '**/dist/**',
       'coverage/**',
+      '**/coverage/**',
+      '**/allure-results/**',
+      '**/allure-report/**',
+      '**/playwright-report/**',
+      '**/test-results/**',
       '**/*.js',
       'demo.js',
       'jest.config.js',
       'jest.config.d.ts',
       'packages/*/dist/**',
       'e2e/**/*.js',
-      '**/playwright.config.ts'
+      '**/playwright.config.ts',
     ],
   },
+  { languageOptions: { globals: { ...globals.node } } },
   eslint.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
+  ...tseslint.configs.recommendedTypeChecked.map((config) => ({ ...config, files: ['**/*.ts'] })),
   eslintPluginPrettierRecommended,
   {
     files: ['**/*.ts'],
@@ -35,23 +41,22 @@ export default tseslint.config(
       ecmaVersion: 2024,
       sourceType: 'module',
       parserOptions: {
-        project: [
-          './tsconfig.json',
-          './packages/*/tsconfig.json',
-          './packages/*/tsconfig.test.json',
-          './packages/*/tsconfig.e2e.json'
-        ],
+        project: './tsconfig.check.json',
         tsconfigRootDir: import.meta.dirname,
       },
     },
   },
   {
+    files: ['**/*.ts'],
     rules: {
       // Let Prettier handle all formatting
-      'prettier/prettier': ['error', {
-        singleQuote: true,
-        tabWidth: 2
-      }],
+      'prettier/prettier': [
+        'error',
+        {
+          singleQuote: true,
+          tabWidth: 2,
+        },
+      ],
 
       // Warn on use of console.log in production code
       'no-console': 'warn',
@@ -59,7 +64,7 @@ export default tseslint.config(
       // TypeScript-specific rules
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['warn', { 'argsIgnorePattern': '^_' }],
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
       '@typescript-eslint/require-await': 'error',
@@ -74,5 +79,5 @@ export default tseslint.config(
       '@typescript-eslint/no-var-requires': 'error',
       '@typescript-eslint/consistent-type-imports': 'warn',
     },
-  },
+  }
 );

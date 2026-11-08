@@ -65,7 +65,7 @@ describe('hirschberg', () => {
     });
 
     expect(result.score).toBe(40); // 8 matches, no gaps
-    expect(result.alignedSeq1.split("-").length - 1).toBe(0);
+    expect(result.alignedSeq1.split('-').length - 1).toBe(0);
   });
 
   it('7. should handle sequences with gaps', () => {
@@ -73,7 +73,7 @@ describe('hirschberg', () => {
       matrix: 'DNA_SIMPLE',
     });
 
-    expect(result.alignedSeq1.split("-").length - 1).toBeGreaterThan(0);
+    expect(result.alignedSeq2.split('-').length - 1).toBeGreaterThan(0);
     expect(result.identity).toBeGreaterThanOrEqual(6);
   });
 
@@ -82,7 +82,9 @@ describe('hirschberg', () => {
       matrix: 'DNA_SIMPLE',
     });
 
-    expect((result.alignmentLength - result.identity - (result.alignedSeq1.split("-").length - 1))).toBe(4);
+    expect(
+      result.alignmentLength - result.identity - (result.alignedSeq1.split('-').length - 1)
+    ).toBe(4);
     expect(result.identity).toBe(0);
   });
 
@@ -145,7 +147,9 @@ describe('hirschberg', () => {
     });
 
     expect(result.identity).toBe(0);
-    expect((result.alignmentLength - result.identity - (result.alignedSeq1.split("-").length - 1))).toBe(4);
+    expect(
+      result.alignmentLength - result.identity - (result.alignedSeq1.split('-').length - 1)
+    ).toBe(4);
   });
 
   it('15. should handle sequences with N ambiguity', () => {
@@ -155,7 +159,6 @@ describe('hirschberg', () => {
 
     expect(result.identity).toBeGreaterThanOrEqual(4);
   });
-
 
   it('16. should throw TypeError when seq1 is not a string', () => {
     expect(() => hirschberg(123 as any, 'ACGT')).toThrow(TypeError);

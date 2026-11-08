@@ -72,6 +72,8 @@ export function buildDeBruijnGraph(
   }
 
   const { canonical = false, minCoverage = 1 } = options;
+  if (!Number.isFinite(minCoverage) || minCoverage < 0)
+    throw new Error('minCoverage must be finite and non-negative');
   const nodes = new Map<string, DeBruijnNode>();
   const reverseEdges = new Map<string, Set<string>>();
 
@@ -164,63 +166,52 @@ export function buildDeBruijnGraph(
  * contigs.forEach(c => console.log(c));
  * ```
  *
- * @performance O(n) where n is number of nodes.
+ * @throws {Error} If edges do not connect overlapping, oriented k-mers.
+ * @performance O(V + kE) including overlap validation, plus contig string construction.
  */
 export function findContigs(graph: DeBruijnGraph, options: { minLength?: number } = {}): string[] {
   const { minLength = graph.k + 1 } = options;
   const contigs: string[] = [];
-  const visited = new Set<string>();
-
   for (const [kmer, node] of graph.nodes) {
-    // Skip if already visited or is branching point
-    if (visited.has(kmer) || node.edges.length !== 1) {
-      continue;
-    }
-
-    // Check if previous k-mer has single edge (not branching)
-    const incoming = graph.reverseEdges.get(kmer);
-    if (incoming && incoming.size === 1) {
-      const prevKmer = [...incoming][0];
-      const prevNode = graph.nodes.get(prevKmer);
-      if (prevNode && prevNode.edges.length === 1) {
-        continue; // Not start of contig
+    for (const next of node.edges) {
+      if (!graph.nodes.has(next) || kmer.slice(1) !== next.slice(0, -1)) {
+        throw new Error(
+          'Contig extraction requires overlapping, oriented k-mers; build with canonical: false'
+        );
       }
-    }
-
-    // Extend contig
-    let contig = kmer;
-    visited.add(kmer);
-    let currentKmer = kmer;
-
-    while (true) {
-      const currentNode = graph.nodes.get(currentKmer);
-      if (!currentNode || currentNode.edges.length !== 1) {
-        break;
-      }
-
-      const nextKmer = currentNode.edges[0];
-      const nextNode = graph.nodes.get(nextKmer);
-
-      if (!nextNode || visited.has(nextKmer)) {
-        break;
-      }
-
-      // Check if next k-mer has multiple incoming edges
-      const incomingEdges = graph.reverseEdges.get(nextKmer);
-      if (incomingEdges && incomingEdges.size > 1) {
-        break;
-      }
-
-      contig += nextKmer[nextKmer.length - 1]; // Append last base
-      visited.add(nextKmer);
-      currentKmer = nextKmer;
-    }
-
-    if (contig.length >= minLength) {
-      contigs.push(contig);
     }
   }
+  // Branch and merge endpoints can belong to several paths; visit edges, not nodes.
+  const visited = new Map<string, Set<string>>();
+  const isLinear = (kmer: string): boolean =>
+    graph.nodes.get(kmer)?.edges.length === 1 && graph.reverseEdges.get(kmer)?.size === 1;
+  const extend = (start: string, next: string): void => {
+    const bases = [start];
+    let current = start;
+    while (graph.nodes.has(next) && !visited.get(current)?.has(next)) {
+      if (!visited.has(current)) visited.set(current, new Set());
+      visited.get(current)!.add(next);
+      bases.push(next[next.length - 1]);
+      current = next;
+      if (!isLinear(current)) break;
+      next = graph.nodes.get(current)!.edges[0];
+    }
+    const contig = bases.join('');
+    if (contig.length >= minLength) contigs.push(contig);
+  };
 
+  for (const [kmer, node] of graph.nodes) {
+    if (isLinear(kmer)) continue;
+    if (!node.edges.length && !graph.reverseEdges.get(kmer)?.size && kmer.length >= minLength)
+      contigs.push(kmer);
+    for (const next of node.edges) extend(kmer, next);
+  }
+  // Every remaining edge belongs to an isolated cycle; include its closing edge once.
+  for (const [kmer, node] of graph.nodes) {
+    for (const next of node.edges) {
+      if (!visited.get(kmer)?.has(next)) extend(kmer, next);
+    }
+  }
   return contigs;
 }
 
@@ -347,8 +338,10 @@ export function removeLowCoverageNodes(graph: DeBruijnGraph, minCoverage: number
 function getTipLength(graph: DeBruijnGraph, kmer: string): number {
   let length = 0;
   let current = kmer;
+  const visited = new Set<string>();
 
-  while (true) {
+  while (!visited.has(current)) {
+    visited.add(current);
     const incoming = graph.reverseEdges.get(current);
     if (!incoming || incoming.size === 0) {
       break;

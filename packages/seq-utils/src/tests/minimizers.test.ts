@@ -25,7 +25,7 @@ describe('minimizers', () => {
     it('3. should avoid duplicate consecutive minimizers', () => {
       const minimizers = getMinimizers('AAAAAAAAAA', 2, 3);
       expect(minimizers.length).toBeGreaterThan(0);
-      expect(minimizers.every(m => m.kmer === 'AA')).toBe(true);
+      expect(minimizers.every((m) => m.kmer === 'AA')).toBe(true);
     });
 
     it('4. should handle canonical k-mers', () => {

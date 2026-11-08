@@ -7,17 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Correct median sequence lengths for odd and even record counts in Node and browser statistics.
+- Use numeric Phred encoding constants in the script-tag browser bundle, matching its quality conversion and statistics APIs.
+
+### Changed
+
+- Compute median, N50, and L50 directly from length frequencies, avoiding per-record arrays and repeated sorting during statistics finalization.
+
 ## [0.1.1] - 2026-02-17
 
 ### Added
+
 - Package exports field for better tree-shaking
 
 ### Fixed
+
 - Removed unused imports in tests
 
 ## [0.1.0] - 2026-02-15
 
 ### Added
+
 - Initial release
 - FASTA format parser and writer (Node.js and browser)
 - FASTQ format parser and writer (Node.js and browser)

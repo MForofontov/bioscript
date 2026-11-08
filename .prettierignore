@@ -13,3 +13,8 @@ allure-report/
 *~
 .vscode/
 .idea/
+
+playwright-report/
+test-results/
+jest.html
+**/e2e/*.js

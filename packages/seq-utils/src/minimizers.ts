@@ -42,7 +42,7 @@ export interface Minimizer {
  * ```
  *
  * @note Minimizers are useful for: sequence alignment, read overlap detection, genome assembly.
- * @performance O(n * w) where n is sequence length, w is window size.
+ * @performance O(n * k) including k-mer construction; amortized O(n) window selection.
  */
 export function getMinimizers(
   sequence: string,
@@ -73,39 +73,7 @@ export function getMinimizers(
     return [];
   }
 
-  const minimizers: Minimizer[] = [];
-  const numWindows = normalized.length - k - w + 2;
-
-  for (let windowStart = 0; windowStart < numWindows; windowStart++) {
-    let minKmer = '';
-    let minPos = -1;
-
-    // Find minimum k-mer in window [windowStart, windowStart + w)
-    for (let i = windowStart; i < windowStart + w && i + k <= normalized.length; i++) {
-      let kmer = normalized.slice(i, i + k);
-
-      if (canonical) {
-        const revComp = reverseComplement(kmer);
-        kmer = kmer < revComp ? kmer : revComp;
-      }
-
-      if (minKmer === '' || kmer < minKmer) {
-        minKmer = kmer;
-        minPos = i;
-      }
-    }
-
-    // Add minimizer if it's different from previous or at different position
-    if (
-      minimizers.length === 0 ||
-      minimizers[minimizers.length - 1].kmer !== minKmer ||
-      minimizers[minimizers.length - 1].position !== minPos
-    ) {
-      minimizers.push({ kmer: minKmer, position: minPos });
-    }
-  }
-
-  return minimizers;
+  return selectMinimizers(normalized, k, w, canonical);
 }
 
 /**
@@ -127,7 +95,7 @@ export function getMinimizers(
  * });
  * ```
  *
- * @performance O(n) amortized with efficient hash function.
+ * @performance O(n * k) with the default hash; amortized O(n) window selection.
  */
 export function getHashMinimizers(
   sequence: string,
@@ -145,6 +113,9 @@ export function getHashMinimizers(
     throw new TypeError(`w must be a number, got ${typeof w}`);
   }
 
+  if (k < 1 || !Number.isInteger(k)) throw new Error('k must be a positive integer');
+  if (w < 1 || !Number.isInteger(w)) throw new Error('w must be a positive integer');
+
   const normalized = sequence.trim().toUpperCase();
   const { canonical = false, hashFunction = defaultHash } = options;
 
@@ -152,40 +123,7 @@ export function getHashMinimizers(
     return [];
   }
 
-  const minimizers: Minimizer[] = [];
-  const numWindows = normalized.length - k - w + 2;
-
-  for (let windowStart = 0; windowStart < numWindows; windowStart++) {
-    let minHash = Infinity;
-    let minKmer = '';
-    let minPos = -1;
-
-    for (let i = windowStart; i < windowStart + w && i + k <= normalized.length; i++) {
-      let kmer = normalized.slice(i, i + k);
-
-      if (canonical) {
-        const revComp = reverseComplement(kmer);
-        kmer = kmer < revComp ? kmer : revComp;
-      }
-
-      const hash = hashFunction(kmer);
-      if (hash < minHash) {
-        minHash = hash;
-        minKmer = kmer;
-        minPos = i;
-      }
-    }
-
-    if (
-      minimizers.length === 0 ||
-      minimizers[minimizers.length - 1].hash !== minHash ||
-      minimizers[minimizers.length - 1].position !== minPos
-    ) {
-      minimizers.push({ kmer: minKmer, position: minPos, hash: minHash });
-    }
-  }
-
-  return minimizers;
+  return selectMinimizers(normalized, k, w, canonical, hashFunction);
 }
 
 /**
@@ -210,7 +148,8 @@ export function getMinimizerDensity(
   options: { canonical?: boolean } = {}
 ): number {
   const minimizers = getMinimizers(sequence, k, w, options);
-  return minimizers.length / (sequence.trim().length - k + 1);
+  const count = sequence.trim().length - k + 1;
+  return count > 0 ? minimizers.length / count : 0;
 }
 
 /**
@@ -268,4 +207,49 @@ function defaultHash(kmer: string): number {
     hash = hash & hash; // Convert to 32-bit integer
   }
   return Math.abs(hash);
+}
+
+/** Monotonic deque; strict comparisons preserve the first position on ties. */
+function selectMinimizers(
+  sequence: string,
+  k: number,
+  w: number,
+  canonical: boolean,
+  hashFunction?: (kmer: string) => number
+): Minimizer[] {
+  let queue: Minimizer[] = [];
+  let head = 0;
+  const result: Minimizer[] = [];
+  for (let position = 0; position + k <= sequence.length; position++) {
+    let kmer = sequence.slice(position, position + k);
+    if (canonical) {
+      const reverse = reverseComplement(kmer);
+      if (reverse < kmer) kmer = reverse;
+    }
+    const candidate: Minimizer = hashFunction
+      ? { kmer, position, hash: hashFunction(kmer) }
+      : { kmer, position };
+    while (head < queue.length && queue[head].position <= position - w) head++;
+    // The previous implementation never selected NaN or positive Infinity.
+    if (!hashFunction || candidate.hash! < Infinity) {
+      while (
+        queue.length > head &&
+        (hashFunction
+          ? queue[queue.length - 1].hash! > candidate.hash!
+          : queue[queue.length - 1].kmer > kmer)
+      )
+        queue.pop();
+      queue.push(candidate);
+    }
+    if (position >= w - 1) {
+      const best = queue[head] ?? { kmer: '', position: -1, hash: Infinity };
+      if (result.length === 0 || result[result.length - 1].position !== best.position)
+        result.push(best);
+    }
+    if (head > 1024 && head * 2 > queue.length) {
+      queue = queue.slice(head);
+      head = 0;
+    }
+  }
+  return result;
 }

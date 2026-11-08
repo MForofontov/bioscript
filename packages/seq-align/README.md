@@ -1,5 +1,7 @@
 # @bioscript/seq-align
 
+Performance timings in this document are illustrative. Use the repository's `npm run benchmark` command and [major review](../../MAJOR_REVIEW.md) for reproducible measurements and compatibility notes.
+
 Sequence alignment algorithms for bioinformatics.
 
 ## Features
@@ -32,8 +34,8 @@ const global = needlemanWunsch('HEAGAWGHEE', 'PAWHEAE', {
   gapExtend: -1,
 });
 
-console.log(global.alignedSeq1);     // 'HEAGAWGHEE'
-console.log(global.alignedSeq2);     // '--PAW-HEAE'
+console.log(global.alignedSeq1); // 'HEAGAWGHEE'
+console.log(global.alignedSeq2); // '--PAW-HEAE'
 console.log(global.identityPercent); // 42.86%
 
 // Local alignment
@@ -41,8 +43,8 @@ const local = smithWaterman('HEAGAWGHEEHEAGAWGHEE', 'PAWHEAE', {
   matrix: 'BLOSUM62',
 });
 
-console.log(local.alignedSeq1);  // Best matching region
-console.log(local.startPos1);    // Start position
+console.log(local.alignedSeq1); // Best matching region
+console.log(local.startPos1); // Start position
 ```
 
 ## API
@@ -52,6 +54,7 @@ console.log(local.startPos1);    // Start position
 Global alignment for complete sequences.
 
 **Options:**
+
 - `matrix` - Scoring matrix (default: 'BLOSUM62')
 - `gapOpen` - Gap opening penalty (default: -10)
 - `gapExtend` - Gap extension penalty (default: -1)
@@ -69,6 +72,7 @@ const result = needlemanWunsch('ACGTACGT', 'ACGTAGCT', {
 Local alignment for finding best matching regions.
 
 **Options:** Same as needlemanWunsch, plus:
+
 - `minScore` - Minimum score threshold (default: 0)
 
 ```typescript
@@ -103,6 +107,7 @@ const result = overlapAlign('ACGTACGTACGT', 'ACGTACGTGGGG', {
 Fast banded alignment for closely related sequences.
 
 **Options:** Same as needlemanWunsch, plus:
+
 - `bandwidth` - Half-width of diagonal band (default: 10)
 
 ```typescript

@@ -1,5 +1,7 @@
 # @bioscript/seq-format
 
+Performance timings in this document are illustrative. Use the repository's `npm run benchmark` command and [major review](../../MAJOR_REVIEW.md) for reproducible measurements and compatibility notes.
+
 Comprehensive bioinformatics file format converters and parsers for GenBank, EMBL, GFF/GTF, BED, VCF, SAM, CIGAR, and Newick formats.
 
 ## Features
@@ -236,7 +238,7 @@ const flag = encodeSAMFlags({
   paired: true,
   properPair: true,
   reverse: true,
-  first: true
+  first: true,
 });
 console.log(flag); // 163
 ```
@@ -305,6 +307,7 @@ const ops = parseCIGAR('8M2I4M1D3M');
 ```
 
 **Supported operations:**
+
 - `M` - Match/Mismatch
 - `I` - Insertion to reference
 - `D` - Deletion from reference
@@ -322,7 +325,7 @@ Format CIGAR operations back to string.
 ```typescript
 const ops = [
   { length: 8, operation: 'M' },
-  { length: 2, operation: 'I' }
+  { length: 2, operation: 'I' },
 ];
 const cigar = formatCIGAR(ops); // '8M2I'
 ```
@@ -354,8 +357,8 @@ Generate aligned sequences with gaps from CIGAR and query sequence.
 
 ```typescript
 const aligned = cigarToAlignedSequence('3M2I2M1D2M', 'ACGTACGTA');
-console.log(aligned.query);      // 'ACGTACG-TA'
-console.log(aligned.reference);  // 'ACG--CGNTA'
+console.log(aligned.query); // 'ACGTACG-TA'
+console.log(aligned.reference); // 'ACG--CGNTA'
 ```
 
 #### validateCIGAR(cigar: string): boolean
@@ -364,8 +367,8 @@ Validate CIGAR string format.
 
 ```typescript
 validateCIGAR('8M2I4M1D3M'); // true
-validateCIGAR('8M2Q4M');     // false (invalid operation Q)
-validateCIGAR('*');          // true (unmapped)
+validateCIGAR('8M2Q4M'); // false (invalid operation Q)
+validateCIGAR('*'); // true (unmapped)
 ```
 
 ### Newick Tree Format
@@ -378,12 +381,13 @@ Parse Newick format string into tree structure.
 
 ```typescript
 const tree = parseNewick('((A:0.1,B:0.2):0.3,C:0.4);');
-console.log(tree.leafCount);   // 3
-console.log(tree.maxDepth);    // 2
-console.log(tree.hasLengths);  // true
+console.log(tree.leafCount); // 3
+console.log(tree.maxDepth); // 2
+console.log(tree.hasLengths); // true
 ```
 
 **Tree structure:**
+
 ```typescript
 interface NewickTree {
   root: NewickNode;
@@ -455,9 +459,9 @@ const totalLength = getTotalLength(tree.root); // 1.0
 Validate Newick format string.
 
 ```typescript
-validateNewick('((A,B),C);');  // true
-validateNewick('((A,B),C)');   // false (missing semicolon)
-validateNewick('((A,B);');     // false (unmatched parentheses)
+validateNewick('((A,B),C);'); // true
+validateNewick('((A,B),C)'); // false (missing semicolon)
+validateNewick('((A,B);'); // false (unmatched parentheses)
 ```
 
 ## Real-World Examples
@@ -476,9 +480,7 @@ const fastaRecords = genBankToFasta(gbRecord, true);
 const cdsRecords = fastaRecords.slice(1); // Skip main sequence
 
 // Write to FASTA file
-const fastaText = cdsRecords
-  .map(r => `>${r.id} ${r.description}\n${r.sequence}`)
-  .join('\n');
+const fastaText = cdsRecords.map((r) => `>${r.id} ${r.description}\n${r.sequence}`).join('\n');
 
 writeFileSync('cds_sequences.fasta', fastaText);
 ```
@@ -491,7 +493,7 @@ import { parseVCF, formatVCF } from '@bioscript/seq-format';
 const { header, records } = parseVCF(vcfText);
 
 // Filter high-quality variants (QUAL > 30)
-const highQualityVariants = records.filter(r => r.qual && r.qual > 30);
+const highQualityVariants = records.filter((r) => r.qual && r.qual > 30);
 
 // Write filtered VCF
 const filteredVcf = formatVCF(header, highQualityVariants);
@@ -518,15 +520,15 @@ import { parseSAM } from '@bioscript/seq-format';
 const { header, records } = parseSAM(samText);
 
 // Count paired-end reads
-const pairedReads = records.filter(r => r.flags?.paired).length;
+const pairedReads = records.filter((r) => r.flags?.paired).length;
 console.log(`Paired reads: ${pairedReads} / ${records.length}`);
 
 // Count unmapped reads
-const unmappedReads = records.filter(r => r.flags?.unmapped).length;
-console.log(`Unmapped: ${unmappedReads} (${(unmappedReads / records.length * 100).toFixed(1)}%)`);
+const unmappedReads = records.filter((r) => r.flags?.unmapped).length;
+console.log(`Unmapped: ${unmappedReads} (${((unmappedReads / records.length) * 100).toFixed(1)}%)`);
 
 // Count reverse strand alignments
-const reverseReads = records.filter(r => r.flags?.reverse).length;
+const reverseReads = records.filter((r) => r.flags?.reverse).length;
 console.log(`Reverse strand: ${reverseReads}`);
 ```
 
@@ -538,15 +540,13 @@ import { parseBED } from '@bioscript/seq-format';
 const bedRecords = parseBED(bedText);
 
 // Filter genes on chromosome 1
-const chr1Genes = bedRecords.filter(r => r.chrom === 'chr1');
+const chr1Genes = bedRecords.filter((r) => r.chrom === 'chr1');
 
 // Find large genes (>10kb)
-const largeGenes = bedRecords.filter(r => 
-  (r.chromEnd - r.chromStart) > 10000
-);
+const largeGenes = bedRecords.filter((r) => r.chromEnd - r.chromStart > 10000);
 
 console.log(`Large genes: ${largeGenes.length}`);
-largeGenes.forEach(gene => {
+largeGenes.forEach((gene) => {
   const size = gene.chromEnd - gene.chromStart;
   console.log(`${gene.name}: ${size}bp on ${gene.strand}`);
 });
@@ -560,14 +560,14 @@ import { parseSAM, parseCIGAR, getCIGARStats } from '@bioscript/seq-format';
 const { records } = parseSAM(samText);
 
 // Analyze alignment quality
-records.forEach(record => {
+records.forEach((record) => {
   if (record.cigar && record.cigar !== '*') {
     const ops = parseCIGAR(record.cigar);
     const stats = getCIGARStats(ops);
-    
+
     const matchRate = stats.matches / stats.alignedLength;
     const indelRate = (stats.insertions + stats.deletions) / stats.alignedLength;
-    
+
     console.log(`${record.qname}:`);
     console.log(`  Match rate: ${(matchRate * 100).toFixed(1)}%`);
     console.log(`  Indel rate: ${(indelRate * 100).toFixed(1)}%`);
@@ -624,8 +624,8 @@ const lowPrecision = formatNewick(tree, { precision: 2 });
 const noLengths = formatNewick(tree, { includeLengths: false });
 
 console.log(fullPrecision); // '(A:0.123456,B:0.987654);'
-console.log(lowPrecision);  // '(A:0.12,B:0.99);'
-console.log(noLengths);     // '(A,B);'
+console.log(lowPrecision); // '(A:0.12,B:0.99);'
+console.log(noLengths); // '(A,B);'
 ```
 
 ## Performance
@@ -642,6 +642,7 @@ All parsers use O(n) algorithms with efficient string processing.
 ## Format Support
 
 ### Fully Supported
+
 - ✅ GenBank (parse, write, convert to/from FASTA)
 - ✅ EMBL (parse, convert to FASTA)
 - ✅ GFF3 (parse, write)
@@ -653,6 +654,7 @@ All parsers use O(n) algorithms with efficient string processing.
 - ✅ Newick (parse, format, tree analysis)
 
 ### Limitations
+
 - **BAM**: Binary format not supported (use samtools for BAM ↔ SAM conversion)
 - **Streaming**: Not optimized for multi-GB files (see @bioscript/seq-stream for streaming)
 - **GenBank features**: Simplified location parsing (join/complement partially supported)

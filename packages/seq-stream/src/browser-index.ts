@@ -26,4 +26,4 @@ export {
 // Re-export types from main modules
 export type { FastaRecord } from './fasta';
 export type { FastqRecord } from './fastq';
-export { QualityEncoding } from './fastq';
+export { QualityEncoding } from './quality';

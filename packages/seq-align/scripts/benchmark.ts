@@ -41,10 +41,7 @@ function generateProteinSequence(length: number): string {
 /**
  * Generate similar sequence with controlled mutations.
  */
-function generateSimilarSequence(
-  original: string,
-  identityPercent: number
-): string {
+function generateSimilarSequence(original: string, identityPercent: number): string {
   const aminoAcids = 'ACDEFGHIKLMNPQRSTVWY';
   const mutationRate = 1 - identityPercent / 100;
   let sequence = '';
@@ -175,13 +172,7 @@ function runBenchmarks() {
 
     for (const algo of algorithms) {
       try {
-        const result = benchmarkAlgorithm(
-          algo.name,
-          algo.func,
-          seq1,
-          seq2,
-          algo.options
-        );
+        const result = benchmarkAlgorithm(algo.name, algo.func, seq1, seq2, algo.options);
 
         allResults.push(result);
 
@@ -201,9 +192,7 @@ function runBenchmarks() {
   console.log('\n' + '='.repeat(60));
   console.log('PERFORMANCE SUMMARY');
   console.log('='.repeat(60));
-  console.log(
-    '\nAlgorithm                        | Length | Time (ms) | Memory (MB)'
-  );
+  console.log('\nAlgorithm                        | Length | Time (ms) | Memory (MB)');
   console.log('-'.repeat(70));
 
   for (const result of allResults) {
@@ -253,9 +242,7 @@ function runBenchmarks() {
     },
   ];
 
-  console.log(
-    '\nAlgorithm          | Time      | Space         | Best For'
-  );
+  console.log('\nAlgorithm          | Time      | Space         | Best For');
   console.log('-'.repeat(65));
 
   for (const info of complexityInfo) {

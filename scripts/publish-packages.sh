@@ -35,11 +35,16 @@ if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
   exit 0
 fi
 
+# Build every workspace before packing or publishing any package.
+npm run build
+
 # Packages to publish
 PACKAGES=(
   "seq-utils"
   "seq-stream"
   "seq-translate"
+  "seq-align"
+  "seq-format"
 )
 
 SUCCESS_COUNT=0
@@ -58,7 +63,7 @@ for package in "${PACKAGES[@]}"; do
   
   if [ ! -d "$PACKAGE_PATH" ]; then
     echo -e "${RED}✗ Directory not found: $PACKAGE_PATH${NC}"
-    ((FAILURE_COUNT++))
+    FAILURE_COUNT=$((FAILURE_COUNT + 1))
     FAILED_PACKAGES+=("@bioscript/$package")
     continue
   fi
@@ -80,10 +85,10 @@ for package in "${PACKAGES[@]}"; do
   echo "  Publishing..."
   if npm publish --access public; then
     echo -e "  ${GREEN}✓ Published successfully${NC}"
-    ((SUCCESS_COUNT++))
+    SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
   else
     echo -e "  ${RED}✗ Publish failed${NC}"
-    ((FAILURE_COUNT++))
+    FAILURE_COUNT=$((FAILURE_COUNT + 1))
     FAILED_PACKAGES+=("@bioscript/$package")
   fi
   

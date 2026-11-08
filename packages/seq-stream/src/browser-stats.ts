@@ -1,3 +1,4 @@
+import { summarizeLengths } from './length-summary';
 /**
  * Browser-compatible statistics calculator for sequences
  * Memory-efficient processing of sequence data
@@ -6,11 +7,7 @@
 import type { FastaRecord } from './fasta';
 import type { FastqRecord } from './fastq';
 
-// Define QualityEncoding locally to avoid importing Node.js dependencies
-enum QualityEncoding {
-  Phred33 = 33,
-  Phred64 = 64,
-}
+import { QualityEncoding } from './quality';
 
 /**
  * Decode quality scores from encoded string (standalone version to avoid Node.js imports)
@@ -120,33 +117,12 @@ export async function calculateStatsBrowser(
     }
   }
 
-  // Calculate median from lengthDistribution map
-  let medianLength = 0;
-  if (lengthDistribution.size > 0) {
-    const sortedLengths = Array.from(lengthDistribution.keys()).sort((a, b) => a - b);
-    const halfPoint = Math.floor(totalSequences / 2);
-    let count = 0;
-
-    for (const length of sortedLengths) {
-      count += lengthDistribution.get(length)!;
-      if (count >= halfPoint) {
-        medianLength = length;
-        break;
-      }
-    }
-  }
+  const { medianLength, n50, l50 } = summarizeLengths(lengthDistribution);
 
   // Calculate standard deviation
   const meanLength = totalSequences > 0 ? totalBases / totalSequences : 0;
   const variance = totalSequences > 0 ? sumOfSquares / totalSequences - meanLength * meanLength : 0;
   const stdDevLength = Math.sqrt(Math.max(0, variance));
-
-  // Calculate N50 and L50
-  const allLengths: number[] = Array.from(lengthDistribution.entries()).flatMap(
-    ([length, count]: [number, number]): number[] => Array(count).fill(length) as number[]
-  );
-  const n50 = calculateN50Browser(allLengths);
-  const l50 = calculateL50Browser(allLengths);
 
   const stats: BrowserStats = {
     totalSequences,
@@ -242,33 +218,12 @@ export function calculateStatsSync(
     }
   }
 
-  // Calculate median from lengthDistribution map
-  let medianLength = 0;
-  if (lengthDistribution.size > 0) {
-    const sortedLengths = Array.from(lengthDistribution.keys()).sort((a, b) => a - b);
-    const halfPoint = Math.floor(totalSequences / 2);
-    let count = 0;
-
-    for (const length of sortedLengths) {
-      count += lengthDistribution.get(length)!;
-      if (count >= halfPoint) {
-        medianLength = length;
-        break;
-      }
-    }
-  }
+  const { medianLength, n50, l50 } = summarizeLengths(lengthDistribution);
 
   // Calculate standard deviation
   const meanLength = totalSequences > 0 ? totalBases / totalSequences : 0;
   const variance = totalSequences > 0 ? sumOfSquares / totalSequences - meanLength * meanLength : 0;
   const stdDevLength = Math.sqrt(Math.max(0, variance));
-
-  // Calculate N50 and L50
-  const allLengths: number[] = Array.from(lengthDistribution.entries()).flatMap(
-    ([length, count]: [number, number]): number[] => Array(count).fill(length) as number[]
-  );
-  const n50 = calculateN50Browser(allLengths);
-  const l50 = calculateL50Browser(allLengths);
 
   const stats: BrowserStats = {
     totalSequences,

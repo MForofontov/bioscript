@@ -1,3 +1,4 @@
+import { browserLines } from './browser-lines';
 /**
  * Browser-compatible FASTA parser using Web Streams API
  * Handles File/Blob objects with automatic gzip decompression
@@ -23,75 +24,24 @@ import type { FastaRecord } from './fasta';
  * ```
  */
 export async function* parseFastaBrowser(file: File | Blob): AsyncGenerator<FastaRecord> {
-  const textDecoder = new TextDecoder('utf-8');
-  let buffer = '';
-  let currentRecord: Partial<FastaRecord> | null = null;
-
-  // Handle gzip if file name ends with .gz
-  let stream: ReadableStream<Uint8Array>;
-
-  if (file instanceof File && file.name.endsWith('.gz')) {
-    stream = file.stream().pipeThrough(new DecompressionStream('gzip'));
-  } else {
-    stream = file.stream();
+  let currentRecord: FastaRecord | undefined;
+  for await (const line of browserLines(file)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (trimmed.startsWith('>')) {
+      if (currentRecord?.id) yield currentRecord;
+      const header = trimmed.slice(1);
+      const space = header.indexOf(' ');
+      currentRecord = {
+        id: space < 0 ? header : header.slice(0, space),
+        description: space < 0 ? '' : header.slice(space + 1),
+        sequence: '',
+      };
+    } else if (currentRecord) {
+      currentRecord.sequence += trimmed;
+    }
   }
-
-  const reader = stream.getReader();
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) break;
-
-      buffer += textDecoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
-
-        if (trimmed.startsWith('>')) {
-          // Emit previous record
-          if (currentRecord && currentRecord.id) {
-            yield currentRecord as FastaRecord;
-          }
-
-          // Parse new header
-          const header = trimmed.substring(1);
-          const spaceIndex = header.indexOf(' ');
-
-          if (spaceIndex === -1) {
-            currentRecord = { id: header, description: '', sequence: '' };
-          } else {
-            currentRecord = {
-              id: header.substring(0, spaceIndex),
-              description: header.substring(spaceIndex + 1),
-              sequence: '',
-            };
-          }
-        } else if (currentRecord) {
-          currentRecord.sequence = (currentRecord.sequence || '') + trimmed;
-        }
-      }
-    }
-
-    // Process final buffer
-    if (buffer) {
-      const trimmed = buffer.trim();
-      if (currentRecord && trimmed && !trimmed.startsWith('>')) {
-        currentRecord.sequence = (currentRecord.sequence || '') + trimmed;
-      }
-    }
-
-    // Emit last record
-    if (currentRecord && currentRecord.id) {
-      yield currentRecord as FastaRecord;
-    }
-  } finally {
-    reader.releaseLock();
-  }
+  if (currentRecord?.id) yield currentRecord;
 }
 
 /**
@@ -109,6 +59,8 @@ export async function* parseFastaBrowser(file: File | Blob): AsyncGenerator<Fast
  * ```
  */
 export function writeFastaBrowser(records: FastaRecord[], lineWidth: number = 80): Blob {
+  if (!Number.isInteger(lineWidth) || lineWidth <= 0)
+    throw new Error('lineWidth must be a positive integer');
   const lines: string[] = [];
 
   for (const record of records) {

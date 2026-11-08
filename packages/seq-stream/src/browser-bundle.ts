@@ -2,11 +2,7 @@
  * Browser bundle entry point
  */
 
-// Quality encoding enum (defined here to avoid Node.js imports)
-export enum QualityEncoding {
-  Phred33 = 'phred33',
-  Phred64 = 'phred64',
-}
+export { QualityEncoding } from './quality';
 
 // FASTA record type
 export interface FastaRecord {

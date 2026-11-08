@@ -107,8 +107,8 @@ describe('TranslationPool', () => {
   // Test case 1: Initialize and terminate pool
   it('1. should initialize and terminate pool', async () => {
     const pool = new TranslationPool(2);
-    await pool.initialize();
-    void pool.terminate();
+    pool.initialize();
+    await pool.terminate();
 
     expect(pool).toBeDefined();
   });

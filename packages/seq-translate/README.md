@@ -1,5 +1,7 @@
 # @bioscript/seq-translate
 
+Performance timings in this document are illustrative. Use the repository's `npm run benchmark` command and [major review](../../MAJOR_REVIEW.md) for reproducible measurements and compatibility notes.
+
 Efficient sequence translation utilities supporting all NCBI genetic code tables with browser and Node.js support.
 
 ## Features
@@ -42,14 +44,14 @@ import { translateWorker, TranslationPool } from '@bioscript/seq-translate';
 
 // Translate multiple sequences in parallel
 const sequences = ['ATGGCC', 'ATGTAA', 'ATGCCC'];
-const results = await translateWorker(sequences, { 
+const results = await translateWorker(sequences, {
   table: 'vertebrate_mitochondrial',
-  allFrames: true 
+  allFrames: true,
 });
 
 results.forEach((seqResults, i) => {
   console.log(`Sequence ${i}:`);
-  seqResults.forEach(r => {
+  seqResults.forEach((r) => {
     console.log(`  Frame ${r.frame}: ${r.sequence}`);
   });
 });
@@ -70,12 +72,12 @@ await pool.terminate();
 import { translateBrowser } from '@bioscript/seq-translate/browser';
 
 // Basic browser translation
-const results = translateBrowser('ATGGCCAAA', { 
+const results = translateBrowser('ATGGCCAAA', {
   table: 'standard',
-  allFrames: true 
+  allFrames: true,
 });
 
-results.forEach(r => {
+results.forEach((r) => {
   console.log(`Frame ${r.frame}: ${r.sequence}`);
 });
 ```
@@ -89,9 +91,9 @@ import { translateBrowserStreaming } from '@bioscript/seq-translate/browser';
 const fileInput = document.querySelector('input[type="file"]');
 const file = fileInput.files[0];
 
-for await (const chunk of translateBrowserStreaming(file, { 
+for await (const chunk of translateBrowserStreaming(file, {
   table: 'standard',
-  chunkSize: 10000 
+  chunkSize: 10000,
 })) {
   console.log(`Translated chunk: ${chunk.sequence.slice(0, 50)}...`);
   // Process chunk as it arrives
@@ -130,9 +132,9 @@ console.log(Object.keys(tables));
 import { translateBatch } from '@bioscript/seq-translate';
 
 const sequences = ['ATGGCC', 'ATGTAA', 'ATGCCC'];
-const proteins = translateBatch(sequences, { 
+const proteins = translateBatch(sequences, {
   table: 'standard',
-  breakOnStop: true 
+  breakOnStop: true,
 });
 
 proteins.forEach((p, i) => {
@@ -149,12 +151,12 @@ import { translateSequence, translateSixFrames } from '@bioscript/seq-translate'
 const protein = translateSequence('ATGGCCTAA', {
   table: 'standard',
   stopSymbol: 'X',
-  breakOnStop: false // Continue past stop codons
+  breakOnStop: false, // Continue past stop codons
 });
 
 // All 6 reading frames (3 forward + 3 reverse)
 const allFrames = translateSixFrames('ATGGCCAAA', {
-  table: 'standard'
+  table: 'standard',
 });
 console.log(allFrames); // 6 translations
 ```
@@ -166,13 +168,13 @@ import { findOrfs } from '@bioscript/seq-translate';
 
 // Find all ORFs (start codon to stop codon)
 const orfs = findOrfs('ATGGCCAAATAAGATGGGGTAGCCC', {
-  minLength: 9,        // Minimum ORF length in bp
-  allFrames: true,     // Search all 6 frames
-  translate: true,     // Include protein translation
-  table: 'standard'
+  minLength: 9, // Minimum ORF length in bp
+  allFrames: true, // Search all 6 frames
+  translate: true, // Include protein translation
+  table: 'standard',
 });
 
-orfs.forEach(orf => {
+orfs.forEach((orf) => {
   console.log(`ORF at ${orf.start}-${orf.end} (frame ${orf.frame}, ${orf.strand} strand)`);
   console.log(`  Sequence: ${orf.sequence}`);
   console.log(`  Protein: ${orf.protein}`);
@@ -182,13 +184,13 @@ orfs.forEach(orf => {
 // Include partial ORFs (no stop codon)
 const partialOrfs = findOrfs(sequence, {
   minLength: 75,
-  includePartial: true  // Include ORFs without stop codon
+  includePartial: true, // Include ORFs without stop codon
 });
 
 // Use alternative start codons
 const altOrfs = findOrfs(sequence, {
-  startCodons: ['ATG', 'CTG', 'GTG'],  // Alternative starts
-  minLength: 30
+  startCodons: ['ATG', 'CTG', 'GTG'], // Alternative starts
+  minLength: 30,
 });
 ```
 
@@ -229,6 +231,7 @@ const altOrfs = findOrfs(sequence, {
 ### Genetic Code Tables
 
 All NCBI genetic code tables (1-33) are supported:
+
 - Standard (1)
 - Vertebrate Mitochondrial (2)
 - Yeast Mitochondrial (3)
@@ -295,4 +298,3 @@ interface OrfOptions extends TranslationOptions {
 ## License
 
 MIT © 2026 [Mykyta Forofontov](https://github.com/MForofontov)
-

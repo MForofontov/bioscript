@@ -79,7 +79,7 @@ describe('semiGlobal', () => {
     });
 
     expect(result.score).toBe(40); // 8 matches, no gaps
-    expect(result.alignedSeq1.split("-").length - 1).toBe(0);
+    expect(result.alignedSeq1.split('-').length - 1).toBe(0);
   });
 
   it('8. should handle sequences with mismatches', () => {
@@ -87,7 +87,9 @@ describe('semiGlobal', () => {
       matrix: 'DNA_SIMPLE',
     });
 
-    expect((result.alignmentLength - result.identity - (result.alignedSeq1.split("-").length - 1))).toBe(4);
+    expect(
+      result.alignmentLength - result.identity - (result.alignedSeq1.split('-').length - 1)
+    ).toBe(4);
     expect(result.identity).toBe(0);
   });
 
@@ -95,8 +97,10 @@ describe('semiGlobal', () => {
     const result = semiGlobal('ACGTACGT', 'ACGTACGT');
 
     expect(result.identity).toBe(8);
-    expect(result.alignedSeq1.split("-").length - 1).toBe(0);
-    expect((result.alignmentLength - result.identity - (result.alignedSeq1.split("-").length - 1))).toBe(0);
+    expect(result.alignedSeq1.split('-').length - 1).toBe(0);
+    expect(
+      result.alignmentLength - result.identity - (result.alignedSeq1.split('-').length - 1)
+    ).toBe(0);
   });
 
   it('11. should handle one sequence is prefix of another', () => {

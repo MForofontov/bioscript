@@ -1,14 +1,13 @@
-import { Transform, type TransformCallback } from 'stream';
+import { LineParser } from './line-parser';
+import { Transform, pipeline, type TransformCallback } from 'stream';
 import { createReadStream, createWriteStream } from 'fs';
 import { createGunzip, createGzip } from 'zlib';
 
 /**
  * Quality encoding schemes for FASTQ files
  */
-export enum QualityEncoding {
-  Phred33 = 33, // Sanger, Illumina 1.8+
-  Phred64 = 64, // Illumina 1.3-1.7
-}
+export { QualityEncoding } from './quality';
+import { QualityEncoding } from './quality';
 
 /**
  * Interface representing a parsed FASTQ sequence
@@ -23,39 +22,15 @@ export interface FastqRecord {
 /**
  * Stream transformer that parses FASTQ format into FastqRecord objects
  */
-export class FastqParser extends Transform {
-  private buffer: string = '';
+export class FastqParser extends LineParser {
   private lineNumber: number = 0;
   private currentRecord: Partial<FastqRecord> = {};
 
-  constructor() {
-    super({ objectMode: true });
+  protected finish(): void {
+    if (this.lineNumber % 4 !== 0) throw new Error('Incomplete FASTQ record at end of input');
   }
 
-  _transform(chunk: Buffer, encoding: string, callback: TransformCallback): void {
-    this.buffer += chunk.toString();
-    const lines = this.buffer.split('\n');
-
-    // Keep the last incomplete line in the buffer
-    this.buffer = lines.pop() || '';
-
-    for (const line of lines) {
-      this.processLine(line);
-    }
-
-    callback();
-  }
-
-  _flush(callback: TransformCallback): void {
-    // Process any remaining data
-    if (this.buffer) {
-      this.processLine(this.buffer);
-    }
-
-    callback();
-  }
-
-  private processLine(line: string): void {
+  protected processLine(line: string): void {
     const trimmed = line.trim();
     const position = this.lineNumber % 4;
 
@@ -98,7 +73,7 @@ export class FastqParser extends Transform {
 
         // Validate sequence and quality lengths match
         if (
-          this.currentRecord.sequence &&
+          this.currentRecord.sequence !== undefined &&
           this.currentRecord.sequence.length !== this.currentRecord.quality.length
         ) {
           throw new Error(
@@ -107,7 +82,7 @@ export class FastqParser extends Transform {
           );
         }
 
-        this.push(this.currentRecord as FastqRecord);
+        this.emitRecord(this.currentRecord as FastqRecord);
         this.currentRecord = {};
         break;
     }
@@ -121,7 +96,12 @@ export class FastqParser extends Transform {
  */
 export class FastqWriter extends Transform {
   constructor() {
-    super({ objectMode: true, writableObjectMode: true, readableObjectMode: false });
+    super({
+      objectMode: true,
+      writableObjectMode: true,
+      readableObjectMode: false,
+      autoDestroy: false,
+    });
   }
 
   _transform(record: FastqRecord, encoding: string, callback: TransformCallback): void {
@@ -214,11 +194,13 @@ export function createFastqParser(filePath: string): NodeJS.ReadableStream {
   const fileStream = createReadStream(filePath);
   const parser = new FastqParser();
 
+  const onComplete = (): void => {};
   if (filePath.endsWith('.gz')) {
-    return fileStream.pipe(createGunzip()).pipe(parser);
+    pipeline(fileStream, createGunzip(), parser, onComplete);
+  } else {
+    pipeline(fileStream, parser, onComplete);
   }
-
-  return fileStream.pipe(parser);
+  return parser;
 }
 
 /**
@@ -229,10 +211,13 @@ export function createFastqWriter(filePath: string): NodeJS.WritableStream {
   const writer = new FastqWriter();
   const fileStream = createWriteStream(filePath);
 
+  const onComplete = (error: NodeJS.ErrnoException | null): void => {
+    writer.destroy(error ?? undefined);
+  };
   if (filePath.endsWith('.gz')) {
-    writer.pipe(createGzip()).pipe(fileStream);
+    pipeline(writer, createGzip(), fileStream, onComplete);
   } else {
-    writer.pipe(fileStream);
+    pipeline(writer, fileStream, onComplete);
   }
 
   return writer;

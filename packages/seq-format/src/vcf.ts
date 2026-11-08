@@ -1,3 +1,4 @@
+import { integer, numeric } from './validation';
 /**
  * VCF (Variant Call Format) parser.
  * @module vcf
@@ -39,7 +40,8 @@ export function parseVCFHeader(text: string): VCFHeader {
     other: [],
   };
 
-  for (const line of lines) {
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/\r$/, '');
     if (!line.startsWith('#')) {
       break; // End of header
     }
@@ -49,54 +51,40 @@ export function parseVCFHeader(text: string): VCFHeader {
       continue;
     }
 
-    if (line.startsWith('##contig=')) {
-      const match = line.match(/##contig=<ID=([^,>]+)(?:,length=(\d+))?/);
-      if (match) {
-        header.contigs.push({
-          id: match[1],
-          length: match[2] ? parseInt(match[2]) : undefined,
-        });
+    const metadata = /^##(contig|INFO|FILTER|FORMAT)=<(.*)>$/.exec(line);
+    if (metadata) {
+      const attributes: Record<string, string> = {};
+      const pairs = metadata[2].match(/(?:[^,"]|"(?:\\.|[^"\\])*")+/g) ?? [];
+      for (const pair of pairs) {
+        const separator = pair.indexOf('=');
+        if (separator < 0) continue;
+        const key = pair.slice(0, separator).trim();
+        let value = pair.slice(separator + 1).trim();
+        if (value.startsWith('"') && value.endsWith('"'))
+          value = value.slice(1, -1).replace(/\\(["\\])/g, '$1');
+        attributes[key] = value;
       }
-      continue;
-    }
-
-    if (line.startsWith('##INFO=')) {
-      const match = line.match(
-        /##INFO=<ID=([^,]+),Number=([^,]+),Type=([^,]+),Description="([^"]+)"/
-      );
-      if (match) {
-        header.info.push({
-          id: match[1],
-          number: match[2],
-          type: match[3],
-          description: match[4],
-        });
-      }
-      continue;
-    }
-
-    if (line.startsWith('##FILTER=')) {
-      const match = line.match(/##FILTER=<ID=([^,]+),Description="([^"]+)"/);
-      if (match) {
-        header.filter.push({
-          id: match[1],
-          description: match[2],
-        });
-      }
-      continue;
-    }
-
-    if (line.startsWith('##FORMAT=')) {
-      const match = line.match(
-        /##FORMAT=<ID=([^,]+),Number=([^,]+),Type=([^,]+),Description="([^"]+)"/
-      );
-      if (match) {
-        header.format.push({
-          id: match[1],
-          number: match[2],
-          type: match[3],
-          description: match[4],
-        });
+      if (attributes.ID) {
+        if (metadata[1] === 'contig')
+          header.contigs.push({
+            id: attributes.ID,
+            length:
+              attributes.length === undefined
+                ? undefined
+                : integer(attributes.length, 'VCF contig length', 1),
+          });
+        else if (metadata[1] === 'FILTER')
+          header.filter.push({ id: attributes.ID, description: attributes.Description ?? '' });
+        else {
+          const field = {
+            id: attributes.ID,
+            number: attributes.Number,
+            type: attributes.Type,
+            description: attributes.Description ?? '',
+          };
+          if (metadata[1] === 'INFO') header.info.push(field);
+          else header.format.push(field);
+        }
       }
       continue;
     }
@@ -161,8 +149,8 @@ export function parseVCFLine(line: string, _samples: string[] = []): VCFRecord {
 
   const [chrom, posStr, id, ref, altStr, qualStr, filter, infoStr] = fields;
 
-  const pos = parseInt(posStr);
-  const qual = qualStr === '.' ? null : parseFloat(qualStr);
+  const pos = integer(posStr, 'VCF position', 1);
+  const qual = qualStr === '.' ? null : numeric(qualStr, 'VCF quality');
   const alt = altStr.split(',');
 
   // Parse INFO field
@@ -171,10 +159,12 @@ export function parseVCFLine(line: string, _samples: string[] = []): VCFRecord {
     const infoPairs = infoStr.split(';');
     for (const pair of infoPairs) {
       if (pair.includes('=')) {
-        const [key, value] = pair.split('=');
+        const separator = pair.indexOf('=');
+        const key = pair.slice(0, separator);
+        const value = pair.slice(separator + 1);
         // Try to parse as number
-        const numValue = parseFloat(value);
-        info[key] = isNaN(numValue) ? value : numValue;
+        const numValue = Number(value);
+        info[key] = value.trim() !== '' && Number.isFinite(numValue) ? numValue : value;
       } else {
         // Flag (boolean)
         info[pair] = true;
@@ -356,6 +346,8 @@ export function formatVCF(header: VCFHeader, records: VCFRecord[]): string {
   }
 
   let output = '';
+  const escapeDescription = (value: string): string =>
+    value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
   // Write fileformat
   output += `##fileformat=${header.fileformat}\n`;
@@ -376,17 +368,17 @@ export function formatVCF(header: VCFHeader, records: VCFRecord[]): string {
 
   // Write INFO
   for (const info of header.info) {
-    output += `##INFO=<ID=${info.id},Number=${info.number},Type=${info.type},Description="${info.description}">\n`;
+    output += `##INFO=<ID=${info.id},Number=${info.number},Type=${info.type},Description="${escapeDescription(info.description)}">\n`;
   }
 
   // Write FILTER
   for (const filter of header.filter) {
-    output += `##FILTER=<ID=${filter.id},Description="${filter.description}">\n`;
+    output += `##FILTER=<ID=${filter.id},Description="${escapeDescription(filter.description)}">\n`;
   }
 
   // Write FORMAT
   for (const format of header.format) {
-    output += `##FORMAT=<ID=${format.id},Number=${format.number},Type=${format.type},Description="${format.description}">\n`;
+    output += `##FORMAT=<ID=${format.id},Number=${format.number},Type=${format.type},Description="${escapeDescription(format.description)}">\n`;
   }
 
   // Write column header

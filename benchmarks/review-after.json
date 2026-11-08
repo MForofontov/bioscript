@@ -1,0 +1,77 @@
+{
+  "node": "v24.22.1",
+  "platform": "win32",
+  "cpu": "Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz",
+  "seed": 42,
+  "warmups": 1,
+  "repetitions": 5,
+  "memoryNote": "Process high-water RSS; cumulative, not isolated per operation.",
+  "results": [
+    {
+      "name": "lexicographic minimizers",
+      "input": {
+        "bases": 100000,
+        "k": 15,
+        "w": 100
+      },
+      "medianMs": 12.762,
+      "peakRssBytes": 54587392
+    },
+    {
+      "name": "hash minimizers",
+      "input": {
+        "bases": 100000,
+        "k": 15,
+        "w": 100
+      },
+      "medianMs": 12.532,
+      "peakRssBytes": 64270336
+    },
+    {
+      "name": "global alignment",
+      "input": {
+        "bases": 600
+      },
+      "medianMs": 68.671,
+      "peakRssBytes": 123330560
+    },
+    {
+      "name": "banded alignment",
+      "input": {
+        "bases": 600,
+        "bandwidth": 10
+      },
+      "medianMs": 7.522,
+      "peakRssBytes": 123330560
+    },
+    {
+      "name": "FASTA streaming",
+      "input": {
+        "records": 10000,
+        "basesPerRecord": 100
+      },
+      "medianMs": 13.895,
+      "peakRssBytes": 123330560
+    },
+    {
+      "name": "worker startup and batch",
+      "input": {
+        "sequences": 20,
+        "bases": 3000,
+        "workers": 2
+      },
+      "medianMs": 57.717,
+      "peakRssBytes": 123330560
+    },
+    {
+      "name": "pool repeated batch",
+      "input": {
+        "sequences": 20,
+        "bases": 3000,
+        "workers": 2
+      },
+      "medianMs": 0.389,
+      "peakRssBytes": 123330560
+    }
+  ]
+}

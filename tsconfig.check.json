@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2020", "DOM"],
+    "noEmit": true
+  },
+  "include": [
+    "*.ts",
+    "packages/*/src/**/*.ts",
+    "packages/*/scripts/**/*.ts",
+    "packages/*/e2e/**/*.ts",
+    "packages/*/*.ts"
+  ],
+  "exclude": ["node_modules", "**/dist", "**/coverage"]
+}

@@ -92,6 +92,7 @@ bioscript/
 #### When to Use Battle-Tested Libraries
 
 **DO use existing packages for:**
+
 - **Streaming**: Node.js `stream`, `zlib` (built-in modules)
 - **File I/O**: Node.js `fs`, `path` (built-in modules)
 - **Compression**: Node.js `zlib` for gzip (built-in)
@@ -101,6 +102,7 @@ bioscript/
 - **Build tools**: `typescript`, `esbuild`
 
 **DO add value on top with:**
+
 - ✅ **Bioinformatics logic**: Format parsing, quality score conversion, statistics
 - ✅ **Streaming workflows**: Auto-detect compression, pipeline composition
 - ✅ **Type safety**: TypeScript interfaces for biological data (FastaRecord, FastqRecord)
@@ -131,7 +133,7 @@ export class StatsCalculator extends Transform {
   // Uses: Node.js Transform streams
   // Adds: GC content, N50/L50, quality scores, length distributions
   // This is domain-specific logic not in stdlib
-  
+
   getStats(): SequenceStats {
     // Calculate N50, L50, median, std dev, etc.
     return {
@@ -157,7 +159,7 @@ export function convertQuality(
 
   return quality
     .split('')
-    .map(char => {
+    .map((char) => {
       const phredScore = char.charCodeAt(0) - from;
       return String.fromCharCode(phredScore + to);
     })
@@ -166,7 +168,7 @@ export function convertQuality(
 
 // ❌ BAD: Just wrapping fs without adding value
 export function readFile(path: string): string {
-  return fs.readFileSync(path, 'utf-8');  // Use fs directly instead
+  return fs.readFileSync(path, 'utf-8'); // Use fs directly instead
 }
 
 // ❌ BAD: Reimplementing compression (use Node.js zlib)
@@ -179,7 +181,7 @@ export function compressGzip(data: Buffer): Buffer {
 
 #### 1. Bioinformatics Function Template
 
-```typescript
+````typescript
 /**
  * Brief description of the biological operation.
  *
@@ -199,8 +201,8 @@ export function compressGzip(data: Buffer): Buffer {
  * @example
  * ```typescript
  * // Using mitochondrial genetic code
- * const protein = translateSequence('ATGAGA', { 
- *   table: 'vertebrate_mitochondrial' 
+ * const protein = translateSequence('ATGAGA', {
+ *   table: 'vertebrate_mitochondrial'
  * });
  * console.log(protein); // 'M*' (AGA is stop in vertebrate mito)
  * ```
@@ -208,35 +210,30 @@ export function compressGzip(data: Buffer): Buffer {
  * @note Supports all 33 NCBI genetic code tables.
  * @performance O(n) time, O(1) space. Processes ~1M codons/sec.
  */
-export function translateSequence(
-  sequence: string,
-  options: TranslationOptions = {}
-): string {
+export function translateSequence(sequence: string, options: TranslationOptions = {}): string {
   // Input validation
   if (typeof sequence !== 'string') {
     throw new TypeError(`sequence must be a string, got ${typeof sequence}`);
   }
 
   const normalized = sequence.trim().toUpperCase();
-  
+
   // Validate sequence contains only valid bases
   if (!/^[ACGTUN]*$/.test(normalized)) {
-    throw new Error(
-      'sequence contains invalid characters (expected: A, C, G, T, U, N)'
-    );
+    throw new Error('sequence contains invalid characters (expected: A, C, G, T, U, N)');
   }
 
   // Function logic
   const { table = 'standard', stopSymbol = '*', breakOnStop = true } = options;
   const codonTable = getTable(table);
-  
+
   // ... translation logic
 }
-```
+````
 
 #### 2. Streaming Parser Template
 
-```typescript
+````typescript
 /**
  * Stream transformer that parses FASTA format.
  * Handles multi-line sequences and descriptions.
@@ -294,11 +291,11 @@ export class FastaParser extends Transform {
     // ... parsing logic with validation
   }
 }
-```
+````
 
 #### 3. Browser Function Template
 
-```typescript
+````typescript
 /**
  * Browser-compatible FASTA parser using Web Streams API.
  * Supports File and Blob inputs with automatic gzip decompression.
@@ -326,14 +323,8 @@ export async function* parseFastaBrowser(
   input: File | Blob | ArrayBuffer
 ): AsyncIterable<FastaRecord> {
   // Input validation
-  if (
-    !(input instanceof File) &&
-    !(input instanceof Blob) &&
-    !(input instanceof ArrayBuffer)
-  ) {
-    throw new TypeError(
-      'input must be File, Blob, or ArrayBuffer'
-    );
+  if (!(input instanceof File) && !(input instanceof Blob) && !(input instanceof ArrayBuffer)) {
+    throw new TypeError('input must be File, Blob, or ArrayBuffer');
   }
 
   // Auto-detect gzip and create stream
@@ -343,7 +334,7 @@ export async function* parseFastaBrowser(
 
   // ... streaming parsing logic
 }
-```
+````
 
 ### Testing Standards
 
@@ -358,7 +349,7 @@ import { functionName } from '../path/to/function';
  */
 describe('functionName', () => {
   // SECTION 1: Normal/typical usage (60% of tests)
-  
+
   it('1. should parse simple FASTA sequence', () => {
     // Arrange
     const input = '>seq1\nACGT\n';
@@ -456,10 +447,10 @@ test.describe('Browser FASTA Parser', () => {
     });
 
     expect(result).toHaveLength(2);
-    expect(result[0]).toEqual({ 
-      id: 'seq1', 
-      sequence: 'ACGTACGT', 
-      description: '' 
+    expect(result[0]).toEqual({
+      id: 'seq1',
+      sequence: 'ACGTACGT',
+      description: '',
     });
   });
 
@@ -467,8 +458,8 @@ test.describe('Browser FASTA Parser', () => {
     const result = await page.evaluate(async () => {
       const response = await fetch('/e2e/fixtures/test.fasta.gz');
       const arrayBuffer = await response.arrayBuffer();
-      const file = new File([arrayBuffer], 'test.fasta.gz', { 
-        type: 'application/gzip' 
+      const file = new File([arrayBuffer], 'test.fasta.gz', {
+        type: 'application/gzip',
       });
 
       const records = [];
@@ -494,17 +485,14 @@ test.describe('Browser FASTA Parser', () => {
 /**
  * Validate DNA/RNA sequence contains only valid bases.
  */
-export function validateSequence(
-  sequence: string,
-  allowAmbiguous: boolean = false
-): boolean {
+export function validateSequence(sequence: string, allowAmbiguous: boolean = false): boolean {
   if (typeof sequence !== 'string') {
     return false;
   }
 
   const basePattern = allowAmbiguous
-    ? /^[ACGTUNRYKMSWBDHV]+$/i  // IUPAC ambiguity codes
-    : /^[ACGTUN]+$/i;             // Standard bases + N
+    ? /^[ACGTUNRYKMSWBDHV]+$/i // IUPAC ambiguity codes
+    : /^[ACGTUN]+$/i; // Standard bases + N
 
   return basePattern.test(sequence);
 }
@@ -519,32 +507,29 @@ export function validateSequence(
  * - Phred+64 (Illumina 1.3-1.7): ASCII 64-126
  */
 export enum QualityEncoding {
-  Phred33 = 33,  // Standard for modern sequencing
-  Phred64 = 64,  // Legacy Illumina
+  Phred33 = 33, // Standard for modern sequencing
+  Phred64 = 64, // Legacy Illumina
 }
 
 /**
  * Decode quality string to numeric Phred scores.
  * Validates quality scores are in valid range.
  */
-export function decodeQualityScores(
-  quality: string,
-  encoding: QualityEncoding
-): number[] {
+export function decodeQualityScores(quality: string, encoding: QualityEncoding): number[] {
   if (typeof quality !== 'string') {
     throw new TypeError(`quality must be a string, got ${typeof quality}`);
   }
 
   return quality.split('').map((char, index) => {
     const phredScore = char.charCodeAt(0) - encoding;
-    
+
     if (phredScore < 0 || phredScore > 93) {
       throw new Error(
         `Invalid quality score at position ${index}: ${phredScore} ` +
-        `(expected 0-93 for encoding ${encoding})`
+          `(expected 0-93 for encoding ${encoding})`
       );
     }
-    
+
     return phredScore;
   });
 }
@@ -552,7 +537,7 @@ export function decodeQualityScores(
 
 #### Genetic Code Tables
 
-```typescript
+````typescript
 /**
  * NCBI genetic code table interface.
  * All codons use RNA notation (U instead of T).
@@ -577,21 +562,21 @@ export type CodonTable = Record<string, string>;
  */
 export function getTable(tableId: string): CodonTable {
   const table = tables[tableId];
-  
+
   if (!table) {
     throw new Error(
       `Unknown genetic code table: ${tableId}. ` +
-      `Available tables: ${Object.keys(tables).join(', ')}`
+        `Available tables: ${Object.keys(tables).join(', ')}`
     );
   }
-  
+
   return table;
 }
-```
+````
 
 #### Statistics Calculation
 
-```typescript
+````typescript
 /**
  * Calculate N50 statistic for assembly quality.
  * N50 is the sequence length at which 50% of bases are in sequences >= that length.
@@ -627,7 +612,7 @@ export function calculateN50(lengths: number[]): number {
 
   return sorted[sorted.length - 1];
 }
-```
+````
 
 ### Performance Standards
 
@@ -641,6 +626,7 @@ export function calculateN50(lengths: number[]): number {
 #### Throughput Benchmarks
 
 Target performance metrics:
+
 - **FASTA parsing**: 500+ MB/s (Node.js uncompressed)
 - **FASTQ parsing**: 300+ MB/s (Node.js uncompressed)
 - **Translation**: 1M+ codons/second (single-threaded)
@@ -652,28 +638,29 @@ Target performance metrics:
 ```typescript
 it('should parse 10MB file efficiently', async () => {
   // Generate 10MB test data
-  const sequences = new Array(10000).fill(0).map((_, i) => 
-    `>seq${i}\n${'ACGT'.repeat(250)}\n`
-  ).join('');
+  const sequences = new Array(10000)
+    .fill(0)
+    .map((_, i) => `>seq${i}\n${'ACGT'.repeat(250)}\n`)
+    .join('');
 
   const startTime = performance.now();
-  
+
   // Parse data
   const records: FastaRecord[] = [];
   await new Promise<void>((resolve) => {
     const parser = new FastaParser();
     const readable = Readable.from([sequences]);
-    
+
     parser.on('data', (record) => records.push(record));
     parser.on('end', resolve);
-    
+
     readable.pipe(parser);
   });
 
   const duration = performance.now() - startTime;
 
   expect(records).toHaveLength(10000);
-  expect(duration).toBeLessThan(100);  // Should complete in <100ms
+  expect(duration).toBeLessThan(100); // Should complete in <100ms
 });
 ```
 
@@ -714,6 +701,7 @@ const result = mainFunction(input);
 Description of what the function does.
 
 **Parameters:**
+
 - `input` (string): Description of input
 - `options` (object, optional): Configuration options
   - `option1` (boolean, default: false): Description
@@ -773,7 +761,7 @@ MIT © 2026 Mykyta Forofontov
  *
  * @note Supports all 33 NCBI genetic code tables.
  * @see {@link https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi}
- * 
+ *
  * @performance O(n) time complexity. Processes ~1M codons/second.
  * Memory: O(n) for result string.
  */
@@ -818,7 +806,7 @@ export { parseFasta as parseFastaBrowser } from './browser-fasta';
 
 ```typescript
 // Node.js streaming pipeline
-const parser = createFastaParser('sequences.fasta.gz');  // Auto-detects gzip
+const parser = createFastaParser('sequences.fasta.gz'); // Auto-detects gzip
 const stats = new StatsCalculator();
 const output = new PassThrough({ objectMode: true });
 
@@ -844,7 +832,7 @@ for await (const record of parseFastaBrowser(file)) {
 
 ```typescript
 // Parallel processing with worker threads
-const pool = new TranslationPool(4);  // 4 worker threads
+const pool = new TranslationPool(4); // 4 worker threads
 await pool.initialize();
 
 const batch1 = await pool.translate(sequences1, { table: 'standard' });
@@ -883,24 +871,28 @@ When adding a new package to the monorepo:
 ### Suggested New Packages
 
 #### @bioscript/seq-align
+
 - Pairwise alignment (Needleman-Wunsch, Smith-Waterman)
 - Multiple sequence alignment wrappers
 - Scoring matrices (BLOSUM, PAM)
 - Local and global alignment
 
 #### @bioscript/seq-search
+
 - Pattern matching and motif finding
 - Restriction site search
 - Primer design utilities
 - Regular expression-based searching
 
 #### @bioscript/seq-quality
+
 - FASTQ quality control
 - Adapter trimming
 - Quality filtering
 - Read quality reports
 
 #### @bioscript/seq-format
+
 - Format converters (FASTA ↔ GenBank ↔ EMBL)
 - GFF/GTF parsers
 - SAM/BAM support
@@ -929,19 +921,19 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build packages
         run: npm run build
-      
+
       - name: Run unit tests
         run: npm test
-      
+
       - name: Run browser tests
         run: npm run test:browser
-      
+
       - name: Check coverage
         run: npm run test:coverage
 ```
@@ -976,6 +968,7 @@ Each package maintains a CHANGELOG.md following [Keep a Changelog](https://keepa
 #### Workflow
 
 **During Development:**
+
 1. **Always add changes to `[Unreleased]` section first**
 2. Use appropriate categories:
    - `### Added` - New features, functions, parameters
@@ -986,42 +979,52 @@ Each package maintains a CHANGELOG.md following [Keep a Changelog](https://keepa
    - `### Security` - Security vulnerability fixes
 
 **Example - Adding to Unreleased:**
+
 ```markdown
 ## [Unreleased]
 
 ### Added
+
 - `calculateGCContent()` function for GC percentage calculation
 - Support for ambiguous IUPAC nucleotide codes
 
 ### Changed
+
 - Improved performance of k-mer extraction by 2x
 
 ### Fixed
+
 - Fixed off-by-one error in N50 calculation
 ```
 
 **Before Publishing:**
+
 1. **Move `[Unreleased]` content to new version section**
 2. **Add version number and release date**
 3. **Leave `[Unreleased]` section empty for next cycle**
 
 **Example - On Release:**
+
 ```markdown
 ## [Unreleased]
 
 ## [0.3.0] - 2026-02-20
 
 ### Added
+
 - `calculateGCContent()` function for GC percentage calculation
 - Support for ambiguous IUPAC nucleotide codes
 
 ### Changed
+
 - Improved performance of k-mer extraction by 2x
 
 ### Fixed
+
 - Fixed off-by-one error in N50 calculation
 
 ## [0.2.0] - 2026-02-17
+
 ...
 ```
 
@@ -1049,9 +1052,11 @@ Each package maintains a CHANGELOG.md following [Keep a Changelog](https://keepa
 #### Key Dependencies
 
 **Production:**
+
 - Node.js built-ins only (fs, stream, zlib, worker_threads, crypto)
 
 **Development:**
+
 - TypeScript
 - Jest + ts-jest
 - @playwright/test

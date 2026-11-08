@@ -53,7 +53,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "build:browser": "esbuild dist/browser-bundle.js --bundle --format=iife --global-name=bioseqTranslate --outfile=dist/bioseq-translate.bundle.js --platform=browser --external:worker_threads && cp dist/bioseq-translate.bundle.js e2e/",
+    "build:browser": "node ../../scripts/build-browser.cjs seq-translate",
     "build:all": "npm run build && npm run build:browser",
     "test": "jest",
     "test:watch": "jest --watch",

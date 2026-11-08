@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Preserve every branch and merge edge when extracting contigs, including shared endpoints, isolated nodes, and closed cycles.
+- Reject nonoverlapping graph edges during contig extraction, preventing invalid sequences from canonical graphs that have lost strand orientation. Build graphs with `canonical: false` for assembly.
+
 ## [0.2.0] - 2026-02-17
 
 ### Added
+
 - `validateSequence()` - Strict sequence validation with optional ambiguity codes
 - `getKmersWithRollingHash()` - O(1) rolling hash for efficient k-mer generation
 - `getSuperKmers()` - Maximal k-mer compression for assembly
@@ -18,15 +24,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test suite (42 new tests)
 
 ### Changed
+
 - Improved test coverage from 70.26% to 93.17%
 - Enhanced De Bruijn graph with bidirectional edge queries
 
 ### Fixed
+
 - Removed unused functions and variables
 
 ## [0.1.0] - 2026-02-15
 
 ### Added
+
 - Initial release
 - K-mer extraction and counting
 - De Bruijn graph construction and traversal

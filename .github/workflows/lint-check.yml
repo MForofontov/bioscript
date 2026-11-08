@@ -9,24 +9,24 @@ on:
         default: '["22.x"]'
         type: string
       lint_changed_only:
-        description: "Only lint changed files on the branch/PR"
+        description: 'Only lint changed files on the branch/PR'
         required: false
         default: false
         type: boolean
       run_prettier:
-        description: "Also run Prettier (format check)"
+        description: 'Also run Prettier (format check)'
         required: false
         default: false
         type: boolean
       run_typecheck:
-        description: "Also run TS typecheck (npm run typecheck)"
+        description: 'Also run TS typecheck (npm run typecheck)'
         required: false
         default: false
         type: boolean
       fail_on_any_issue:
-        description: "Fail the job if any issues found"
+        description: 'Fail the job if any issues found'
         required: false
-        default: false
+        default: true
         type: boolean
 
 permissions:
@@ -41,7 +41,7 @@ jobs:
         node: ${{ fromJSON(inputs.node_versions) }}
 
     env:
-      FORCE_COLOR: "1"
+      FORCE_COLOR: '1'
 
     steps:
       - name: Checkout
@@ -147,7 +147,7 @@ jobs:
           if [ -f pnpm-lock.yaml ]; then PM="pnpm"; elif [ -f yarn.lock ]; then PM="yarn"; else PM="npm"; fi
           if jq -e '.scripts | has("prettier") or has("format")' package.json >/dev/null 2>&1; then
             if jq -e '.scripts.format' package.json >/dev/null 2>&1; then
-              CMD="$PM run format -- -c ."
+              CMD="$PM run format:check"
             else
               CMD="$PM run prettier -- -c ."
             fi
@@ -173,7 +173,7 @@ jobs:
             elif [ -f yarn.lock ]; then yarn typecheck | tee typecheck.txt; CODE=${PIPESTATUS[0]}; \
             else npm run typecheck | tee typecheck.txt; CODE=${PIPESTATUS[0]}; fi
           else
-            echo "No typecheck script defined. Skipping."; echo "exit_code=0" >> $GITHUB_OUTPUT; exit 0
+            echo "Missing required typecheck script"; exit 1
           fi
           echo "exit_code=$CODE" >> $GITHUB_OUTPUT
           set -e

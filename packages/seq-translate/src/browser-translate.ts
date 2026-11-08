@@ -3,7 +3,12 @@
  * Optimized for large sequences with streaming support
  */
 
-import { getTable, type CodonTable } from './tables';
+import { getTable } from './tables';
+import {
+  buildLookup as buildOptimizedLookup,
+  translateWithLookup as translateFrame,
+} from './lookup';
+import { reverseComplement } from '@bioscript/seq-utils';
 
 /**
  * Translation options for browser translation
@@ -35,78 +40,6 @@ export interface TranslationResult {
   isReverse: boolean;
   /** Original sequence length */
   sourceLength: number;
-}
-
-/**
- * Build optimized lookup table for fast codon translation
- * Supports both RNA (U) and DNA (T) codons
- */
-function buildOptimizedLookup(table: CodonTable): Map<string, string> {
-  const lookup = new Map<string, string>();
-
-  for (const [codon, aa] of Object.entries(table)) {
-    const normalized = codon.toUpperCase();
-    lookup.set(normalized, aa);
-    // Also add DNA equivalent (T instead of U)
-    const dnaCodon = normalized.replace(/U/g, 'T');
-    lookup.set(dnaCodon, aa);
-  }
-
-  return lookup;
-}
-
-/**
- * Translate a single reading frame efficiently
- */
-function translateFrame(
-  seq: string,
-  lookup: Map<string, string>,
-  stopSymbol: string,
-  breakOnStop: boolean,
-  frameOffset: number = 0
-): string {
-  const start = frameOffset;
-  const result: string[] = [];
-
-  for (let i = start; i + 3 <= seq.length; i += 3) {
-    const codon = seq.slice(i, i + 3).toUpperCase();
-    const aa = lookup.get(codon) ?? 'X';
-
-    if (aa === '*') {
-      result.push(stopSymbol);
-      if (breakOnStop) break;
-    } else {
-      result.push(aa);
-    }
-  }
-
-  return result.join('');
-}
-
-/**
- * Get reverse complement of a sequence
- */
-function reverseComplement(seq: string): string {
-  const complement: Record<string, string> = {
-    A: 'T',
-    T: 'A',
-    G: 'C',
-    C: 'G',
-    a: 't',
-    t: 'a',
-    g: 'c',
-    c: 'g',
-    U: 'A',
-    u: 'a',
-    N: 'N',
-    n: 'n',
-  };
-
-  return seq
-    .split('')
-    .reverse()
-    .map((b) => complement[b] ?? b)
-    .join('');
 }
 
 /**
@@ -186,76 +119,49 @@ export async function* translateBrowserStreaming(
   options: BrowserTranslationOptions = {}
 ): AsyncGenerator<TranslationResult> {
   const { table = 'standard', stopSymbol = '*', breakOnStop = true, chunkSize = 10000 } = options;
-
-  const codonTable = getTable(table);
-  const lookup = buildOptimizedLookup(codonTable);
-  const textDecoder = new TextDecoder('utf-8');
-
-  // Handle gzip decompression if needed
-  let stream: ReadableStream<Uint8Array>;
-  if (file instanceof File && file.name.endsWith('.gz')) {
-    stream = file.stream().pipeThrough(new DecompressionStream('gzip'));
-  } else {
-    stream = file.stream();
-  }
-
+  if (!Number.isSafeInteger(chunkSize) || chunkSize <= 0)
+    throw new Error('chunkSize must be a positive integer');
+  const lookup = buildOptimizedLookup(getTable(table));
+  const targetSize = Math.max(3, Math.floor(chunkSize / 3) * 3);
+  let stream = file.stream();
+  if (typeof File !== 'undefined' && file instanceof File && file.name.endsWith('.gz'))
+    stream = stream.pipeThrough(new DecompressionStream('gzip'));
   const reader = stream.getReader();
+  const decoder = new TextDecoder();
   let buffer = '';
-  let remainder = '';
-  let stopped = false;
-
+  let completed = false;
   try {
     while (true) {
       const { done, value } = await reader.read();
-
-      if (done) {
-        // Process final buffer
-        if (remainder.length >= 3 && !stopped) {
-          const translated = translateFrame(remainder, lookup, stopSymbol, breakOnStop);
-          if (translated.length > 0) {
-            yield {
-              sequence: translated,
-              frame: 0,
-              isReverse: false,
-              sourceLength: remainder.length,
-            };
+      buffer += (done ? decoder.decode() : decoder.decode(value, { stream: true })).toUpperCase();
+      completed = done;
+      while (buffer.length >= targetSize || (done && buffer.length >= 3)) {
+        const length = Math.min(targetSize, Math.floor(buffer.length / 3) * 3);
+        let chunk = buffer.slice(0, length);
+        buffer = buffer.slice(length);
+        let stopped = false;
+        if (breakOnStop) {
+          for (let i = 0; i < chunk.length; i += 3) {
+            if (lookup.get(chunk.slice(i, i + 3)) === '*') {
+              chunk = chunk.slice(0, i + 3);
+              stopped = true;
+              break;
+            }
           }
         }
-        break;
+        const translated = translateFrame(chunk, lookup, stopSymbol, breakOnStop);
+        if (translated.length)
+          yield { sequence: translated, frame: 0, isReverse: false, sourceLength: chunk.length };
+        if (stopped) return;
       }
-
-      buffer += textDecoder.decode(value, { stream: true });
-
-      // Process in chunks
-      while (buffer.length >= chunkSize && !stopped) {
-        const chunk = remainder + buffer.slice(0, chunkSize);
-
-        // Keep codons aligned - process only complete triplets
-        const processLength = Math.floor(chunk.length / 3) * 3;
-        const toTranslate = chunk.slice(0, processLength);
-        remainder = chunk.slice(processLength);
-
-        const translated = translateFrame(toTranslate, lookup, stopSymbol, breakOnStop);
-
-        if (translated.length > 0) {
-          yield {
-            sequence: translated,
-            frame: 0,
-            isReverse: false,
-            sourceLength: toTranslate.length,
-          };
-
-          if (breakOnStop && translated.includes(stopSymbol)) {
-            stopped = true;
-            break;
-          }
-        }
-
-        buffer = buffer.slice(chunkSize);
-      }
+      if (done) break;
     }
   } finally {
-    reader.releaseLock();
+    try {
+      if (!completed) await reader.cancel();
+    } finally {
+      reader.releaseLock();
+    }
   }
 }
 

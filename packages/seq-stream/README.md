@@ -1,5 +1,7 @@
 # @bioscript/seq-stream
 
+Performance timings in this document are illustrative. Use the repository's `npm run benchmark` command and [major review](../../MAJOR_REVIEW.md) for reproducible measurements and compatibility notes.
+
 [![npm version](https://badge.fury.io/js/%40bioscript%2Fseq-stream.svg)](https://www.npmjs.com/package/@bioscript/seq-stream)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -24,29 +26,15 @@ npm install @bioscript/seq-stream
 
 ### Browser Usage
 
-For browser environments, use the browser-specific module:
-
-```html
-<!-- For use in browsers -->
-<script type="module">
-  import { parseFastaBrowser, calculateStatsBrowser } from './dist/browser-index.js';
-
-  // Process files from <input type="file">
-  async function handleFile(file) {
-    const records = parseFastaBrowser(file);
-    const stats = await calculateStatsBrowser(records);
-    console.log(stats);
-  }
-</script>
-```
-
-**Browser modules are modular** - import only what you need:
+Use the browser entrypoint with a bundler such as esbuild or Vite. Published JavaScript uses CommonJS; do not load `dist/browser-index.js` directly as a native browser module.
 
 ```typescript
-// Specific imports for tree-shaking
-import { parseFastaBrowser } from '@bioscript/seq-stream/browser';
-import { calculateN50Browser } from '@bioscript/seq-stream/browser';
-import { downloadFasta } from '@bioscript/seq-stream/browser';
+import { parseFastaBrowser, calculateStatsBrowser } from '@bioscript/seq-stream/browser';
+
+async function handleFile(file: File) {
+  const records = parseFastaBrowser(file);
+  return calculateStatsBrowser(records);
+}
 ```
 
 **⚠️ Browser Limitations:** Browsers have memory limits (~2-4GB). For files >1GB, use Node.js version. For 300GB files, server-side processing is required.
@@ -56,7 +44,6 @@ import { downloadFasta } from '@bioscript/seq-stream/browser';
 - `browser-fasta.ts` - FASTA parsing/writing
 - `browser-fastq.ts` - FASTQ parsing/writing + quality conversion
 - `browser-stats.ts` - Statistics calculation (GC%, N50/L50)
-- `browser-download.ts` - File download utilities
 - `browser-index.ts` - Unified exports
 
 ## Quick Start

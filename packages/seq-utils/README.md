@@ -1,5 +1,7 @@
 # @bioscript/seq-utils
 
+Performance timings in this document are illustrative. Use the repository's `npm run benchmark` command and [major review](../../MAJOR_REVIEW.md) for reproducible measurements and compatibility notes.
+
 Core sequence manipulation utilities for DNA/RNA operations including k-mer analysis, minimizers, and De Bruijn graphs.
 
 ## Features
@@ -27,14 +29,14 @@ npm install @bioscript/seq-utils
 ## Quick Start
 
 ```typescript
-import { 
-  dnaToRna, 
-  complement, 
+import {
+  dnaToRna,
+  complement,
   reverseComplement,
   getKmers,
   countKmers,
   getMinimizers,
-  buildDeBruijnGraph
+  buildDeBruijnGraph,
 } from '@bioscript/seq-utils';
 
 // DNA to RNA conversion
@@ -59,7 +61,7 @@ console.log(counts.get('ATC')); // 2
 
 // Get minimizers for sequence sketching
 const minimizers = getMinimizers('ATCGATCGATCG', 3, 4);
-minimizers.forEach(m => console.log(`${m.kmer} at position ${m.position}`));
+minimizers.forEach((m) => console.log(`${m.kmer} at position ${m.position}`));
 
 // Build De Bruijn graph for assembly
 const graph = buildDeBruijnGraph(['ATCGATCG', 'TCGATCGA'], 4);
@@ -73,11 +75,13 @@ console.log(`Graph has ${graph.nodes.size} nodes`);
 Convert DNA sequence to RNA by replacing T with U.
 
 **Parameters:**
+
 - `sequence` (string): DNA sequence to convert
 
 **Returns:** RNA sequence (string)
 
 **Example:**
+
 ```typescript
 dnaToRna('ATGC'); // 'AUGC'
 dnaToRna('atgc'); // 'augc' (preserves case)
@@ -88,11 +92,13 @@ dnaToRna('atgc'); // 'augc' (preserves case)
 Convert RNA sequence to DNA by replacing U with T.
 
 **Parameters:**
+
 - `sequence` (string): RNA sequence to convert
 
 **Returns:** DNA sequence (string)
 
 **Example:**
+
 ```typescript
 rnaToDna('AUGC'); // 'ATGC'
 rnaToDna('augc'); // 'atgc' (preserves case)
@@ -103,11 +109,13 @@ rnaToDna('augc'); // 'atgc' (preserves case)
 Calculate the complement of a nucleotide sequence. Automatically detects DNA or RNA based on sequence content.
 
 **Parameters:**
+
 - `sequence` (string): DNA or RNA sequence
 
 **Returns:** Complement sequence (string)
 
 **Example:**
+
 ```typescript
 // DNA: A↔T, G↔C
 complement('ATGC'); // 'TACG'
@@ -121,11 +129,13 @@ complement('AUGC'); // 'UACG'
 Calculate the reverse complement of a nucleotide sequence.
 
 **Parameters:**
+
 - `sequence` (string): DNA or RNA sequence
 
 **Returns:** Reverse complement sequence (string)
 
 **Example:**
+
 ```typescript
 reverseComplement('ATGC'); // 'GCAT'
 reverseComplement('AUGC'); // 'GCAU'
@@ -138,6 +148,7 @@ reverseComplement('AUGC'); // 'GCAU'
 Extract all k-mers from a sequence.
 
 **Parameters:**
+
 - `sequence` (string): DNA/RNA sequence
 - `k` (number): K-mer length
 - `options` (object, optional):
@@ -147,6 +158,7 @@ Extract all k-mers from a sequence.
 **Returns:** Array of k-mer strings
 
 **Example:**
+
 ```typescript
 const kmers = getKmers('ATCGATCG', 3);
 // Returns: ['ATC', 'TCG', 'CGA', 'GAT', 'ATC', 'TCG']
@@ -168,6 +180,7 @@ const canonical = getKmers('ATCG', 2, { canonical: true });
 Count k-mer occurrences.
 
 **Parameters:**
+
 - `sequence` (string): DNA/RNA sequence
 - `k` (number): K-mer length
 - `options` (object, optional):
@@ -176,6 +189,7 @@ Count k-mer occurrences.
 **Returns:** Map of k-mer to count
 
 **Example:**
+
 ```typescript
 const counts = countKmers('ATCGATCG', 3);
 counts.get('ATC'); // 2
@@ -188,6 +202,7 @@ counts.get('CGA'); // 1
 Calculate k-mer frequency spectrum (histogram of k-mer counts).
 
 **Parameters:**
+
 - `sequence` (string): DNA/RNA sequence
 - `k` (number): K-mer length
 - `options` (object, optional):
@@ -196,6 +211,7 @@ Calculate k-mer frequency spectrum (histogram of k-mer counts).
 **Returns:** Map of frequency to count
 
 **Example:**
+
 ```typescript
 const spectrum = getKmerSpectrum('ATCGATCG', 3);
 spectrum.get(1); // Number of k-mers appearing once
@@ -207,6 +223,7 @@ spectrum.get(2); // Number of k-mers appearing twice
 Find k-mers appearing exactly once.
 
 **Parameters:**
+
 - `sequence` (string): DNA/RNA sequence
 - `k` (number): K-mer length
 - `options` (object, optional):
@@ -215,6 +232,7 @@ Find k-mers appearing exactly once.
 **Returns:** Set of unique k-mer strings
 
 **Example:**
+
 ```typescript
 const unique = getUniqueKmers('ATCGATCG', 3);
 // Set containing k-mers that appear exactly once
@@ -225,6 +243,7 @@ const unique = getUniqueKmers('ATCGATCG', 3);
 Calculate Jaccard similarity between two sequences based on k-mers.
 
 **Parameters:**
+
 - `seq1` (string): First sequence
 - `seq2` (string): Second sequence
 - `k` (number): K-mer length
@@ -234,6 +253,7 @@ Calculate Jaccard similarity between two sequences based on k-mers.
 **Returns:** Jaccard similarity (0-1)
 
 **Example:**
+
 ```typescript
 const similarity = getKmerJaccard('ATCGATCG', 'ATCGATCG', 3);
 // 1.0 (identical)
@@ -247,6 +267,7 @@ const partial = getKmerJaccard('ATCGATCG', 'ATCGGGCG', 3);
 Extract k-mers using rolling hash (efficient for large k).
 
 **Parameters:**
+
 - `sequence` (string): DNA/RNA sequence
 - `k` (number): K-mer length
 - `options` (object, optional):
@@ -256,6 +277,7 @@ Extract k-mers using rolling hash (efficient for large k).
 **Returns:** Map of k-mer to hash value
 
 **Example:**
+
 ```typescript
 const hashed = getKmersWithRollingHash('ATCGATCG', 5);
 hashed.forEach((hash, kmer) => {
@@ -270,6 +292,7 @@ hashed.forEach((hash, kmer) => {
 Extract super-k-mers (maximal sequences of overlapping k-mers).
 
 **Parameters:**
+
 - `sequence` (string): DNA/RNA sequence
 - `k` (number): K-mer length
 - `options` (object, optional):
@@ -278,6 +301,7 @@ Extract super-k-mers (maximal sequences of overlapping k-mers).
 **Returns:** Array of super-k-mer strings
 
 **Example:**
+
 ```typescript
 const superKmers = getSuperKmers('ATCGATCGATCG', 3);
 // Returns longer sequences where k-mers overlap consecutively
@@ -290,6 +314,7 @@ const superKmers = getSuperKmers('ATCGATCGATCG', 3);
 Extract syncmers (synchronized k-mers using s-mers).
 
 **Parameters:**
+
 - `sequence` (string): DNA/RNA sequence
 - `k` (number): K-mer length
 - `s` (number): S-mer length (s < k)
@@ -299,9 +324,10 @@ Extract syncmers (synchronized k-mers using s-mers).
 **Returns:** Array of syncmer objects with `kmer` and `position`
 
 **Example:**
+
 ```typescript
 const syncmers = getSyncmers('ATCGATCGATCG', 5, 2);
-syncmers.forEach(sm => {
+syncmers.forEach((sm) => {
   console.log(`${sm.kmer} at position ${sm.position}`);
 });
 ```
@@ -315,6 +341,7 @@ syncmers.forEach(sm => {
 Extract minimizers for sequence sketching.
 
 **Parameters:**
+
 - `sequence` (string): DNA/RNA sequence
 - `k` (number): K-mer length (minimizer size)
 - `w` (number): Window size (number of k-mers per window)
@@ -324,9 +351,10 @@ Extract minimizers for sequence sketching.
 **Returns:** Array of `Minimizer` objects with `kmer` and `position`
 
 **Example:**
+
 ```typescript
 const minimizers = getMinimizers('ATCGATCGATCG', 3, 4);
-minimizers.forEach(m => {
+minimizers.forEach((m) => {
   console.log(`${m.kmer} at position ${m.position}`);
 });
 ```
@@ -336,6 +364,7 @@ minimizers.forEach(m => {
 Extract minimizers using hash-based selection (faster for large k).
 
 **Parameters:**
+
 - `sequence` (string): DNA/RNA sequence
 - `k` (number): K-mer length
 - `w` (number): Window size
@@ -346,9 +375,10 @@ Extract minimizers using hash-based selection (faster for large k).
 **Returns:** Array of `Minimizer` objects with `kmer`, `position`, and `hash`
 
 **Example:**
+
 ```typescript
 const minimizers = getHashMinimizers('ATCGATCGATCG', 5, 10);
-minimizers.forEach(m => {
+minimizers.forEach((m) => {
   console.log(`${m.kmer} (hash: ${m.hash}) at ${m.position}`);
 });
 ```
@@ -360,6 +390,7 @@ Calculate minimizer density (minimizers per base).
 **Returns:** Density value (0-1)
 
 **Example:**
+
 ```typescript
 const density = getMinimizerDensity('ATCGATCGATCG', 3, 4);
 console.log(`${(density * 100).toFixed(1)}% of sequence covered`);
@@ -372,6 +403,7 @@ Compare two sequences using minimizer Jaccard similarity (faster than full k-mer
 **Returns:** Jaccard similarity (0-1)
 
 **Example:**
+
 ```typescript
 const similarity = getMinimizerJaccard('ATCGATCG', 'ATCGGGCG', 3, 4);
 console.log(`${(similarity * 100).toFixed(1)}% similar`);
@@ -384,6 +416,7 @@ console.log(`${(similarity * 100).toFixed(1)}% similar`);
 Build De Bruijn graph from sequences with optimized reverse edge index for O(1) incoming edge lookups.
 
 **Parameters:**
+
 - `sequences` (string[]): Array of DNA/RNA sequences
 - `k` (number): K-mer length
 - `options` (object, optional):
@@ -393,6 +426,7 @@ Build De Bruijn graph from sequences with optimized reverse edge index for O(1) 
 **Returns:** `DeBruijnGraph` object with forward and reverse edge indexes
 
 **Example:**
+
 ```typescript
 const sequences = ['ATCGATCG', 'TCGATCGA'];
 const graph = buildDeBruijnGraph(sequences, 4);
@@ -408,7 +442,10 @@ const filtered = buildDeBruijnGraph(sequences, 4, { minCoverage: 2 });
 
 Find contigs (unbranched paths) in De Bruijn graph.
 
+Use `canonical: false` when building graphs for contig extraction. Canonical keys discard strand orientation; extraction rejects nonoverlapping edges rather than producing invalid sequences. Canonical graphs remain useful for counts and graph statistics.
+
 **Parameters:**
+
 - `graph` (DeBruijnGraph): De Bruijn graph
 - `options` (object, optional):
   - `minLength` (number): Minimum contig length (default: k+1)
@@ -416,10 +453,11 @@ Find contigs (unbranched paths) in De Bruijn graph.
 **Returns:** Array of contig sequences
 
 **Example:**
+
 ```typescript
 const graph = buildDeBruijnGraph(sequences, 4);
 const contigs = findContigs(graph, { minLength: 10 });
-contigs.forEach(c => console.log(`Contig: ${c}`));
+contigs.forEach((c) => console.log(`Contig: ${c}`));
 ```
 
 #### getGraphStats(graph)
@@ -429,6 +467,7 @@ Calculate graph statistics.
 **Returns:** Object with `nodeCount`, `edgeCount`, `avgCoverage`, `maxCoverage`, `branchingNodes`, `deadEnds`
 
 **Example:**
+
 ```typescript
 const stats = getGraphStats(graph);
 console.log(`Nodes: ${stats.nodeCount}`);
@@ -441,12 +480,14 @@ console.log(`Branching nodes: ${stats.branchingNodes}`);
 Simplify graph by removing tips (dead-end branches).
 
 **Parameters:**
+
 - `graph` (DeBruijnGraph): Graph to modify (in place)
 - `maxTipLength` (number): Maximum tip length to remove
 
 **Returns:** Number of tips removed
 
 **Example:**
+
 ```typescript
 const removed = removeTips(graph, 10);
 console.log(`Removed ${removed} tips`);
@@ -457,12 +498,14 @@ console.log(`Removed ${removed} tips`);
 Remove low-coverage nodes (likely sequencing errors).
 
 **Parameters:**
+
 - `graph` (DeBruijnGraph): Graph to modify (in place)
 - `minCoverage` (number): Minimum coverage threshold
 
 **Returns:** Number of nodes removed
 
 **Example:**
+
 ```typescript
 const removed = removeLowCoverageNodes(graph, 3);
 console.log(`Removed ${removed} low-coverage nodes`);
@@ -485,25 +528,28 @@ console.log(`Removed ${removed} low-coverage nodes`);
 - **Complement**: O(n) time complexity with minimal allocations
 - **K-mer Extraction**: O(n) where n is sequence length
 - **K-mer Counting**: O(n) with O(1) lookup using Map
-- **Minimizers**: O(n * w) where w is window size
-- **De Bruijn Graphs**: O(n * m) where n is number of sequences, m is average length
+- **Minimizers**: O(n \* w) where w is window size
+- **De Bruijn Graphs**: O(n \* m) where n is number of sequences, m is average length
 - **Memory**: O(n) space complexity, proportional to input size
 
 ## Use Cases
 
 ### K-mer Analysis
+
 - **Genome size estimation**: Using k-mer spectrum analysis
 - **Error correction**: Identifying low-frequency k-mers
 - **Sequence similarity**: Fast similarity detection using Jaccard index
 - **Repeat detection**: Finding repeated k-mers in sequences
 
 ### Minimizers
+
 - **Read alignment**: Efficient seed finding for sequence alignment
 - **Overlap detection**: Finding read overlaps in genome assembly
 - **Sequence clustering**: Grouping similar sequences
 - **Data compression**: Reducing sequence size while preserving similarity
 
 ### De Bruijn Graphs
+
 - **Genome assembly**: De novo assembly from sequencing reads
 - **Transcript assembly**: Reconstructing full-length transcripts
 - **Error correction**: Graph-based cleaning of sequencing data

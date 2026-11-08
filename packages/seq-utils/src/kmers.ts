@@ -352,7 +352,12 @@ export function getKmersWithRollingHash(
     const revComp = reverseComplement(kmer);
     kmer = kmer < revComp ? kmer : revComp;
   }
-  kmerHashes.set(kmer, hash);
+  let storedHash = hash;
+  if (canonical) {
+    storedHash = 0;
+    for (const base of kmer) storedHash = (storedHash * 4 + (baseMap[base] || 0)) % mod;
+  }
+  kmerHashes.set(kmer, storedHash);
 
   // Rolling hash for remaining k-mers
   for (let i = k; i < normalized.length; i++) {
@@ -368,7 +373,12 @@ export function getKmersWithRollingHash(
       const revComp = reverseComplement(kmer);
       kmer = kmer < revComp ? kmer : revComp;
     }
-    kmerHashes.set(kmer, hash);
+    let storedHash = hash;
+    if (canonical) {
+      storedHash = 0;
+      for (const base of kmer) storedHash = (storedHash * 4 + (baseMap[base] || 0)) % mod;
+    }
+    kmerHashes.set(kmer, storedHash);
   }
 
   return kmerHashes;

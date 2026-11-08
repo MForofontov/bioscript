@@ -36,6 +36,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser-index.d.ts",
+      "import": "./dist/browser-index.js",
+      "require": "./dist/browser-index.js"
     }
   },
   "sideEffects": false,
@@ -44,7 +49,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "build:browser": "esbuild dist/browser-bundle.js --bundle --format=iife --global-name=bioseqStream --outfile=e2e/bioseq-bundle.js --platform=browser --external:stream --external:fs --external:zlib",
+    "build:browser": "node ../../scripts/build-browser.cjs seq-stream",
     "test": "jest",
     "test:local": "jest --coverage",
     "test:watch": "jest --watch",

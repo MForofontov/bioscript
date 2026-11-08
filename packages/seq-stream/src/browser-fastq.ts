@@ -1,3 +1,4 @@
+import { browserLines } from './browser-lines';
 /**
  * Browser-compatible FASTQ parser using Web Streams API
  * Handles File/Blob objects with automatic gzip decompression
@@ -23,94 +24,63 @@ import type { FastqRecord, QualityEncoding } from './fastq';
  * ```
  */
 export async function* parseFastqBrowser(file: File | Blob): AsyncGenerator<FastqRecord> {
-  const textDecoder = new TextDecoder('utf-8');
-  let buffer = '';
   let lineNumber = 0;
   let currentRecord: Partial<FastqRecord> = {};
+  for await (const line of browserLines(file)) {
+    const trimmed = line.trim();
+    const position = lineNumber % 4;
 
-  // Handle gzip if file name ends with .gz
-  let stream: ReadableStream<Uint8Array>;
+    switch (position) {
+      case 0: {
+        // ID line
+        if (!trimmed.startsWith('@')) {
+          throw new Error(`Expected '@' at line ${lineNumber}, got: ${trimmed.substring(0, 20)}`);
+        }
+        const header = trimmed.substring(1);
+        const spaceIndex = header.indexOf(' ');
 
-  if (file instanceof File && file.name.endsWith('.gz')) {
-    stream = file.stream().pipeThrough(new DecompressionStream('gzip'));
-  } else {
-    stream = file.stream();
-  }
+        if (spaceIndex === -1) {
+          currentRecord = { id: header, description: '' };
+        } else {
+          currentRecord = {
+            id: header.substring(0, spaceIndex),
+            description: header.substring(spaceIndex + 1),
+          };
+        }
+        break;
+      }
 
-  const reader = stream.getReader();
+      case 1: // Sequence
+        currentRecord.sequence = trimmed;
+        break;
 
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
+      case 2: // '+'
+        if (!trimmed.startsWith('+')) {
+          throw new Error(`Expected '+' at line ${lineNumber}, got: ${trimmed.substring(0, 20)}`);
+        }
+        break;
 
-      if (done) break;
+      case 3: // Quality
+        currentRecord.quality = trimmed;
 
-      buffer += textDecoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        const position = lineNumber % 4;
-
-        switch (position) {
-          case 0: {
-            // ID line
-            if (!trimmed.startsWith('@')) {
-              throw new Error(
-                `Expected '@' at line ${lineNumber}, got: ${trimmed.substring(0, 20)}`
-              );
-            }
-            const header = trimmed.substring(1);
-            const spaceIndex = header.indexOf(' ');
-
-            if (spaceIndex === -1) {
-              currentRecord = { id: header, description: '' };
-            } else {
-              currentRecord = {
-                id: header.substring(0, spaceIndex),
-                description: header.substring(spaceIndex + 1),
-              };
-            }
-            break;
-          }
-
-          case 1: // Sequence
-            currentRecord.sequence = trimmed;
-            break;
-
-          case 2: // '+'
-            if (!trimmed.startsWith('+')) {
-              throw new Error(
-                `Expected '+' at line ${lineNumber}, got: ${trimmed.substring(0, 20)}`
-              );
-            }
-            break;
-
-          case 3: // Quality
-            currentRecord.quality = trimmed;
-
-            if (
-              currentRecord.sequence &&
-              currentRecord.sequence.length !== currentRecord.quality.length
-            ) {
-              throw new Error(
-                `Sequence/quality length mismatch for ${currentRecord.id}: ` +
-                  `${currentRecord.sequence.length} vs ${currentRecord.quality.length}`
-              );
-            }
-
-            yield currentRecord as FastqRecord;
-            currentRecord = {};
-            break;
+        if (
+          currentRecord.sequence !== undefined &&
+          currentRecord.sequence.length !== currentRecord.quality.length
+        ) {
+          throw new Error(
+            `Sequence/quality length mismatch for ${currentRecord.id}: ` +
+              `${currentRecord.sequence.length} vs ${currentRecord.quality.length}`
+          );
         }
 
-        lineNumber++;
-      }
+        yield currentRecord as FastqRecord;
+        currentRecord = {};
+        break;
     }
-  } finally {
-    reader.releaseLock();
+
+    lineNumber++;
   }
+  if (lineNumber % 4 !== 0) throw new Error('Incomplete FASTQ record at end of input');
 }
 
 /**
@@ -148,15 +118,12 @@ export function writeFastqBrowser(records: FastqRecord[]): Blob {
 export function parseFastqText(text: string): FastqRecord[] {
   const records: FastqRecord[] = [];
   const lines = text.split('\n');
+  if (lines[lines.length - 1] === '') lines.pop();
   let lineNumber = 0;
   let currentRecord: Partial<FastqRecord> = {};
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed) {
-      lineNumber++;
-      continue;
-    }
 
     const position = lineNumber % 4;
 
@@ -194,7 +161,7 @@ export function parseFastqText(text: string): FastqRecord[] {
         currentRecord.quality = trimmed;
 
         if (
-          currentRecord.sequence &&
+          currentRecord.sequence !== undefined &&
           currentRecord.sequence.length !== currentRecord.quality.length
         ) {
           throw new Error(`Sequence/quality length mismatch for ${currentRecord.id}`);
@@ -208,6 +175,7 @@ export function parseFastqText(text: string): FastqRecord[] {
     lineNumber++;
   }
 
+  if (lineNumber % 4 !== 0) throw new Error('Incomplete FASTQ record at end of input');
   return records;
 }
 

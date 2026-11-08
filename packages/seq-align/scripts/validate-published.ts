@@ -3,10 +3,7 @@
  * Sources: Wikipedia, NCBI documentation, published papers
  */
 
-import {
-  needlemanWunsch,
-  smithWaterman,
-} from '../src/index';
+import { needlemanWunsch, smithWaterman } from '../src/index';
 
 interface PublishedExample {
   name: string;
@@ -47,7 +44,8 @@ const publishedExamples: PublishedExample[] = [
     expectedScore: 22, // From paper: GTT-AC alignment
     expectedAligned1: 'GTT-AC',
     expectedAligned2: 'GTTGAC',
-    notes: 'Original Smith-Waterman 1981 paper example. Exact match validates core alignment engine.',
+    notes:
+      'Original Smith-Waterman 1981 paper example. Exact match validates core alignment engine.',
   },
 
   // 2. PAM250 Protein Alignment
@@ -172,9 +170,7 @@ function validatePublishedExamples() {
 
           alignmentMatch = result.identity === expectedIdentity;
           if (!alignmentMatch) {
-            console.log(
-              `  ⚠️  Alignment differs (alternative optimal alignment may exist)`
-            );
+            console.log(`  ⚠️  Alignment differs (alternative optimal alignment may exist)`);
             console.log(`     Expected: ${example.expectedAligned1}`);
             console.log(`               ${example.expectedAligned2}`);
           }

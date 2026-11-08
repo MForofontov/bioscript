@@ -8,7 +8,6 @@ test.describe('Browser - Utility Functions', () => {
 
   test('1. dnaToRna should convert DNA to RNA', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-expect-error - browser bundle
       return window.bioseqTranslate.dnaToRna('ATGC');
     });
 
@@ -17,7 +16,6 @@ test.describe('Browser - Utility Functions', () => {
 
   test('2. rnaToDna should convert RNA to DNA', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-expect-error - browser bundle
       return window.bioseqTranslate.rnaToDna('AUGC');
     });
 
@@ -26,7 +24,6 @@ test.describe('Browser - Utility Functions', () => {
 
   test('3. complement should return complement sequence for DNA', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-expect-error - browser bundle
       return window.bioseqTranslate.complement('ATGC');
     });
 
@@ -35,7 +32,6 @@ test.describe('Browser - Utility Functions', () => {
 
   test('4. complement should return complement sequence for RNA', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-expect-error - browser bundle
       return window.bioseqTranslate.complement('AUGC');
     });
 
@@ -44,7 +40,6 @@ test.describe('Browser - Utility Functions', () => {
 
   test('5. reverseComplement should return reverse complement', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-expect-error - browser bundle
       return window.bioseqTranslate.reverseComplement('ATGC');
     });
 
@@ -53,7 +48,6 @@ test.describe('Browser - Utility Functions', () => {
 
   test('6. reverseComplement should handle lowercase', async ({ page }) => {
     const result = await page.evaluate(() => {
-      // @ts-expect-error - browser bundle
       return window.bioseqTranslate.reverseComplement('atgc');
     });
 

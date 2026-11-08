@@ -6,7 +6,9 @@
  */
 
 import { parentPort, workerData } from 'worker_threads';
-import { getTable, type CodonTable } from './tables';
+import { getTable } from './tables';
+import { buildLookup, translateWithLookup as translateFrame } from './lookup';
+import { reverseComplement } from '@bioscript/seq-utils';
 
 interface WorkerTask {
   sequences: string[];
@@ -30,83 +32,13 @@ interface TranslationResult {
 }
 
 /**
- * Build optimized lookup table
- */
-function buildOptimizedLookup(table: CodonTable): Map<string, string> {
-  const lookup = new Map<string, string>();
-
-  for (const [codon, aa] of Object.entries(table)) {
-    const normalized = codon.toUpperCase();
-    lookup.set(normalized, aa);
-    const dnaCodon = normalized.replace(/U/g, 'T');
-    lookup.set(dnaCodon, aa);
-  }
-
-  return lookup;
-}
-
-/**
- * Translate a single frame
- */
-function translateFrame(
-  seq: string,
-  lookup: Map<string, string>,
-  stopSymbol: string,
-  breakOnStop: boolean,
-  frameOffset: number = 0
-): string {
-  const start = frameOffset;
-  const result: string[] = [];
-
-  for (let i = start; i + 3 <= seq.length; i += 3) {
-    const codon = seq.slice(i, i + 3).toUpperCase();
-    const aa = lookup.get(codon) ?? 'X';
-
-    if (aa === '*') {
-      result.push(stopSymbol);
-      if (breakOnStop) break;
-    } else {
-      result.push(aa);
-    }
-  }
-
-  return result.join('');
-}
-
-/**
- * Get reverse complement
- */
-function reverseComplement(seq: string): string {
-  const complement: Record<string, string> = {
-    A: 'T',
-    T: 'A',
-    G: 'C',
-    C: 'G',
-    a: 't',
-    t: 'a',
-    g: 'c',
-    c: 'g',
-    U: 'A',
-    u: 'a',
-    N: 'N',
-    n: 'n',
-  };
-
-  return seq
-    .split('')
-    .reverse()
-    .map((b) => complement[b] ?? b)
-    .join('');
-}
-
-/**
  * Process translation task in worker
  */
 function processTask(task: WorkerTask): TranslationResult[][] {
   const { sequences, table, stopSymbol, breakOnStop, allFrames, includeReverse } = task;
 
   const codonTable = getTable(table);
-  const lookup = buildOptimizedLookup(codonTable);
+  const lookup = buildLookup(codonTable);
 
   return sequences.map((sequence) => {
     const results: TranslationResult[] = [];
@@ -143,17 +75,19 @@ function processTask(task: WorkerTask): TranslationResult[][] {
   });
 }
 
-// Worker main execution
-if (parentPort && workerData) {
-  try {
-    const results = processTask(workerData as WorkerTask);
-    const response: WorkerResult = { results };
-    parentPort.postMessage(response);
-  } catch (error) {
-    const response: WorkerResult = {
-      results: [],
-      error: error instanceof Error ? error.message : String(error),
-    };
-    parentPort.postMessage(response);
-  }
+// One-shot workerData remains supported; pools use the message protocol.
+if (parentPort) {
+  const port = parentPort;
+  const respond = (task: WorkerTask): void => {
+    try {
+      port.postMessage({ results: processTask(task) } satisfies WorkerResult);
+    } catch (error) {
+      port.postMessage({
+        results: [],
+        error: error instanceof Error ? error.message : String(error),
+      } satisfies WorkerResult);
+    }
+  };
+  if (workerData) respond(workerData as WorkerTask);
+  else port.on('message', respond);
 }

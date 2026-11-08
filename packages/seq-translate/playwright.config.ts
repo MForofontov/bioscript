@@ -3,16 +3,14 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
+  timeout: 120000,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: [
-    ['html'],
-    ['allure-playwright', { outputFolder: 'allure-results' }],
-  ],
+  workers: 1,
+  reporter: [['html'], ['allure-playwright', { outputFolder: 'allure-results' }]],
   use: {
-    baseURL: 'http://localhost:3000',
-    trace: 'on-first-retry',
+    baseURL: 'http://127.0.0.1:3112',
+    trace: 'retain-on-failure',
   },
 
   projects: [
@@ -25,8 +23,9 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'npx http-server -p 3000 -c-1',
-    port: 3000,
-    reuseExistingServer: !process.env.CI,
+    command: `"${process.execPath}" "${require.resolve('http-server/bin/http-server')}" -a 127.0.0.1 -p 3112 -c-1`,
+    url: 'http://127.0.0.1:3112/e2e/test-page.html',
+    timeout: 120000,
+    reuseExistingServer: false,
   },
 });

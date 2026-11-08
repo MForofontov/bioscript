@@ -1,3 +1,4 @@
+import { integer, numeric } from './validation';
 /**
  * GFF3 and GTF format parser and writer.
  * @module gff
@@ -53,11 +54,13 @@ export function parseGFFLine(line: string, version: GFFVersion = 'gff3'): GFFRec
   const [seqid, source, type, startStr, endStr, scoreStr, strand, phaseStr, attributesStr] = fields;
 
   // Parse numeric fields
-  const start = parseInt(startStr);
-  const end = parseInt(endStr);
-  const score = scoreStr === '.' ? null : parseFloat(scoreStr);
-  const phase = phaseStr === '.' ? null : (parseInt(phaseStr) as 0 | 1 | 2);
+  const start = integer(startStr, 'GFF start', 1);
+  const end = integer(endStr, 'GFF end', 1);
+  const score = scoreStr === '.' ? null : numeric(scoreStr, 'GFF score');
+  const phase = phaseStr === '.' ? null : (integer(phaseStr, 'GFF phase') as 0 | 1 | 2);
 
+  if (end < start) throw new Error('GFF end must be >= start');
+  if (phase !== null && phase > 2) throw new Error('GFF phase must be 0, 1, 2, or .');
   // Validate strand
   if (!['+', '-', '.', '?'].includes(strand)) {
     throw new Error(`Invalid strand: ${strand} (expected +, -, ., or ?)`);
@@ -68,7 +71,7 @@ export function parseGFFLine(line: string, version: GFFVersion = 'gff3'): GFFRec
 
   if (version === 'gff3') {
     // GFF3: key=value;key=value
-    const pairs = attributesStr.split(';').filter((p) => p.trim());
+    const pairs = attributesStr.split(';').filter((p) => p.trim() && p.trim() !== '.');
     for (const pair of pairs) {
       const [key, ...valueParts] = pair.split('=');
       const value = valueParts.join('=').trim();

@@ -401,7 +401,7 @@ describe('kmers', () => {
     it('2. should have s < k', () => {
       const syncmers = getSyncmers('ATCGATCG', 4, 2);
       expect(syncmers.length).toBeGreaterThan(0);
-      syncmers.forEach(sm => {
+      syncmers.forEach((sm) => {
         expect(sm.kmer.length).toBe(4);
       });
     });
@@ -413,7 +413,7 @@ describe('kmers', () => {
 
     it('4. should include position information', () => {
       const syncmers = getSyncmers('ATCGATCG', 4, 2);
-      syncmers.forEach(sm => {
+      syncmers.forEach((sm) => {
         expect(typeof sm.position).toBe('number');
         expect(sm.position).toBeGreaterThanOrEqual(0);
       });

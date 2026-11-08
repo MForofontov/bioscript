@@ -6,6 +6,7 @@
  */
 
 import type { NewickNode, NewickTree } from './types';
+import { numeric } from './validation';
 
 /**
  * Parse Newick format string into tree structure.
@@ -76,6 +77,7 @@ export function parseNewick(newick: string): NewickTree {
       position < treeString.length &&
       treeString[position] !== ':' &&
       treeString[position] !== ',' &&
+      treeString[position] !== '(' &&
       treeString[position] !== ')' &&
       treeString[position] !== ';'
     ) {
@@ -99,11 +101,7 @@ export function parseNewick(newick: string): NewickTree {
         lengthStr += treeString[position];
         position++;
       }
-      const length = parseFloat(lengthStr);
-      if (isNaN(length)) {
-        throw new Error(`Invalid branch length: ${lengthStr}`);
-      }
-      node.length = length;
+      node.length = numeric(lengthStr.trim(), 'branch length');
       hasLengths = true;
     }
 
@@ -112,6 +110,8 @@ export function parseNewick(newick: string): NewickTree {
 
   try {
     const root = parseNode();
+    if (position !== treeString.length)
+      throw new Error(`Unexpected content at position ${position}`);
 
     // Calculate tree metadata
     const leafCount = countLeaves(root);

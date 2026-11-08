@@ -7,6 +7,8 @@ import { Worker } from 'worker_threads';
 import { cpus } from 'os';
 import { resolve } from 'path';
 import { existsSync } from 'fs';
+import { getTable } from './tables';
+import { buildLookup } from './lookup';
 
 /**
  * Translation options for worker-based translation
@@ -40,229 +42,184 @@ export interface TranslationResult {
   sourceLength: number;
 }
 
-/**
- * Run a worker thread for translation
- */
-function runWorker(
-  workerPath: string,
-  sequences: string[],
-  options: WorkerTranslationOptions
-): Promise<TranslationResult[][]> {
-  return new Promise((resolveWorker, reject) => {
-    const worker = new Worker(workerPath, {
-      workerData: {
-        sequences,
-        table: options.table || 'standard',
-        stopSymbol: options.stopSymbol || '*',
-        breakOnStop: options.breakOnStop !== false,
-        allFrames: options.allFrames || false,
-        includeReverse: options.includeReverse || false,
-      },
-    });
-
-    worker.on('message', (result: { results: TranslationResult[][]; error?: string }) => {
-      if (result.error) {
-        reject(new Error(result.error));
-      } else {
-        resolveWorker(result.results);
-      }
-    });
-
-    worker.on('error', reject);
-    worker.on('exit', (code) => {
-      if (code !== 0) {
-        reject(new Error(`Worker stopped with exit code ${code}`));
-      }
-    });
-  });
+/** Resolve built worker assets without relying on platform-specific path separators. */
+function workerFile(): string {
+  const adjacent = resolve(__dirname, 'worker-script.js');
+  const built = resolve(__dirname, '../dist/worker-script.js');
+  if (existsSync(adjacent)) return adjacent;
+  if (existsSync(built)) return built;
+  throw new Error('Translation worker is missing; build @bioscript/seq-translate first');
 }
 
-/**
- * Translate multiple sequences in parallel using worker threads
- * Automatically distributes work across available CPU cores
- *
- * @example
- * ```typescript
- * const sequences = ['ATGGCC', 'ATGTAA', 'ATGCCC'];
- * const results = await translateWorker(sequences, {
- *   table: 'standard',
- *   allFrames: true
- * });
- *
- * results.forEach((seqResults, i) => {
- *   console.log(`Sequence ${i}:`);
- *   seqResults.forEach(r => console.log(`  Frame ${r.frame}: ${r.sequence}`));
- * });
- * ```
- */
+function positiveInteger(value: number, name: string): number {
+  if (!Number.isSafeInteger(value) || value <= 0)
+    throw new Error(`${name} must be a positive integer`);
+  return value;
+}
+
+function taskData(sequences: string[], options: WorkerTranslationOptions) {
+  return {
+    sequences,
+    table: options.table ?? 'standard',
+    stopSymbol: options.stopSymbol ?? '*',
+    breakOnStop: options.breakOnStop !== false,
+    allFrames: options.allFrames ?? false,
+    includeReverse: options.includeReverse ?? false,
+  };
+}
+
+/** Translate batches in parallel, preserving their original order. */
 export async function translateWorker(
   sequences: string[],
   options: WorkerTranslationOptions = {}
 ): Promise<TranslationResult[][]> {
-  if (sequences.length === 0) {
-    return [];
+  const numWorkers = positiveInteger(options.numWorkers ?? cpus().length, 'numWorkers');
+  if (sequences.length === 0) return [];
+  // Small batches do not benefit from starting one thread for every short sequence.
+  const count = sequences.length <= numWorkers ? 1 : numWorkers;
+  const pool = new TranslationPool(count);
+  try {
+    const chunkSize = Math.ceil(sequences.length / count);
+    const chunks: string[][] = [];
+    for (let i = 0; i < sequences.length; i += chunkSize)
+      chunks.push(sequences.slice(i, i + chunkSize));
+    return (await Promise.all(chunks.map((chunk) => pool.translate(chunk, options)))).flat();
+  } finally {
+    await pool.terminate();
   }
-
-  const numWorkers = options.numWorkers || cpus().length;
-  // Try dist first (production), fall back to src (development/testing)
-  let workerPath = resolve(__dirname, 'worker-script.js');
-
-  // Check if we're in development/test mode (src directory)
-  if (__dirname.includes('/src')) {
-    const distPath = resolve(__dirname, '../dist/worker-script.js');
-    if (existsSync(distPath)) {
-      workerPath = distPath;
-    }
-  }
-
-  // For small workloads, use single worker
-  if (sequences.length <= numWorkers) {
-    return runWorker(workerPath, sequences, options);
-  }
-
-  // Distribute sequences across workers
-  const chunkSize = Math.ceil(sequences.length / numWorkers);
-  const chunks: string[][] = [];
-
-  for (let i = 0; i < sequences.length; i += chunkSize) {
-    chunks.push(sequences.slice(i, i + chunkSize));
-  }
-
-  // Run workers in parallel
-  const workerPromises = chunks.map((chunk) => runWorker(workerPath, chunk, options));
-
-  const results = await Promise.all(workerPromises);
-
-  // Flatten results back to original order
-  return results.flat();
 }
 
-/**
- * Translate a single large sequence by splitting it into chunks
- * and processing chunks in parallel. Useful for very long sequences (> 1MB)
- *
- * @example
- * ```typescript
- * const longSeq = 'ATG' + 'GCC'.repeat(100000) + 'TAA';
- * const results = await translateWorkerChunked(longSeq, {
- *   table: 'standard',
- *   chunkSize: 30000
- * });
- *
- * // Combine chunks
- * const fullTranslation = results.map(r => r.sequence).join('');
- * ```
- */
+/** Translate frame zero in codon-aligned chunks. Concatenation equals whole-sequence translation. */
 export async function translateWorkerChunked(
   sequence: string,
   options: WorkerTranslationOptions & { chunkSize?: number } = {}
 ): Promise<TranslationResult[]> {
-  const chunkSize = options.chunkSize || 30000; // 30kb chunks (10k codons)
-  const seq = sequence.trim().toUpperCase();
-
-  // Split sequence into overlapping chunks to maintain frame
-  const chunks: string[] = [];
-  for (let i = 0; i < seq.length; i += chunkSize) {
-    chunks.push(seq.slice(i, Math.min(i + chunkSize + 2, seq.length)));
-  }
-
-  const results = await translateWorker(chunks, options);
-
-  // Return first frame of each chunk
-  return results.map((chunkResults) => chunkResults[0]);
-}
-
-/**
- * Translate sequences with automatic worker pool management
- * Keeps a pool of workers alive for multiple translation batches
- */
-export class TranslationPool {
-  private workers: Worker[] = [];
-  private workerPath: string;
-  private numWorkers: number;
-  private taskQueue: Array<{
-    sequences: string[];
-    options: WorkerTranslationOptions;
-    resolve: (value: TranslationResult[][]) => void;
-    reject: (error: Error) => void;
-  }> = [];
-  private busyWorkers: Set<number> = new Set();
-
-  constructor(numWorkers?: number) {
-    this.numWorkers = numWorkers || cpus().length;
-    let workerPath = resolve(__dirname, 'worker-script.js');
-
-    // Check if we're in development/test mode (src directory)
-    if (__dirname.includes('/src')) {
-      const distPath = resolve(__dirname, '../dist/worker-script.js');
-      if (existsSync(distPath)) {
-        workerPath = distPath;
+  const requested = positiveInteger(options.chunkSize ?? 30000, 'chunkSize');
+  positiveInteger(options.numWorkers ?? cpus().length, 'numWorkers');
+  const chunkSize = Math.max(3, Math.floor(requested / 3) * 3);
+  let seq = sequence.trim().toUpperCase();
+  if (options.breakOnStop !== false) {
+    const lookup = buildLookup(getTable(options.table ?? 'standard'));
+    for (let i = 0; i + 3 <= seq.length; i += 3) {
+      if (lookup.get(seq.slice(i, i + 3)) === '*') {
+        seq = seq.slice(0, i + 3);
+        break;
       }
     }
+  }
+  const chunks: string[] = [];
+  for (let i = 0; i < seq.length; i += chunkSize) chunks.push(seq.slice(i, i + chunkSize));
+  return (
+    await translateWorker(chunks, { ...options, allFrames: false, includeReverse: false })
+  ).map((results) => results[0]);
+}
 
-    this.workerPath = workerPath;
+interface PoolTask {
+  sequences: string[];
+  options: WorkerTranslationOptions;
+  resolve: (value: TranslationResult[][]) => void;
+  reject: (error: Error) => void;
+}
+
+/** Persistent workers process one task each; queued and active tasks always settle on shutdown. */
+export class TranslationPool {
+  private workers = new Set<Worker>();
+  private active = new Map<Worker, PoolTask>();
+  private taskQueue: PoolTask[] = [];
+  private numWorkers: number;
+  private terminated = false;
+  private termination?: Promise<void>;
+
+  constructor(numWorkers?: number) {
+    this.numWorkers = positiveInteger(numWorkers ?? cpus().length, 'numWorkers');
   }
 
-  /**
-   * Initialize the worker pool
-   */
   initialize(): void {
-    for (let i = 0; i < this.numWorkers; i++) {
-      const worker = new Worker(this.workerPath);
-      this.workers.push(worker);
+    if (this.terminated) throw new Error('Translation pool has been terminated');
+    if (this.workers.size) return;
+    try {
+      for (let i = 0; i < this.numWorkers; i++) this.addWorker();
+    } catch (error) {
+      void this.terminate();
+      throw error;
     }
   }
 
-  /**
-   * Translate sequences using the worker pool
-   */
+  private addWorker(): void {
+    const worker = new Worker(workerFile());
+    this.workers.add(worker);
+    worker.on('message', (response: { results: TranslationResult[][]; error?: string }) => {
+      const task = this.active.get(worker);
+      if (!task) return;
+      this.active.delete(worker);
+      if (response.error) task.reject(new Error(response.error));
+      else task.resolve(response.results);
+      this.processQueue();
+    });
+    worker.on('error', (error) => this.workerFailed(worker, error));
+    worker.on('exit', (code) =>
+      this.workerFailed(
+        worker,
+        new Error(`Translation worker exited before completing its task (code ${code})`)
+      )
+    );
+  }
+
+  private workerFailed(worker: Worker, error: Error): void {
+    if (!this.workers.delete(worker)) return;
+    this.active.get(worker)?.reject(error);
+    this.active.delete(worker);
+    if (!this.terminated && this.taskQueue.length) {
+      try {
+        this.addWorker();
+        this.processQueue();
+      } catch (failure) {
+        for (const task of this.taskQueue.splice(0)) task.reject(failure as Error);
+      }
+    }
+  }
+
   async translate(
     sequences: string[],
     options: WorkerTranslationOptions = {}
   ): Promise<TranslationResult[][]> {
-    if (this.workers.length === 0) {
-      this.initialize();
-    }
-
+    if (this.terminated) throw new Error('Translation pool has been terminated');
+    if (options.numWorkers !== undefined) positiveInteger(options.numWorkers, 'numWorkers');
+    if (!sequences.length) return [];
+    this.initialize();
     return new Promise((resolveTask, reject) => {
       this.taskQueue.push({ sequences, options, resolve: resolveTask, reject });
-      void this.processQueue();
+      this.processQueue();
     });
   }
 
-  private async processQueue(): Promise<void> {
-    if (this.taskQueue.length === 0) {
-      return;
-    }
-
-    const availableWorkerIdx = this.workers.findIndex((_, idx) => !this.busyWorkers.has(idx));
-    if (availableWorkerIdx === -1) {
-      return;
-    }
-
-    const task = this.taskQueue.shift();
-    if (!task) return;
-
-    this.busyWorkers.add(availableWorkerIdx);
-
-    try {
-      const result = await runWorker(this.workerPath, task.sequences, task.options);
-      task.resolve(result);
-    } catch (error) {
-      task.reject(error as Error);
-    } finally {
-      this.busyWorkers.delete(availableWorkerIdx);
-      void this.processQueue();
+  private processQueue(): void {
+    for (const worker of this.workers) {
+      while (!this.active.has(worker) && this.taskQueue.length) {
+        const task = this.taskQueue.shift()!;
+        this.active.set(worker, task);
+        try {
+          worker.postMessage(taskData(task.sequences, task.options));
+        } catch (error) {
+          this.active.delete(worker);
+          task.reject(error as Error);
+        }
+      }
     }
   }
 
-  /**
-   * Terminate all workers in the pool
-   */
   async terminate(): Promise<void> {
-    await Promise.all(this.workers.map((worker) => worker.terminate()));
-    this.workers = [];
-    this.busyWorkers.clear();
-    this.taskQueue = [];
+    if (this.termination) return this.termination;
+    this.terminated = true;
+    const error = new Error('Translation pool terminated');
+    for (const task of this.taskQueue.splice(0)) task.reject(error);
+    for (const task of this.active.values()) task.reject(error);
+    this.active.clear();
+    const workers = [...this.workers];
+    this.workers.clear();
+    this.termination = Promise.all(workers.map((worker) => worker.terminate())).then(
+      () => undefined
+    );
+    return this.termination;
   }
 }

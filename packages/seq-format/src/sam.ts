@@ -1,3 +1,4 @@
+import { integer, numeric } from './validation';
 /**
  * SAM (Sequence Alignment/Map) format parser.
  * Basic support for SAM text format (BAM binary parsing not included).
@@ -119,7 +120,8 @@ export function parseSAMHeader(text: string): SAMHeader {
     comments: [],
   };
 
-  for (const line of lines) {
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/\r$/, '');
     if (!line.startsWith('@')) {
       break; // End of header
     }
@@ -130,7 +132,9 @@ export function parseSAMHeader(text: string): SAMHeader {
     if (tag === '@HD') {
       // Header line
       for (let i = 1; i < fields.length; i++) {
-        const [key, value] = fields[i].split(':');
+        const colon = fields[i].indexOf(':');
+        const key = fields[i].slice(0, colon);
+        const value = fields[i].slice(colon + 1);
         if (key === 'VN') header.version = value;
         if (key === 'SO') header.sortOrder = value;
       }
@@ -141,7 +145,9 @@ export function parseSAMHeader(text: string): SAMHeader {
       // Reference sequence
       const ref: { name: string; length: number } = { name: '', length: 0 };
       for (let i = 1; i < fields.length; i++) {
-        const [key, value] = fields[i].split(':');
+        const colon = fields[i].indexOf(':');
+        const key = fields[i].slice(0, colon);
+        const value = fields[i].slice(colon + 1);
         if (key === 'SN') ref.name = value;
         if (key === 'LN') ref.length = parseInt(value);
       }
@@ -155,7 +161,9 @@ export function parseSAMHeader(text: string): SAMHeader {
       // Read group
       const rg: Record<string, string> = {};
       for (let i = 1; i < fields.length; i++) {
-        const [key, value] = fields[i].split(':');
+        const colon = fields[i].indexOf(':');
+        const key = fields[i].slice(0, colon);
+        const value = fields[i].slice(colon + 1);
         rg[key] = value;
       }
       header.readGroups.push(rg);
@@ -166,7 +174,9 @@ export function parseSAMHeader(text: string): SAMHeader {
       // Program
       const pg: Record<string, string> = {};
       for (let i = 1; i < fields.length; i++) {
-        const [key, value] = fields[i].split(':');
+        const colon = fields[i].indexOf(':');
+        const key = fields[i].slice(0, colon);
+        const value = fields[i].slice(colon + 1);
         pg[key] = value;
       }
       header.programs.push(pg);
@@ -218,20 +228,25 @@ export function parseSAMLine(line: string): SAMRecord {
     throw new Error(`Invalid SAM format: expected at least 11 fields, got ${fields.length}`);
   }
 
-  const flag = parseInt(fields[1]);
-  const pos = parseInt(fields[3]);
-  const mapq = parseInt(fields[4]);
-  const pnext = parseInt(fields[7]);
-  const tlen = parseInt(fields[8]);
+  const flag = integer(fields[1], 'SAM flag');
+  const pos = integer(fields[3], 'SAM pos');
+  const mapq = integer(fields[4], 'SAM mapq');
+  const pnext = integer(fields[7], 'SAM pnext');
+  const tlen = integer(fields[8], 'SAM tlen', -2147483648);
 
+  if (flag > 65535 || mapq > 255) throw new Error('SAM flag or mapping quality out of range');
+  if (fields[9] !== '*' && fields[10] !== '*' && fields[9].length !== fields[10].length)
+    throw new Error('SAM sequence and quality lengths must match');
   // Parse optional tags
   const tags: Record<string, string | number> = {};
   for (let i = 11; i < fields.length; i++) {
-    const [key, type, value] = fields[i].split(':');
+    const match = /^([^:]+):([^:]+):(.*)$/.exec(fields[i]);
+    if (!match) throw new Error('Invalid SAM optional tag');
+    const [, key, type, value] = match;
     if (type === 'i') {
-      tags[key] = parseInt(value);
+      tags[key] = integer(value, 'SAM integer tag', -2147483648);
     } else if (type === 'f') {
-      tags[key] = parseFloat(value);
+      tags[key] = numeric(value, 'SAM float tag');
     } else {
       tags[key] = value;
     }

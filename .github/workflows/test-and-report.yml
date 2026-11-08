@@ -42,7 +42,7 @@ jobs:
     env:
       ALLURE_RESULTS_DIR: allure-results
       ALLURE_REPORT_DIR: allure-report
-      FORCE_COLOR: "1"
+      FORCE_COLOR: '1'
 
     steps:
       - name: Checkout
@@ -118,23 +118,23 @@ jobs:
         run: |
           set +e
           if [ -f pnpm-lock.yaml ]; then PM="pnpm"; elif [ -f yarn.lock ]; then PM="yarn"; else PM="npm"; fi
-          
+
           # Determine which script to run based on test_mode
           case "${{ inputs.test_mode }}" in
             unit) SCRIPT="test" ;;
             e2e)  SCRIPT="test:browser" ;;
             *)    SCRIPT="test:github" ;;
           esac
-          
+
           echo "Running tests with: $PM run $SCRIPT"
           $PM run "$SCRIPT"
           CODE=$?
-          
+
           echo "exit_code=$CODE" >> $GITHUB_OUTPUT
-          
+
           # Collect allure-results from packages (Playwright e2e)
           find packages -type d -name "allure-results" -exec sh -c 'cp -r "$1"/* "'"$ALLURE_RESULTS_DIR"'/" 2>/dev/null || true' _ {} \;
-          
+
           echo "Results count: $(ls -1 $ALLURE_RESULTS_DIR 2>/dev/null | wc -l)"
           exit 0
 
@@ -186,7 +186,7 @@ jobs:
           echo "- Allure version: \`${{ inputs.allure_version }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- Playwright browsers: \`${{ inputs.playwright_browsers }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ -f "${{ env.ALLURE_REPORT_DIR }}/widgets/summary.json" ]; then
             sudo apt-get update -y >/dev/null 2>&1 || true
             sudo apt-get install -y jq >/dev/null 2>&1 || true
@@ -200,7 +200,7 @@ jobs:
           else
             echo "- Allure summary not found (no results?)" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "- \`allure-report-${{ matrix.node }}\` - Allure HTML report" >> $GITHUB_STEP_SUMMARY

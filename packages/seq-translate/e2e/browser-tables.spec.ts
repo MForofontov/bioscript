@@ -9,9 +9,7 @@ test.describe('Browser Translation - Genetic Tables', () => {
   test('1. should support NCBI table numbers', async ({ page }) => {
     const result = await page.evaluate(() => {
       const seq = 'ATGATG';
-      // @ts-expect-error - browser bundle
       const table1 = window.bioseqTranslate.translateBrowser(seq, { table: '1' });
-      // @ts-expect-error - browser bundle
       const tableStd = window.bioseqTranslate.translateBrowser(seq, { table: 'standard' });
       return {
         table1: table1[0].sequence,
@@ -25,9 +23,7 @@ test.describe('Browser Translation - Genetic Tables', () => {
   test('2. should handle vertebrate mitochondrial table', async ({ page }) => {
     const result = await page.evaluate(() => {
       const seq = 'ATGATA'; // ATA codes for M in mitochondrial
-      // @ts-expect-error - browser bundle
       const standard = window.bioseqTranslate.translateBrowser(seq, { table: 'standard' });
-      // @ts-expect-error - browser bundle
       const mito = window.bioseqTranslate.translateBrowser(seq, {
         table: 'vertebrate_mitochondrial',
       });
@@ -44,9 +40,7 @@ test.describe('Browser Translation - Genetic Tables', () => {
   test('3. should handle yeast mitochondrial table', async ({ page }) => {
     const result = await page.evaluate(() => {
       const seq = 'ATGCTA'; // CTA codes for T in yeast mito
-      // @ts-expect-error - browser bundle
       const standard = window.bioseqTranslate.translateBrowser(seq, { table: 'standard' });
-      // @ts-expect-error - browser bundle
       const yeast = window.bioseqTranslate.translateBrowser(seq, { table: 'yeast_mitochondrial' });
       return {
         standard: standard[0].sequence,
@@ -60,7 +54,6 @@ test.describe('Browser Translation - Genetic Tables', () => {
 
   test('4. should list all available tables', async ({ page }) => {
     const tables = await page.evaluate(() => {
-      // @ts-expect-error - browser bundle
       return Object.keys(window.bioseqTranslate.tables);
     });
 
