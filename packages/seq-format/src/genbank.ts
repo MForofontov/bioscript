@@ -4,6 +4,7 @@
  */
 
 import type { GenBankRecord, GenBankFeature, FastaRecord } from './types';
+import { assertString, assertObject, reverseComplement } from '@bioscript/seq-utils';
 
 /**
  * Parse GenBank format text into structured record.
@@ -25,9 +26,7 @@ import type { GenBankRecord, GenBankFeature, FastaRecord } from './types';
  * Typical files: 1-10KB (genes) parse in <1ms, 100KB-1MB (genomes) in 5-50ms.
  */
 export function parseGenBank(text: string): GenBankRecord {
-  if (typeof text !== 'string') {
-    throw new TypeError(`text must be a string, got ${typeof text}`);
-  }
+  assertString(text, 'text');
 
   const lines = text.split('\n');
   const record: Partial<GenBankRecord> = {
@@ -182,7 +181,7 @@ export function parseGenBank(text: string): GenBankRecord {
 
     // Parse sequence
     if (currentSection === 'origin') {
-      const seqMatch = line.match(/^\s*\d+\s+([a-z\s]+)$/);
+      const seqMatch = line.match(/^\s*\d+\s+([a-zA-Z\s]+)$/);
       if (seqMatch) {
         sequenceLines.push(seqMatch[1].replace(/\s+/g, ''));
       }
@@ -233,13 +232,47 @@ export function parseGenBank(text: string): GenBankRecord {
  * @performance O(n + f) where n is sequence length, f is number of features.
  * Typical: <1ms for standard records.
  */
+function extractSequenceFromLocation(location: string, fullSequence: string): string | null {
+  let loc = location.trim();
+  let isComplement = false;
+
+  const complementMatch = loc.match(/^complement\((.+)\)$/);
+  if (complementMatch) {
+    isComplement = true;
+    loc = complementMatch[1].trim();
+  }
+
+  let segments: string[] = [];
+  const joinMatch = loc.match(/^join\((.+)\)$/);
+  if (joinMatch) {
+    segments = joinMatch[1].split(',').map((part) => part.trim());
+  } else {
+    segments = [loc];
+  }
+
+  let featureSeq = '';
+  for (const segment of segments) {
+    const rangeMatch = segment.match(/^(\d+)\.\.(\d+)$/);
+    if (!rangeMatch) {
+      return null;
+    }
+    const start = parseInt(rangeMatch[1], 10) - 1;
+    const end = parseInt(rangeMatch[2], 10);
+    featureSeq += fullSequence.substring(start, end);
+  }
+
+  if (!featureSeq) {
+    return null;
+  }
+
+  return isComplement ? reverseComplement(featureSeq) : featureSeq;
+}
+
 export function genBankToFasta(
   record: GenBankRecord,
   includeFeatures: boolean = false
 ): FastaRecord[] {
-  if (typeof record !== 'object' || record === null) {
-    throw new TypeError(`record must be an object, got ${typeof record}`);
-  }
+  assertObject(record, 'record');
 
   const results: FastaRecord[] = [];
 
@@ -262,20 +295,13 @@ export function genBankToFasta(
         const id = geneQual?.value || locusTagQual?.value || feature.type;
         const description = productQual?.value || feature.location;
 
-        // Extract sequence from location (simplified - handles single ranges)
-        const locationMatch = feature.location.match(/(\d+)\.\.(\d+)/);
-        if (locationMatch) {
-          const start = parseInt(locationMatch[1]) - 1; // 0-based
-          const end = parseInt(locationMatch[2]);
-          const featureSeq = record.sequence.substring(start, end);
-
-          if (featureSeq) {
-            results.push({
-              id,
-              description,
-              sequence: featureSeq,
-            });
-          }
+        const featureSeq = extractSequenceFromLocation(feature.location, record.sequence);
+        if (featureSeq) {
+          results.push({
+            id,
+            description,
+            sequence: featureSeq,
+          });
         }
       }
     }
@@ -313,9 +339,7 @@ export function fastaToGenBank(
     topology?: string;
   } = {}
 ): string {
-  if (typeof record !== 'object' || record === null) {
-    throw new TypeError(`record must be an object, got ${typeof record}`);
-  }
+  assertObject(record, 'record');
 
   const { organism = 'Unknown', moleculeType = 'DNA', topology = 'linear' } = options;
 

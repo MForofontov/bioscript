@@ -1,7 +1,15 @@
 // Run development commands with the same Node executable on Windows and Unix.
 const { spawnSync } = require('child_process');
 const { join } = require('path');
-const packages = ['seq-utils', 'seq-stream', 'seq-translate', 'seq-align', 'seq-format'];
+const packages = [
+  'seq-utils',
+  'seq-stream',
+  'seq-translate',
+  'seq-align',
+  'seq-format',
+  'seq-search',
+  'seq-quality',
+];
 const root = join(__dirname, '..');
 function run(tool, args, cwd = root) {
   const result = spawnSync(process.execPath, [join(root, 'node_modules', tool), ...args], {

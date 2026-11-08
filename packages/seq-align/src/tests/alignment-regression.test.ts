@@ -159,6 +159,19 @@ test('Hirschberg reverses each suffix only once', () => {
   expect(hirschberg('AAC', 'CA', { matrix, gapOpen: -3 }).score).toBe(-5);
 });
 
+test.each([semiGlobal, overlapAlign, bandedAlign])(
+  'explicit score normalization overrides the legacy flag',
+  (align) => {
+    const options = { matrix, gapOpen: -3, gapExtend: -1 };
+    const raw = align('AAC', 'AC', { ...options, normalize: false });
+    expect(align('AAC', 'AC', { ...options, normalize: true, normalizeScore: false }).score).toBe(
+      raw.score
+    );
+    const scaled = align('AAC', 'AC', { ...options, normalize: false, normalizeScore: true });
+    expect(scaled.score).toBe(raw.score / scaled.alignmentLength);
+  }
+);
+
 test('short binary sequences match independent scores across penalty regimes and bands', () => {
   const sequences = ['A', 'C', 'AA', 'AC', 'CA', 'CC', 'AAC', 'CAC'];
   for (const a of sequences) {

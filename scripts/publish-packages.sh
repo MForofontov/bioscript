@@ -45,6 +45,8 @@ PACKAGES=(
   "seq-translate"
   "seq-align"
   "seq-format"
+  "seq-search"
+  "seq-quality"
 )
 
 SUCCESS_COUNT=0

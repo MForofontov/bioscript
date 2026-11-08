@@ -7,10 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-08
+
 ### Fixed
 
-- Preserve every branch and merge edge when extracting contigs, including shared endpoints, isolated nodes, and closed cycles.
-- Reject nonoverlapping graph edges during contig extraction, preventing invalid sequences from canonical graphs that have lost strand orientation. Build graphs with `canonical: false` for assembly.
+- Preserve the published normalization and validation APIs.
+- Fix graph contig branch/merge traversal, preserve valid canonical edges, and validate malformed oriented edges.
+- Preserve strand-invariant rolling hashes and use amortized linear minimizer window selection.
+
+## [0.3.0] - 2026-07-29
+
+### Fixed
+
+- IUPAC complement maps; mixed T/U no longer flips entire string to RNA mode
+- Canonical de Bruijn edges require (k−1) overlap; tip removal deletes full tip paths
+- Canonical `getSuperKmers` keeps sequence adjacency; rolling-hash keys match canonical forms
+
+## [Unreleased]
+
+### Added
+
+- `assertArray()` - Assert a value is an array, throwing `TypeError` if not
+- `assertObject()` - Assert a value is a non-null object, throwing `TypeError` if not
+- `assertPositiveInteger()` - Assert a number is a positive integer, throwing `Error` if not
+- `assertNonEmptySequences()` - Assert two normalized sequences are non-empty, throwing `Error` if either is empty (standardizes the "sequences cannot be empty" message across all callers)
+
+### Changed
+
+- `normalize.ts` no longer re-implements `rnaToDna`/`dnaToRna`; now imports them from `dna-rna.ts` (eliminates internal duplication)
+- `kmers.ts`: replaced inline `k < 1 || !Number.isInteger(k)` guards with `assertPositiveInteger()` in all 6 functions
+- `minimizers.ts`: replaced inline positive-integer guards for `k` and `w` with `assertPositiveInteger()`
+- `debruijn.ts`: replaced `!Array.isArray` + `typeof k !== 'number'` guards with `assertArray()` + `assertNumber()`
 
 ## [0.2.0] - 2026-02-17
 

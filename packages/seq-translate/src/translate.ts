@@ -7,7 +7,7 @@
 
 import { getTable } from './tables';
 import { buildLookup, translateWithLookup } from './lookup';
-import { reverseComplement } from '@bioscript/seq-utils';
+import { reverseComplement, normalizeSequence, assertValidSequence } from '@bioscript/seq-utils';
 
 /**
  * Translation options
@@ -19,6 +19,8 @@ export interface TranslationOptions {
   stopSymbol?: string;
   /** If true, translation stops at first stop codon (default: true) */
   breakOnStop?: boolean;
+  /** Validate sequence characters before translation (default: false) */
+  strict?: boolean;
 }
 
 /**
@@ -38,11 +40,15 @@ export interface TranslationOptions {
  * @performance O(n) where n is sequence length. Processes ~1M codons/sec.
  */
 export function translateSequence(seq: string, options: TranslationOptions = {}): string {
-  const { table = 'standard', stopSymbol = '*', breakOnStop = true } = options;
+  const { table = 'standard', stopSymbol = '*', breakOnStop = true, strict = false } = options;
+
+  if (strict) {
+    assertValidSequence(seq);
+  }
 
   const codonTable = getTable(table);
   const lookup = buildLookup(codonTable);
-  const normalized = seq.trim().toUpperCase();
+  const normalized = normalizeSequence(seq);
 
   return translateWithLookup(normalized, lookup, stopSymbol, breakOnStop);
 }
@@ -68,7 +74,7 @@ export function translateAllFrames(seq: string, options: TranslationOptions = {}
 
   const codonTable = getTable(table);
   const lookup = buildLookup(codonTable);
-  const normalized = seq.trim().toUpperCase();
+  const normalized = normalizeSequence(seq);
 
   return [0, 1, 2].map((frame) =>
     translateWithLookup(normalized, lookup, stopSymbol, breakOnStop, frame)
@@ -98,7 +104,7 @@ export function translateSixFrames(seq: string, options: TranslationOptions = {}
   const codonTable = getTable(table);
   const lookup = buildLookup(codonTable);
 
-  const normalized = seq.trim().toUpperCase();
+  const normalized = normalizeSequence(seq);
   const revComp = reverseComplement(normalized);
 
   const results: string[] = [];
@@ -147,7 +153,7 @@ export function translateBatch(sequences: string[], options: TranslationOptions 
   const lookup = buildLookup(codonTable);
 
   return sequences.map((seq) => {
-    const normalized = seq.trim().toUpperCase();
+    const normalized = normalizeSequence(seq);
     return translateWithLookup(normalized, lookup, stopSymbol, breakOnStop);
   });
 }

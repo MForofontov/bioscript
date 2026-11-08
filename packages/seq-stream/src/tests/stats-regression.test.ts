@@ -1,10 +1,14 @@
 import { finished } from 'stream/promises';
-import { StatsCalculator } from '../stats';
+import { StatsCalculator, calculateN50L50FromHistogram } from '../stats';
 import { calculateStatsBrowser, calculateStatsSync } from '../browser-stats';
 import { summarizeLengths } from '../length-summary';
 
 describe('length statistics across runtimes', () => {
   test('summarizes billions of repeated lengths without expanding them', () => {
+    expect(calculateN50L50FromHistogram(new Map([[10, 4_000_000_000]]))).toEqual({
+      n50: 10,
+      l50: 2_000_000_000,
+    });
     expect(summarizeLengths(new Map([[10, 4_000_000_000]]))).toEqual({
       minLength: 10,
       maxLength: 10,

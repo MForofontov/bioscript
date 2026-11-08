@@ -119,7 +119,7 @@ const result = bandedAlign(seq1, seq2, {
 
 ### hirschberg(seq1, seq2, options?)
 
-Memory-efficient global alignment for very long sequences.
+Memory-efficient global alignment for very long sequences. Uses a **linear gap model** (`gapOpen` per gapped column); `gapExtend` is ignored. Scores are not directly comparable to Needleman-Wunsch when `gapOpen !== gapExtend`.
 
 ```typescript
 const result = hirschberg(longSeq1, longSeq2, {
@@ -163,4 +163,4 @@ interface AlignmentResult {
 
 ## License
 
-MIT © 2026 Mykyta Forofontov
+MIT © 2026 [Mykyta Forofontov](https://github.com/MForofontov)

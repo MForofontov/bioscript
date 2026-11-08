@@ -1,7 +1,5 @@
 # @bioscript/seq-utils
 
-Performance timings in this document are illustrative. Use the repository's `npm run benchmark` command and [major review](../../MAJOR_REVIEW.md) for reproducible measurements and compatibility notes.
-
 Core sequence manipulation utilities for DNA/RNA operations including k-mer analysis, minimizers, and De Bruijn graphs.
 
 ## Features
@@ -9,13 +7,14 @@ Core sequence manipulation utilities for DNA/RNA operations including k-mer anal
 ✨ **DNA/RNA Conversion** - Bidirectional DNA ↔ RNA conversion  
 🧬 **Complement** - Calculate complement sequences for DNA and RNA  
 🔄 **Reverse Complement** - Generate reverse complement sequences  
+✅ **Validation Utilities** - Reusable type checking and sequence validation<br>
+🔧 **Normalization Utilities** - Standardized sequence normalization functions<br>
 🔬 **K-mer Analysis** - Extract, count, and analyze k-mers with canonical support  
 ⚡ **Rolling Hash** - Efficient k-mer hashing for large k values  
 🎯 **Super-k-mers** - Maximal k-mer compression for storage optimization  
 🔀 **Syncmers** - Evenly distributed sequence sketching  
 📊 **Minimizers** - Efficient sequence sketching for similarity detection  
 🕸️ **De Bruijn Graphs** - Optimized graph-based assembly with O(1) edge lookups  
-✅ **Sequence Validation** - Optional strict mode for nucleotide validation  
 ⚡ **High Performance** - Optimized algorithms with reverse edge indexing  
 📦 **Zero Dependencies** - Pure TypeScript with no external dependencies  
 🔒 **Type Safe** - Full TypeScript support with comprehensive types
@@ -30,18 +29,37 @@ npm install @bioscript/seq-utils
 
 ```typescript
 import {
+  // DNA/RNA conversion
   dnaToRna,
+  rnaToDna,
+  // Complement operations
   complement,
   reverseComplement,
+  // Validation utilities (NEW)
+  assertString,
+  assertValidSequence,
+  isValidSequence,
+  // Normalization utilities (NEW)
+  normalizeSequence,
+  normalizeToDna,
+  normalizeToRna,
+  // K-mer analysis
   getKmers,
   countKmers,
+  // Minimizers
   getMinimizers,
+  // De Bruijn graphs
   buildDeBruijnGraph,
 } from '@bioscript/seq-utils';
 
 // DNA to RNA conversion
 const rna = dnaToRna('ATGC');
 console.log(rna); // 'AUGC'
+
+// Validate and normalize sequence
+assertString(sequence, 'sequence');
+assertValidSequence(sequence); // Throws if invalid
+const normalized = normalizeSequence('  atcg  '); // 'ATCG'
 
 // Get complement
 const comp = complement('ATGC');
@@ -70,7 +88,115 @@ console.log(`Graph has ${graph.nodes.size} nodes`);
 
 ## API Documentation
 
-### dnaToRna(sequence)
+### Validation Utilities
+
+#### assertString(value, paramName)
+
+Assert that a value is a string, throwing TypeError if not.
+
+**Parameters:**
+
+- `value` (unknown): Value to validate
+- `paramName` (string): Parameter name for error message
+
+**Throws:** TypeError if value is not a string
+
+**Example:**
+
+```typescript
+assertString(sequence, 'sequence');
+// Throws: TypeError: sequence must be a string, got number
+```
+
+#### assertValidSequence(sequence)
+
+Validate sequence contains only valid nucleotide characters (A, C, G, T, U, N). Throws error if invalid.
+
+**Parameters:**
+
+- `sequence` (string): Sequence to validate
+
+**Throws:** Error if sequence contains invalid characters
+
+**Example:**
+
+```typescript
+assertValidSequence('ATCG'); // OK
+assertValidSequence('ATCXYZ'); // Throws Error
+```
+
+#### isValidSequence(sequence, allowAmbiguous?)
+
+Check if sequence contains only valid nucleotide characters (non-throwing).
+
+**Parameters:**
+
+- `sequence` (string): Sequence to check
+- `allowAmbiguous` (boolean, default: true): Allow IUPAC ambiguity codes
+
+**Returns:** boolean
+
+**Example:**
+
+```typescript
+isValidSequence('ATCG'); // true
+isValidSequence('ATCXYZ'); // false
+isValidSequence('ATCGRYKMSWBDHV'); // true (with ambiguous codes)
+```
+
+### Normalization Utilities
+
+#### normalizeSequence(sequence)
+
+Normalize sequence: trim whitespace and convert to uppercase.
+
+**Parameters:**
+
+- `sequence` (string): Sequence to normalize
+
+**Returns:** Normalized sequence (string)
+
+**Example:**
+
+```typescript
+normalizeSequence('  atcg  '); // 'ATCG'
+```
+
+#### normalizeToDna(sequence)
+
+Normalize sequence to DNA format: trim, uppercase, and convert U to T.
+
+**Parameters:**
+
+- `sequence` (string): DNA or RNA sequence
+
+**Returns:** Normalized DNA sequence (string)
+
+**Example:**
+
+```typescript
+normalizeToDna('  augc  '); // 'ATGC'
+```
+
+#### normalizeToRna(sequence)
+
+Normalize sequence to RNA format: trim, uppercase, and convert T to U.
+
+**Parameters:**
+
+- `sequence` (string): DNA or RNA sequence
+
+**Returns:** Normalized RNA sequence (string)
+
+**Example:**
+
+```typescript
+normalizeToRna('  atgc  '); // 'AUGC'
+```
+
+### DNA/RNA Conversion
+
+#### dnaToRna(sequence)
 
 Convert DNA sequence to RNA by replacing T with U.
 
@@ -104,7 +230,9 @@ rnaToDna('AUGC'); // 'ATGC'
 rnaToDna('augc'); // 'atgc' (preserves case)
 ```
 
-### complement(sequence)
+### Complement Operations
+
+#### complement(sequence)
 
 Calculate the complement of a nucleotide sequence. Automatically detects DNA or RNA based on sequence content.
 
@@ -124,7 +252,7 @@ complement('ATGC'); // 'TACG'
 complement('AUGC'); // 'UACG'
 ```
 
-### reverseComplement(sequence)
+#### reverseComplement(sequence)
 
 Calculate the reverse complement of a nucleotide sequence.
 
@@ -442,8 +570,6 @@ const filtered = buildDeBruijnGraph(sequences, 4, { minCoverage: 2 });
 
 Find contigs (unbranched paths) in De Bruijn graph.
 
-Use `canonical: false` when building graphs for contig extraction. Canonical keys discard strand orientation; extraction rejects nonoverlapping edges rather than producing invalid sequences. Canonical graphs remain useful for counts and graph statistics.
-
 **Parameters:**
 
 - `graph` (DeBruijnGraph): De Bruijn graph
@@ -563,4 +689,8 @@ console.log(`Removed ${removed} low-coverage nodes`);
 
 ## License
 
-MIT © 2026 Mykyta Forofontov
+MIT © 2026 [Mykyta Forofontov](https://github.com/MForofontov)
+
+## Contig extraction and performance
+
+Build oriented graphs with `canonical: false` for sequence assembly. Canonical graphs retain counts and only edges whose canonical keys overlap. Contig extraction visits every branch/merge edge and rejects malformed nonoverlapping edges. Minimizer window selection uses an amortized linear deque; k-mer construction and hashing still cost O(k) per k-mer.

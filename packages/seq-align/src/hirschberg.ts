@@ -107,7 +107,7 @@ export function hirschberg(
   }
 
   // Get options (using simple gap penalty for space efficiency)
-  const { matrix = 'BLOSUM62', gapOpen = -1, normalize = false } = options;
+  const { matrix = 'BLOSUM62', gapOpen = -10, normalize = false } = options;
   validatePenalties(options);
   const gapPenalty = gapOpen;
 

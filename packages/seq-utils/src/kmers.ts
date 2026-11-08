@@ -1,3 +1,11 @@
+import { assertString, assertNumber, assertPositiveInteger } from './validation';
+import { normalizeSequence } from './normalize';
+
+function canonicalizeSuper(superKmer: string, canonical: boolean, k: number): string {
+  if (!canonical || superKmer.length < k) return superKmer;
+  const reverse = reverseComplement(superKmer);
+  return superKmer < reverse ? superKmer : reverse;
+}
 /**
  * K-mer counting and spectrum analysis utilities.
  * Provides efficient k-mer extraction, counting, and frequency analysis.
@@ -408,53 +416,36 @@ export function getSuperKmers(
   k: number,
   options: { canonical?: boolean } = {}
 ): string[] {
-  if (typeof sequence !== 'string') {
-    throw new TypeError(`sequence must be a string, got ${typeof sequence}`);
-  }
-  if (typeof k !== 'number') {
-    throw new TypeError(`k must be a number, got ${typeof k}`);
-  }
-  if (k < 1 || !Number.isInteger(k)) {
-    throw new Error(`k must be a positive integer, got ${k}`);
-  }
+  assertString(sequence, 'sequence');
+  assertNumber(k, 'k');
+  assertPositiveInteger(k, 'k');
 
-  const normalized = sequence.trim().toUpperCase();
+  const normalized = normalizeSequence(sequence);
   if (k > normalized.length) {
     return [];
   }
 
   const { canonical = false } = options;
   const superKmers: string[] = [];
+  // Super-k-mers follow the original sequence path (consecutive windows always overlap).
+  // Canonical mode labels k-mers for identity but must not break sequence adjacency.
   let currentSuper = normalized.slice(0, k);
-  let prevKmer = currentSuper;
-
-  if (canonical) {
-    const revComp = reverseComplement(prevKmer);
-    prevKmer = prevKmer < revComp ? prevKmer : revComp;
-  }
 
   for (let i = 1; i <= normalized.length - k; i++) {
-    let kmer = normalized.slice(i, i + k);
-    if (canonical) {
-      const revComp = reverseComplement(kmer);
-      kmer = kmer < revComp ? kmer : revComp;
-    }
-
-    // Check if this k-mer overlaps with previous
-    const prevSuffix = prevKmer.slice(1);
-    const currentPrefix = kmer.slice(0, k - 1);
+    const rawPrev = normalized.slice(i - 1, i - 1 + k);
+    const rawKmer = normalized.slice(i, i + k);
+    const prevSuffix = rawPrev.slice(1);
+    const currentPrefix = rawKmer.slice(0, k - 1);
 
     if (prevSuffix === currentPrefix) {
-      currentSuper += kmer[k - 1];
+      currentSuper += rawKmer[k - 1];
     } else {
-      superKmers.push(currentSuper);
-      currentSuper = normalized.slice(i, i + k);
+      superKmers.push(canonicalizeSuper(currentSuper, canonical, k));
+      currentSuper = rawKmer;
     }
-
-    prevKmer = kmer;
   }
 
-  superKmers.push(currentSuper);
+  superKmers.push(canonicalizeSuper(currentSuper, canonical, k));
   return superKmers;
 }
 

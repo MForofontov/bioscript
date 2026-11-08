@@ -38,6 +38,9 @@ test('contigs include self loops and closed cycles exactly once', () => {
 
 test('contigs reject edges whose canonical keys have lost strand orientation', () => {
   const graph = buildDeBruijnGraph(['ACGT'], 2, { canonical: true });
+  expect(findContigs(graph)).toEqual(['ACG']);
+  // Model an invalid edge supplied by an older builder or a manually edited graph.
+  graph.nodes.get('CG')!.edges.push('AC');
   expect(() => findContigs(graph)).toThrow('canonical: false');
 });
 

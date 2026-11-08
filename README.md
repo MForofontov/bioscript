@@ -1,91 +1,90 @@
 # Bioscript
 
 A collection of bioinformatics tools and utilities organized as a monorepo.
+Install and import individual `@bioscript/*` packages — this workspace root is not published as an umbrella library.
 
 ## Packages
 
-### [@bioscript/seq-stream](./packages/seq-stream)
-
-High-performance streaming parser and writer for FASTA and FASTQ bioinformatics file formats. Features include:
-
-- ✨ Streaming design for processing large files with minimal memory
-- 📦 Support for both FASTA and FASTQ formats
-- 🗜️ Automatic gzip compression/decompression
-- 🔄 Quality score conversion between Phred encodings
-- 📊 Comprehensive sequence statistics
-- 🌐 Browser and Node.js support
-
-### [@bioscript/seq-align](./packages/seq-align)
-
-Pairwise sequence alignment algorithms for bioinformatics. Features include:
-
-- ✨ Global alignment (Needleman-Wunsch) for end-to-end alignment
-- 📍 Local alignment (Smith-Waterman) for finding conserved regions
-- 🧬 Multiple scoring matrices (BLOSUM62, BLOSUM80, PAM250, DNA)
-- ⚡ Dynamic programming with configurable scoring and gap penalties
-- 🔧 Full TypeScript support with comprehensive type definitions
-- 📦 Zero dependencies, pure TypeScript implementation
-
-### [@bioscript/seq-format](./packages/seq-format)
-
-Comprehensive bioinformatics file format converters and parsers. Features include:
-
-- ✨ GenBank format parsing and FASTA conversion
-- 📦 EMBL format support
-- 🧬 GFF3/GTF annotation parsing and writing
-- 📍 BED format support (BED3, BED6, BED12)
-- 🔬 VCF variant call format parsing
-- 🎯 SAM alignment format with flag decoding
-- 🚀 High-performance O(n) parsers
-- 📦 Zero dependencies, pure TypeScript
-
 ### [@bioscript/seq-utils](./packages/seq-utils)
 
-DNA/RNA conversion, complements, k-mers, minimizers, and De Bruijn graphs.
+Core DNA/RNA utilities: complement, reverse complement, normalization, validation, k-mers, minimizers, and De Bruijn graphs.
+
+### [@bioscript/seq-stream](./packages/seq-stream)
+
+High-performance streaming parser and writer for FASTA and FASTQ:
+
+- Streaming design for large files with minimal memory
+- FASTA and FASTQ formats with automatic gzip support
+- Quality score conversion between Phred encodings
+- Sequence statistics (GC%, N50/L50)
+- Browser and Node.js support
 
 ### [@bioscript/seq-translate](./packages/seq-translate)
 
-Codon-table translation, reading frames, ORF detection, browser streaming, and Node worker pools.
+Genetic code translation with all NCBI transl_table codes (1–33), multi-frame translation, ORF finding, worker-thread batching, and browser APIs.
+
+### [@bioscript/seq-align](./packages/seq-align)
+
+Pairwise sequence alignment:
+
+- Global (Needleman-Wunsch), local (Smith-Waterman), semi-global, overlap, banded, Hirschberg
+- BLOSUM / PAM / DNA scoring matrices
+- Pure TypeScript, zero runtime dependencies beyond `@bioscript/seq-utils`
+
+### [@bioscript/seq-format](./packages/seq-format)
+
+Bioinformatics file format parsers and writers:
+
+- GenBank, EMBL, GFF3/GTF, BED, VCF, SAM (text), Newick, CIGAR utilities
+- BAM binary is not supported (convert with samtools)
+
+### [@bioscript/seq-search](./packages/seq-search)
+
+Pattern and motif search: IUPAC motifs, exact/regex find, restriction sites, and basic primer utilities (Tm, GC, pair checks).
+
+### [@bioscript/seq-quality](./packages/seq-quality)
+
+FASTQ quality control: Phred helpers, length/quality/N-content filters, quality trimming, adapter trimming, and FastQC-lite reports.
 
 ## Getting Started
 
-This monorepo uses npm workspaces. Use Node.js 22 or newer for development tooling. Published libraries retain Node.js 16 support; browser streaming requires Web Streams and gzip support requires DecompressionStream.
-
-To get started:
+This is a monorepo using npm workspaces:
 
 ```bash
 # Install dependencies for all packages
-npm ci --ignore-scripts
+npm install
 
 # Build all packages
 npm run build
 
+# Typecheck all packages
+npm run typecheck
+
 # Run tests for all packages
 npm run test
 
-# Install the browser used by the test suite
-npx playwright install chromium
+# Run alignment reference validation
+npm run validate:reference -w @bioscript/seq-align
 
-# Run the complete verification suite
-npm run verify
-
-# Run reproducible performance benchmarks after building
-npm run benchmark
+# Run tests in browser environments
+npm run test:browser
 ```
 
 ## Development
 
-Each package has its own README with specific documentation. Navigate to the package directory for more details:
+Each package has its own README:
 
-- [seq-stream package documentation](./packages/seq-stream/README.md)
-- [seq-align package documentation](./packages/seq-align/README.md)
-- [seq-format package documentation](./packages/seq-format/README.md)
-- [seq-utils package documentation](./packages/seq-utils/README.md)
-- [seq-translate package documentation](./packages/seq-translate/README.md)
+- [seq-utils](./packages/seq-utils/README.md)
+- [seq-stream](./packages/seq-stream/README.md)
+- [seq-translate](./packages/seq-translate/README.md)
+- [seq-align](./packages/seq-align/README.md)
+- [seq-format](./packages/seq-format/README.md)
+- [seq-search](./packages/seq-search/README.md)
+- [seq-quality](./packages/seq-quality/README.md)
 
 ## Verification and compatibility
 
-`npm run verify` builds and type-checks all five workspaces, checks lint and formatting, runs unit and Chromium tests, verifies alignment against exhaustive path enumeration, and tests installed package tarballs outside the workspace. CI runs on Windows and Linux and uploads test artifacts on failures.
+`npm run verify` builds and type-checks all seven workspaces, checks lint and formatting, runs unit and Chromium tests, verifies alignment against exhaustive path enumeration, and tests installed package tarballs outside the workspace. CI runs on Windows and Linux and uploads test artifacts on failures.
 
 Type checking includes tests, browser tests, and validation scripts. Browser checks run with one worker and a two-minute test timeout, using dedicated local servers on ports 3111 and 3112. Failed browser runs retain traces. Generated test reports are excluded from module discovery and linting.
 
@@ -99,4 +98,4 @@ Alignment APIs retain their historical `normalize` behavior: global/local alignm
 
 ## License
 
-MIT
+MIT © 2026 [Mykyta Forofontov](https://github.com/MForofontov)

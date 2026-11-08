@@ -51,6 +51,19 @@ SQ   Sequence 1859 BP; 609 A; 314 C; 355 G; 581 T; 0 other;
     expect(record.organism).toBe('Trifolium repens (white clover)');
   });
 
+  it('4b. should append multi-line OS fields', () => {
+    const embl = `ID   TEST01; SV 1; linear; DNA; STD; PRO; 10 BP.
+OS   Homo sapiens
+OS   (human)
+XX
+SQ   Sequence 10 BP; 5 A; 5 T; 0 other;
+     aaaaaatttt
+//
+`;
+    const record = parseEMBL(embl);
+    expect(record.organism).toBe('Homo sapiens (human)');
+  });
+
   it('5. should parse features', () => {
     const record = parseEMBL(simpleEMBL);
 
@@ -76,6 +89,20 @@ SQ   Sequence 1859 BP; 609 A; 314 C; 355 G; 581 T; 0 other;
     expect(record.sequence.length).toBeGreaterThan(100);
   });
 
+  it('8. should stop at first record terminator in multi-record files', () => {
+    const multiRecord = `${simpleEMBL}ID   SECOND; SV 1; linear; mRNA; STD; PLN; 2 BP.
+AC   SECOND;
+DE   Second record
+SQ   Sequence 2 BP; 1 A; 0 C; 0 G; 1 T; 0 other;
+     at
+//
+`;
+    const firstOnly = parseEMBL(simpleEMBL);
+    const record = parseEMBL(multiRecord);
+    expect(record.id).toBe('X56734');
+    expect(record.sequence).toBe(firstOnly.sequence);
+  });
+
   it('8. should handle empty sequence', () => {
     const embl = `ID   TEST; SV 1; linear; mRNA; STD; PLN; 0 BP.
 AC   TEST;
@@ -98,6 +125,52 @@ SQ   Sequence 0 BP;
 `;
     expect(() => parseEMBL(invalidEMBL)).toThrow(Error);
     expect(() => parseEMBL(invalidEMBL)).toThrow('missing ID');
+  });
+
+  it('11. should concatenate multi-line DE and KW fields', () => {
+    const embl = `ID   TEST; SV 1; linear; mRNA; STD; PLN; 12 BP.
+AC   TEST;
+SV   TEST.1
+DE   First description line
+DE   continues here
+KW   keyword1;
+KW   keyword2.
+OS   Test sp.
+RN   [1]
+RP   1-12
+RA   Author A.;
+RT   "A title";
+RL   Journal 1:1-2(2020).
+FH   Key             Location/Qualifiers
+FT   source          1..12
+FT                   /organism="Test sp."
+FT                   /note="a long note that
+FT                   continues on the next line"
+FT   CDS             join(1..6,
+FT                   7..12)
+FT                   /gene="g1"
+FT                   /pseudo
+SQ   Sequence 12 BP; 3 A; 3 C; 3 G; 3 T; 0 other;
+     atgcatgcatgc
+//
+`;
+    const record = parseEMBL(embl);
+    expect(record.description).toContain('First description line');
+    expect(record.description).toContain('continues here');
+    expect(record.keywords).toContain('keyword1');
+    expect(record.keywords).toContain('keyword2');
+    expect(record.references.length).toBeGreaterThan(0);
+    expect(record.references[0]).toContain('RN');
+    const cds = record.features.find((f) => f.type === 'CDS');
+    expect(cds).toBeDefined();
+    expect(cds!.location).toContain('join');
+    expect(cds!.location).toContain('7..12');
+    const note = record.features[0].qualifiers.find((q) => q.key === 'organism');
+    expect(note?.value).toBe('Test sp.');
+    const gene = cds!.qualifiers.find((q) => q.key === 'gene');
+    expect(gene?.value).toBe('g1');
+    const pseudo = cds!.qualifiers.find((q) => q.key === 'pseudo');
+    expect(pseudo).toBeDefined();
   });
 });
 

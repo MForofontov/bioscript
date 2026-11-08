@@ -35,7 +35,7 @@ describe('findOrfs', () => {
   it('3. should find multiple ORFs in sequence', () => {
     // Two ORFs: ATG-GCC-TAA and ATG-AAA-TAG
     const sequence = 'ATGGCCTAAATGAAATAG';
-    const orfs = findOrfs(sequence, { minLength: 9 });
+    const orfs = findOrfs(sequence, { minLength: 9, breakOnStop: false });
 
     expect(orfs).toHaveLength(2);
     expect(orfs[0].start).toBe(0);
@@ -153,14 +153,14 @@ describe('findOrfs', () => {
     expect(orfsWithPartial[0].hasStopCodon).toBe(false);
   });
 
-  it('13. should handle very long sequence efficiently', () => {
-    // Generate 10KB sequence with ORF
-    const orf = 'ATG' + 'GCC'.repeat(300) + 'TAA'; // ~900bp ORF
+  it('13. should find ORFs in very long sequence', () => {
+    const orf = 'ATG' + 'GCC'.repeat(300) + 'TAA';
     const sequence = 'ACGT'.repeat(1000) + orf + 'ACGT'.repeat(1000);
 
     const orfs = findOrfs(sequence, { minLength: 75 });
 
     expect(orfs.length).toBeGreaterThanOrEqual(1);
+    expect(orfs[0].length).toBeGreaterThanOrEqual(75);
   });
 
   it('14. should handle sequence with only N bases', () => {
@@ -170,16 +170,13 @@ describe('findOrfs', () => {
     expect(orfs).toHaveLength(0);
   });
 
-  it('15. should find nested ORFs when breakOnStop is false', () => {
-    // ATG-TAA-ATG-TAA: contains nested ORF
+  it('15. should stop frame scan after first stop when breakOnStop is true', () => {
     const sequence = 'ATGTAAATGTAA';
-    const orfs = findOrfs(sequence, {
-      minLength: 6,
-      breakOnStop: false,
-    });
+    const orfsStopped = findOrfs(sequence, { minLength: 6, breakOnStop: true });
+    const orfsContinued = findOrfs(sequence, { minLength: 6, breakOnStop: false });
 
-    // Should find both ORFs
-    expect(orfs.length).toBeGreaterThanOrEqual(1);
+    expect(orfsStopped).toHaveLength(1);
+    expect(orfsContinued).toHaveLength(2);
   });
 
   it('16. should sort ORFs by start position', () => {
@@ -249,17 +246,14 @@ describe('findOrfs', () => {
     expect(() => findOrfs(sequence)).toThrow('invalid characters');
   });
 
-  it('23. should use fallback table for unknown genetic code table', () => {
-    // getTable returns standard table as fallback for unknown names
+  it('23. should throw for unknown genetic code table', () => {
     const sequence = 'ATGGCCAAATAA';
-    const orfs = findOrfs(sequence, {
-      minLength: 9,
-      table: 'nonexistent_table',
-      translate: true,
-    });
-
-    // Should still work, using standard table
-    expect(orfs).toHaveLength(1);
-    expect(orfs[0].protein).toBe('MAK*');
+    expect(() =>
+      findOrfs(sequence, {
+        minLength: 9,
+        table: 'nonexistent_table',
+        translate: true,
+      })
+    ).toThrow(/Unknown genetic code table/);
   });
 });
