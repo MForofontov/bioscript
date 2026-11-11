@@ -1,6 +1,6 @@
 {
   "name": "@bioscript/seq-align",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Pairwise sequence alignment algorithms (Needleman-Wunsch, Smith-Waterman) with BLOSUM and PAM scoring matrices.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
