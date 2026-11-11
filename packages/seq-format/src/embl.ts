@@ -180,7 +180,8 @@ export function parseEMBL(text: string): EMBLRecord {
         break;
 
       case '//':
-        // End of record
+        // End of record — stop parsing after first record
+        i = lines.length;
         break;
     }
   }

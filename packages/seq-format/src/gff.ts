@@ -81,7 +81,7 @@ export function parseGFFLine(line: string, version: GFFVersion = 'gff3'): GFFRec
     }
   } else {
     // GTF: key "value"; key "value";
-    const matches = attributesStr.matchAll(/(\w+)\s+"([^"]+)"/g);
+    const matches = attributesStr.matchAll(/([^\s;]+)\s+"([^"]+)"/g);
     for (const match of matches) {
       const [, key, value] = match;
       attributes[key] = value;

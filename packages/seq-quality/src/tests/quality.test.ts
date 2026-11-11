@@ -104,6 +104,16 @@ describe('report', () => {
     expect(report.meanGcPercent).toBeGreaterThan(0);
   });
 
+  it('computes per-base mean quality for variable-length reads', () => {
+    const records = [
+      rec('long', 'A'.repeat(100), 'I'.repeat(100)),
+      rec('short', 'A'.repeat(10), '!'.repeat(10)),
+    ];
+    const report = qualityReport(records);
+    expect(report.meanQuality).toBeGreaterThan(30);
+    expect(report.meanQuality).toBeLessThan(40);
+  });
+
   it('handles empty input', () => {
     const report = qualityReport([]);
     expect(report.readCount).toBe(0);

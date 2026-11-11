@@ -156,7 +156,7 @@ describe('LengthFilter', () => {
     expect(results.minLength).toBe(4);
     expect(results.maxLength).toBe(8);
     expect(results.meanLength).toBe(20 / 3);
-    expect(results.medianLength).toBe(4); // Sorted lengths [4, 8, 8], median at index floor(3/2) = 1 -> value 4
+    expect(results.medianLength).toBe(8); // Sorted lengths [4, 8, 8], median is 8
     expect(results.stdDevLength).toBeGreaterThan(0);
 
     // N50/L50

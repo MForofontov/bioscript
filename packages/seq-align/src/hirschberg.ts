@@ -40,8 +40,8 @@ export function hirschberg(
 
   assertNonEmptySequences(s1, s2);
 
-  // Match Needleman-Wunsch default gapOpen; linear gap model only.
-  const { matrix = 'BLOSUM62', gapOpen = -10, normalize = false } = options;
+  // Match Needleman-Wunsch default gapOpen; linear gap model only (gapExtend ignored).
+  const { matrix = 'BLOSUM62', gapOpen = -10, gapExtend: _gapExtend, normalize = false } = options;
   const gapPenalty = gapOpen;
 
   const scoringMatrix: ScoringMatrix =

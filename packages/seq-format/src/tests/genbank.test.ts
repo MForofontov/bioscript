@@ -157,6 +157,22 @@ describe('genBankToFasta', () => {
     expect(fastaRecords[1].id).toBe('testGene'); // CDS feature
   });
 
+  it('2b. should reverse-complement complement feature locations', () => {
+    const record: GenBankRecord = {
+      ...gbRecord,
+      features: [
+        {
+          type: 'CDS',
+          location: 'complement(10..20)',
+          qualifiers: [{ key: 'gene', value: 'revGene' }],
+        },
+      ],
+    };
+    const fastaRecords = genBankToFasta(record, true);
+    const feature = fastaRecords.find((r) => r.id === 'revGene');
+    expect(feature?.sequence).toBe('GCATGCATGCA');
+  });
+
   it('3. should use locus when accession is empty', () => {
     const record = { ...gbRecord, accession: '' };
     const fastaRecords = genBankToFasta(record);

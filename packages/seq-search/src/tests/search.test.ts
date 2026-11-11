@@ -55,6 +55,27 @@ describe('findPattern / motifs', () => {
     expect(hits).toHaveLength(2);
   });
 
+  it('honors ignoreCase for literal and RegExp patterns', () => {
+    const literal = findPattern('ACGTACGT', 'acgt', { ignoreCase: false });
+    expect(literal).toHaveLength(0);
+    const literalCi = findPattern('ACGTACGT', 'acgt', { ignoreCase: true });
+    expect(literalCi.length).toBeGreaterThan(0);
+
+    const regex = findPattern('ACGT', /acgt/, { ignoreCase: false });
+    expect(regex).toHaveLength(0);
+    const regexCi = findPattern('ACGT', /acgt/, { ignoreCase: true });
+    expect(regexCi).toHaveLength(1);
+  });
+
+  it('reports coding-oriented match on minus strand', () => {
+    const seq = 'AAAGGCCATTTT';
+    const hits = findPattern(seq, 'ATGGCC', { strand: '-' });
+    expect(hits[0].start).toBe(3);
+    expect(hits[0].end).toBe(9);
+    expect(hits[0].match).toBe('ATGGCC');
+    expect(seq.slice(hits[0].start, hits[0].end)).toBe('GGCCAT');
+  });
+
   it('builds consensus with IUPAC ambiguity', () => {
     expect(findConsensus(['ATGC', 'ATGC'])).toBe('ATGC');
     expect(findConsensus(['ATGC', 'ATGT'], 0.5)).toMatch(/^ATG[CY]$/);

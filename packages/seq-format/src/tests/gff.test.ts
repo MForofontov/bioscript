@@ -38,6 +38,15 @@ describe('parseGFFLine', () => {
     expect(record.attributes.transcript_id).toBe('DDX11L1.1');
   });
 
+  it('3b. should parse hyphenated GTF attribute keys', () => {
+    const line =
+      'chr1\tHAVANA\tgene\t11869\t14409\t.\t+\t.\tgene-id "DDX11L1"; gene-name "DDX11L1";';
+    const record = parseGFFLine(line, 'gtf');
+
+    expect(record.attributes['gene-id']).toBe('DDX11L1');
+    expect(record.attributes['gene-name']).toBe('DDX11L1');
+  });
+
   it('4. should handle null score', () => {
     const line = 'chr1\tsource\tgene\t1\t100\t.\t+\t.\tID=test';
     const record = parseGFFLine(line, 'gff3');

@@ -35,7 +35,7 @@ describe('findOrfs', () => {
   it('3. should find multiple ORFs in sequence', () => {
     // Two ORFs: ATG-GCC-TAA and ATG-AAA-TAG
     const sequence = 'ATGGCCTAAATGAAATAG';
-    const orfs = findOrfs(sequence, { minLength: 9 });
+    const orfs = findOrfs(sequence, { minLength: 9, breakOnStop: false });
 
     expect(orfs).toHaveLength(2);
     expect(orfs[0].start).toBe(0);
@@ -173,16 +173,13 @@ describe('findOrfs', () => {
     expect(orfs).toHaveLength(0);
   });
 
-  it('15. should find nested ORFs when breakOnStop is false', () => {
-    // ATG-TAA-ATG-TAA: contains nested ORF
+  it('15. should stop frame scan after first stop when breakOnStop is true', () => {
     const sequence = 'ATGTAAATGTAA';
-    const orfs = findOrfs(sequence, {
-      minLength: 6,
-      breakOnStop: false,
-    });
+    const orfsStopped = findOrfs(sequence, { minLength: 6, breakOnStop: true });
+    const orfsContinued = findOrfs(sequence, { minLength: 6, breakOnStop: false });
 
-    // Should find both ORFs
-    expect(orfs.length).toBeGreaterThanOrEqual(1);
+    expect(orfsStopped).toHaveLength(1);
+    expect(orfsContinued).toHaveLength(2);
   });
 
   it('16. should sort ORFs by start position', () => {

@@ -8,7 +8,10 @@ import {
   smithWaterman,
   semiGlobal,
   overlapAlign,
+  bandedAlign,
 } from '../src/index';
+import { DNA_SIMPLE } from '../src/matrices';
+import { scoreAlignmentPair } from '../src/gotoh';
 
 interface ReferenceAlignment {
   name: string;
@@ -77,9 +80,9 @@ const referenceAlignments: ReferenceAlignment[] = [
       gapOpen: -10,
       gapExtend: -0.5,
     },
-    expectedAligned1: '---MEEPQSDPSVEPPLSQETFSDLWKLL-PEN---',
+    expectedAligned1: '---MEEPQSDPSVEPPLSQETFSDLWKLLPEN----',
     expectedAligned2: 'MTAMEESQSDISLELPLSQETFSGLWKLLPPEDILP',
-    expectedScore: 81,
+    expectedScore: 83.5,
     source: 'Verified optimal under package affine-gap convention',
   },
 
@@ -175,6 +178,25 @@ const referenceAlignments: ReferenceAlignment[] = [
     expectedIdentity: 20,
     source: 'BLOSUM matrices (Henikoff & Henikoff)',
   },
+
+  // 9. Banded affine alignment score consistency
+  {
+    name: 'Banded Affine Score Consistency',
+    description: 'Reported score must match affine score of returned alignment',
+    seq1: 'AACG',
+    seq2: 'CGGA',
+    algorithm: 'banded',
+    options: {
+      matrix: 'DNA_SIMPLE',
+      gapOpen: -10,
+      gapExtend: -1,
+      bandwidth: 4,
+    },
+    expectedAligned1: 'AACG--',
+    expectedAligned2: '--CGGA',
+    expectedScore: -12,
+    source: 'Gotoh traceback regression',
+  },
 ];
 
 /**
@@ -266,6 +288,9 @@ function validateImplementations() {
         case 'overlap':
           result = overlapAlign(ref.seq1, ref.seq2, ref.options);
           break;
+        case 'banded':
+          result = bandedAlign(ref.seq1, ref.seq2, ref.options);
+          break;
         default:
           throw new Error(`Unknown algorithm: ${ref.algorithm}`);
       }
@@ -303,6 +328,27 @@ function validateImplementations() {
           console.log(
             `  ⚠️  Score mismatch: got ${result.score}, expected ${ref.expectedScore}`
           );
+        }
+      }
+
+      // Score-alignment consistency for global affine-gap algorithms
+      if (['needleman-wunsch', 'smith-waterman', 'banded'].includes(ref.algorithm)) {
+        const scoringMatrix =
+          typeof ref.options.matrix === 'string'
+            ? require('../src/matrices').getMatrix(ref.options.matrix)
+            : ref.options.matrix ?? require('../src/matrices').BLOSUM62;
+        const affineScore = scoreAlignmentPair(
+          result.alignedSeq1,
+          result.alignedSeq2,
+          scoringMatrix,
+          ref.options.gapOpen ?? -10,
+          ref.options.gapExtend ?? -1
+        );
+        if (Math.abs(affineScore - result.score) > 1e-6) {
+          console.log(
+            `  ⚠️  Score-alignment mismatch: reported ${result.score}, affine ${affineScore}`
+          );
+          scoreValid = false;
         }
       }
 

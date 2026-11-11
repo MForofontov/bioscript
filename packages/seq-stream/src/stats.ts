@@ -124,13 +124,16 @@ export class StatsCalculator extends Transform {
       minLength = sortedLengths[0];
       maxLength = sortedLengths[sortedLengths.length - 1];
 
-      // Calculate median by expanding the distribution
-      const halfPoint = Math.floor(this.totalSequences / 2);
+      // Calculate median from length distribution
+      const medianIndex =
+        this.totalSequences % 2 === 1
+          ? Math.ceil(this.totalSequences / 2)
+          : Math.floor(this.totalSequences / 2);
       let count = 0;
 
       for (const length of sortedLengths) {
         count += this.lengthDistribution.get(length)!;
-        if (count >= halfPoint) {
+        if (count >= medianIndex) {
           medianLength = length;
           break;
         }
@@ -145,12 +148,8 @@ export class StatsCalculator extends Transform {
         : 0;
     const stdDevLength = Math.sqrt(Math.max(0, variance));
 
-    // Calculate N50 and L50 from length distribution
-    const allLengths: number[] = Array.from(this.lengthDistribution.entries()).flatMap(
-      ([length, count]: [number, number]): number[] => Array(count).fill(length) as number[]
-    );
-    const n50 = calculateN50(allLengths);
-    const l50 = calculateL50(allLengths);
+    // Calculate N50 and L50 from length distribution without materializing all lengths
+    const { n50, l50 } = calculateN50L50FromHistogram(this.lengthDistribution);
 
     const stats: SequenceStats = {
       totalSequences: this.totalSequences,
@@ -179,6 +178,38 @@ export class StatsCalculator extends Transform {
 
     return stats;
   }
+}
+
+/**
+ * Calculate N50 and L50 from a length histogram without expanding to O(n) memory.
+ */
+export function calculateN50L50FromHistogram(
+  lengthDistribution: Map<number, number>
+): { n50: number; l50: number } {
+  if (lengthDistribution.size === 0) {
+    return { n50: 0, l50: 0 };
+  }
+
+  const sorted = Array.from(lengthDistribution.entries()).sort((a, b) => b[0] - a[0]);
+  const totalLength = sorted.reduce((sum, [len, count]) => sum + len * count, 0);
+  const halfTotal = totalLength / 2;
+
+  let sum = 0;
+  let n50 = sorted[sorted.length - 1][0];
+  let l50 = 0;
+
+  for (let i = 0; i < sorted.length; i++) {
+    const [length, count] = sorted[i];
+    for (let c = 0; c < count; c++) {
+      sum += length;
+      l50++;
+      if (sum >= halfTotal) {
+        return { n50: length, l50 };
+      }
+    }
+  }
+
+  return { n50, l50 };
 }
 
 /**
