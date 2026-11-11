@@ -1,6 +1,6 @@
 {
   "name": "@bioscript/seq-search",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Pattern matching, IUPAC motif search, restriction sites, and primer utilities for DNA/RNA sequences.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -41,7 +41,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@bioscript/seq-utils": "^0.2.2"
+    "@bioscript/seq-utils": "^0.3.0"
   },
   "scripts": {
     "build": "tsc",
