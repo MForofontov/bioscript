@@ -57,6 +57,16 @@ export class FastqParser extends Transform {
 
   private processLine(line: string): void {
     const trimmed = line.trim();
+
+    // Blank lines between records must not advance the 4-line state machine.
+    if (!trimmed) {
+      const position = this.lineNumber % 4;
+      if (position !== 0 || this.currentRecord.id) {
+        throw new Error(`Unexpected blank line in FASTQ record at line ${this.lineNumber}`);
+      }
+      return;
+    }
+
     const position = this.lineNumber % 4;
 
     switch (position) {

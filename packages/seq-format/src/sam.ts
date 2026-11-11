@@ -217,12 +217,17 @@ export function parseSAMLine(line: string): SAMRecord {
   const pnext = parseInt(fields[7]);
   const tlen = parseInt(fields[8]);
 
-  // Parse optional tags
+  // Parse optional tags (TAG:TYPE:VALUE — value may contain ':')
   const tags: Record<string, string | number> = {};
   for (let i = 11; i < fields.length; i++) {
-    const [key, type, value] = fields[i].split(':');
+    const first = fields[i].indexOf(':');
+    const second = fields[i].indexOf(':', first + 1);
+    if (first === -1 || second === -1) continue;
+    const key = fields[i].slice(0, first);
+    const type = fields[i].slice(first + 1, second);
+    const value = fields[i].slice(second + 1);
     if (type === 'i') {
-      tags[key] = parseInt(value);
+      tags[key] = parseInt(value, 10);
     } else if (type === 'f') {
       tags[key] = parseFloat(value);
     } else {

@@ -241,6 +241,10 @@ export function semiGlobal(
     }
   }
 
+  // Start of scored alignment region (before free leading end-gaps)
+  const startPos1 = i;
+  const startPos2 = j;
+
   // Add leading gaps
   while (i > 0) {
     aligned1.unshift(s1[i - 1]);
@@ -282,8 +286,8 @@ export function semiGlobal(
     alignedSeq1,
     alignedSeq2,
     score: finalScore,
-    startPos1: Math.max(0, i),
-    startPos2: Math.max(0, j),
+    startPos1,
+    startPos2,
     endPos1: maxI,
     endPos2: maxJ,
     identity,

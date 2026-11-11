@@ -54,6 +54,15 @@ describe('FastqParser', () => {
     expect(records[1].id).toBe('seq2');
   });
 
+  test('ignores blank lines between records', async () => {
+    const input = '@seq1\nACGT\n+\nIIII\n\n@seq2\nTGCA\n+\nHHHH\n';
+    const records: FastqRecord[] = [];
+    const parser = new FastqParser();
+    parser.on('data', (record: FastqRecord) => records.push(record));
+    await pipeline(Readable.from([input]), parser);
+    expect(records.map((r) => r.id)).toEqual(['seq1', 'seq2']);
+  });
+
   test('throws error on sequence/quality length mismatch', async () => {
     const input = '@seq1\nACGT\n+\nII\n';
 

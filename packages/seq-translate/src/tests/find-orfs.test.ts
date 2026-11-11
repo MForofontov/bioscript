@@ -252,17 +252,14 @@ describe('findOrfs', () => {
     expect(() => findOrfs(sequence)).toThrow('invalid characters');
   });
 
-  it('23. should use fallback table for unknown genetic code table', () => {
-    // getTable returns standard table as fallback for unknown names
+  it('23. should throw for unknown genetic code table', () => {
     const sequence = 'ATGGCCAAATAA';
-    const orfs = findOrfs(sequence, {
-      minLength: 9,
-      table: 'nonexistent_table',
-      translate: true,
-    });
-
-    // Should still work, using standard table
-    expect(orfs).toHaveLength(1);
-    expect(orfs[0].protein).toBe('MAK*');
+    expect(() =>
+      findOrfs(sequence, {
+        minLength: 9,
+        table: 'nonexistent_table',
+        translate: true,
+      })
+    ).toThrow(/Unknown genetic code table/);
   });
 });

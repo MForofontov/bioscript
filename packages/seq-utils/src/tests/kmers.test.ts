@@ -351,7 +351,9 @@ describe('kmers', () => {
 
     it('4. should handle canonical k-mers', () => {
       const superKmers = getSuperKmers('ATCGATCG', 3, { canonical: true });
-      expect(superKmers.length).toBeGreaterThan(0);
+      // Contiguous sequence remains one super-k-mer (canonicalized as a whole)
+      expect(superKmers).toHaveLength(1);
+      expect(superKmers[0].length).toBe(8);
     });
 
     it('5. should handle k equal to sequence length', () => {

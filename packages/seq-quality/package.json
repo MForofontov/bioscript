@@ -1,6 +1,6 @@
 {
   "name": "@bioscript/seq-quality",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "FASTQ quality control: filtering, trimming, adapter removal, and FastQC-lite reports.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -40,8 +40,8 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@bioscript/seq-stream": "^0.1.2",
-    "@bioscript/seq-utils": "^0.2.1"
+    "@bioscript/seq-stream": "^0.2.0",
+    "@bioscript/seq-utils": "^0.3.0"
   },
   "scripts": {
     "build": "tsc",

@@ -163,18 +163,24 @@ export function parseVCFLine(line: string, _samples: string[] = []): VCFRecord {
   const alt = altStr.split(',');
 
   // Parse INFO field
-  const info: Record<string, string | number | boolean> = {};
+  const info: Record<string, string | number | boolean | number[]> = {};
   if (infoStr !== '.') {
     const infoPairs = infoStr.split(';');
     for (const pair of infoPairs) {
-      if (pair.includes('=')) {
-        const [key, value] = pair.split('=');
-        // Try to parse as number
-        const numValue = parseFloat(value);
-        info[key] = isNaN(numValue) ? value : numValue;
-      } else {
-        // Flag (boolean)
+      const eq = pair.indexOf('=');
+      if (eq === -1) {
         info[pair] = true;
+        continue;
+      }
+      const key = pair.slice(0, eq);
+      const value = pair.slice(eq + 1);
+      if (value.includes(',')) {
+        const parts = value.split(',');
+        const nums = parts.map((p) => Number(p));
+        info[key] = nums.every((n) => !Number.isNaN(n)) ? nums : value;
+      } else {
+        const numValue = Number(value);
+        info[key] = value !== '' && !Number.isNaN(numValue) ? numValue : value;
       }
     }
   }
@@ -292,6 +298,9 @@ export function formatVCFLine(record: VCFRecord): string {
   const infoPairs = Object.entries(record.info).map(([key, value]) => {
     if (value === true) {
       return key;
+    }
+    if (Array.isArray(value)) {
+      return `${key}=${value.join(',')}`;
     }
     return `${key}=${value}`;
   });

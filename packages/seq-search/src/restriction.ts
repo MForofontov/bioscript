@@ -51,11 +51,16 @@ export function findRestrictionSites(
       : (enzymes as RestrictionEnzyme[]);
 
   const hits: RestrictionHit[] = [];
+  const seen = new Set<string>();
   for (const enzyme of list) {
     const matches = findMotif(sequence, enzyme.site, { strand: 'both', ...options });
     for (const m of matches) {
+      // Palindromic sites match both strands at the same interval — keep one hit.
+      const key = `${enzyme.name}:${m.start}:${m.end}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
       hits.push({ ...m, enzyme: enzyme.name, site: enzyme.site });
     }
   }
-  return hits.sort((a, b) => a.start - b.start);
+  return hits.sort((a, b) => a.start - b.start || (a.strand === '+' ? -1 : 1));
 }

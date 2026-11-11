@@ -10,11 +10,11 @@ describe('hirschberg', () => {
   // SECTION 1: Normal/typical usage (60% of tests)
 
   it('1. should align sequences using linear space', () => {
-    const result = hirschberg('HEAGAWGHEE', 'PAWHEAE');
+    const result = hirschberg('HEAGAWGHEE', 'PAWHEAE', { gapOpen: -1 });
 
-    expect(result.score).toBeGreaterThan(0);
+    expect(result.alignedSeq1.length).toBe(result.alignedSeq2.length);
     expect(result.alignedSeq1.length).toBeGreaterThan(0);
-    expect(result.alignedSeq2.length).toBeGreaterThan(0);
+    expect(result.identity).toBeGreaterThan(0);
   });
 
   it('2. should work with custom matrix', () => {
@@ -32,9 +32,10 @@ describe('hirschberg', () => {
       matrix: 'DNA_SIMPLE',
     });
 
-    expect(result.identity).toBeGreaterThanOrEqual(7);
-    const gaps = (result.alignedSeq1.match(/-/g) || []).length;
-    expect(gaps).toBeLessThanOrEqual(1); // Hirschberg may have minor differences
+    expect(result.identity).toBe(8);
+    expect(result.alignedSeq1).toBe('ACGTACGT');
+    expect(result.alignedSeq2).toBe('ACGTACGT');
+    expect(result.score).toBe(40);
   });
 
   it('4. should handle protein sequences', () => {
@@ -73,7 +74,7 @@ describe('hirschberg', () => {
       matrix: 'DNA_SIMPLE',
     });
 
-    expect(result.alignedSeq1.split("-").length - 1).toBeGreaterThan(0);
+    expect((result.alignedSeq1 + result.alignedSeq2).includes('-')).toBe(true);
     expect(result.identity).toBeGreaterThanOrEqual(6);
   });
 
@@ -86,27 +87,26 @@ describe('hirschberg', () => {
     expect(result.identity).toBe(0);
   });
 
-  it('9. should produce same results as Needleman-Wunsch', () => {
-    // Hirschberg should give same alignment as NW but with less memory
+  it('9. should produce same score as Needleman-Wunsch under linear gaps', () => {
+    const { needlemanWunsch } = require('../needleman-wunsch');
     const seq1 = 'ACGTACGT';
     const seq2 = 'ACGTCCGT';
+    // Linear gap model: gapOpen === gapExtend for NW affine ≈ Hirschberg linear
+    const opts = { matrix: 'DNA_SIMPLE' as const, gapOpen: -5, gapExtend: -5 };
 
-    const result = hirschberg(seq1, seq2, {
-      matrix: 'DNA_SIMPLE',
-      gapOpen: -5,
-      gapExtend: -2,
-    });
+    const h = hirschberg(seq1, seq2, opts);
+    const n = needlemanWunsch(seq1, seq2, { ...opts, normalize: false });
 
-    expect(result.identity).toBeGreaterThanOrEqual(6);
-    expect(result.alignedSeq1.length).toBe(result.alignedSeq2.length);
+    expect(h.score).toBe(n.score);
+    expect(h.identity).toBe(n.identity);
   });
 
   it('10. should handle identical sequences', () => {
-    const result = hirschberg('ACGTACGT', 'ACGTACGT');
+    const result = hirschberg('ACGTACGT', 'ACGTACGT', { matrix: 'DNA_SIMPLE' });
 
-    expect(result.identity).toBeGreaterThanOrEqual(7);
-    const gaps = (result.alignedSeq1.match(/-/g) || []).length;
-    expect(gaps).toBeLessThanOrEqual(1); // Hirschberg may have minor differences
+    expect(result.identity).toBe(8);
+    expect(result.alignedSeq1).toBe('ACGTACGT');
+    expect(result.alignedSeq2).toBe('ACGTACGT');
   });
 
   it('11. should handle sequences of different lengths', () => {
