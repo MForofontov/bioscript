@@ -7,12 +7,13 @@ import {
   convertQualityScores,
   decodeQualityScores,
   encodeQualityScores,
+  QualityConverter,
   type FastqRecord,
 } from '../fastq';
 import { Readable, Writable } from 'stream';
 import { pipeline } from 'stream/promises';
 import { join } from 'path';
-import { unlinkSync } from 'fs';
+import { unlinkSync, existsSync } from 'fs';
 
 describe('FastqParser', () => {
   test('parses simple FASTQ record', async () => {
@@ -217,5 +218,96 @@ describe('FASTQ gzip support', () => {
     ]);
 
     expect(gzipRecords).toEqual(plainRecords);
+  });
+});
+
+describe('FastqParser edge cases', () => {
+  test('flushes trailing buffer without final newline', async () => {
+    // Incomplete last quality line is flushed via _flush
+    const input = '@seq1\nACGT\n+\nIIII';
+    const records: FastqRecord[] = [];
+    const readable = Readable.from([input]);
+    const parser = new FastqParser();
+    parser.on('data', (r: FastqRecord) => records.push(r));
+    await pipeline(readable, parser);
+    expect(records).toHaveLength(1);
+    expect(records[0].quality).toBe('IIII');
+  });
+
+  test('throws when header does not start with @', async () => {
+    const input = 'seq1\nACGT\n+\nIIII\n';
+    const readable = Readable.from([input]);
+    const parser = new FastqParser();
+    await expect(pipeline(readable, parser)).rejects.toThrow(/Expected '@'/);
+  });
+
+  test('throws when separator does not start with +', async () => {
+    const input = '@seq1\nACGT\n-\nIIII\n';
+    const readable = Readable.from([input]);
+    const parser = new FastqParser();
+    await expect(pipeline(readable, parser)).rejects.toThrow(/Expected '\+'/);
+  });
+});
+
+describe('QualityConverter and helpers', () => {
+  test('convertQualityScores returns same string when encodings match', () => {
+    expect(convertQualityScores('IIII', QualityEncoding.Phred33, QualityEncoding.Phred33)).toBe(
+      'IIII'
+    );
+  });
+
+  test('QualityConverter transforms records in a stream', async () => {
+    const records: FastqRecord[] = [];
+    const input = Readable.from([
+      { id: 's1', sequence: 'AC', quality: 'II' } as FastqRecord,
+    ]);
+    const converter = new QualityConverter(QualityEncoding.Phred33, QualityEncoding.Phred64);
+    converter.on('data', (r: FastqRecord) => records.push(r));
+    await pipeline(input, converter);
+    expect(records).toHaveLength(1);
+    expect(records[0].quality).not.toBe('II');
+    expect(decodeQualityScores(records[0].quality, QualityEncoding.Phred64)).toEqual(
+      decodeQualityScores('II', QualityEncoding.Phred33)
+    );
+  });
+
+  test('FastqWriter includes description when present', async () => {
+    const chunks: Buffer[] = [];
+    const writer = new FastqWriter();
+    writer.on('data', (c: Buffer | string) => chunks.push(Buffer.from(c)));
+    const input = Readable.from([
+      { id: 's1', description: 'desc', sequence: 'AC', quality: 'II' } as FastqRecord,
+    ]);
+    await pipeline(input, writer);
+    const text = Buffer.concat(chunks).toString();
+    expect(text).toContain('@s1 desc\n');
+  });
+
+  test('createFastqWriter writes uncompressed FASTQ', async () => {
+    const out = join(__dirname, 'fixtures', `out-plain-${Date.now()}.fastq`);
+    try {
+      const writer = createFastqWriter(out) as FastqWriter;
+      await new Promise<void>((resolve, reject) => {
+        writer.write({ id: 'a', sequence: 'AA', quality: 'II' }, (err) => {
+          if (err) reject(err);
+          else {
+            writer.end(() => resolve());
+          }
+        });
+      });
+      // Allow pipe to finish
+      await new Promise((r) => setTimeout(r, 50));
+      expect(existsSync(out)).toBe(true);
+      const parsed: FastqRecord[] = [];
+      await new Promise<void>((resolve, reject) => {
+        createFastqParser(out)
+          .on('data', (rec: FastqRecord) => parsed.push(rec))
+          .on('end', resolve)
+          .on('error', reject);
+      });
+      expect(parsed[0].id).toBe('a');
+    } finally {
+      if (existsSync(out)) unlinkSync(out);
+    }
   });
 });

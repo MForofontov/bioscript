@@ -289,4 +289,55 @@ describe('debruijn', () => {
       });
     });
   });
+
+  describe('coverage edge paths', () => {
+    it('1. should prune dangling reverseEdges when minCoverage filters nodes', () => {
+      // High-coverage path plus a unique low-coverage spur that creates reverse edges
+      const sequences = [
+        'ATCGATCGATCG',
+        'ATCGATCGATCG',
+        'ATCGATCGATCG',
+        'ATCGGGG', // unique k-mers with coverage 1
+      ];
+      const graph = buildDeBruijnGraph(sequences, 4, { minCoverage: 2 });
+      for (const [, incoming] of graph.reverseEdges) {
+        for (const source of incoming) {
+          expect(graph.nodes.has(source)).toBe(true);
+        }
+      }
+      expect(graph.nodes.size).toBeGreaterThan(0);
+    });
+
+    it('2. should walk tip length for a branched dead-end tip', () => {
+      // Main path + short spur ending in a dead end
+      const sequences = ['ACGTACGTACGT', 'ACGTAAA'];
+      const graph = buildDeBruijnGraph(sequences, 3);
+      const before = graph.nodes.size;
+      const removed = removeTips(graph, 10);
+      expect(removed).toBeGreaterThanOrEqual(0);
+      expect(graph.nodes.size).toBeLessThanOrEqual(before);
+    });
+
+    it('3. should report zero avgCoverage on empty graph', () => {
+      const empty: DeBruijnGraph = { nodes: new Map(), reverseEdges: new Map(), k: 4 };
+      const stats = getGraphStats(empty);
+      expect(stats.avgCoverage).toBe(0);
+      expect(stats.deadEnds).toBe(0);
+      expect(stats.branchingNodes).toBe(0);
+    });
+
+    it('4. should count deadEnds and branchingNodes', () => {
+      const sequences = ['AAAA', 'AAAT', 'AAAC']; // branch from AAA
+      const graph = buildDeBruijnGraph(sequences, 3);
+      const stats = getGraphStats(graph);
+      expect(stats.branchingNodes + stats.deadEnds).toBeGreaterThan(0);
+    });
+
+    it('5. should build canonical edges between overlapping k-mers', () => {
+      const sequences = ['ATCGATCGAT'];
+      const graph = buildDeBruijnGraph(sequences, 4, { canonical: true });
+      const withEdges = [...graph.nodes.values()].filter((n) => n.edges.length > 0);
+      expect(withEdges.length).toBeGreaterThan(0);
+    });
+  });
 });

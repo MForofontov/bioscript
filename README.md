@@ -1,47 +1,54 @@
 # Bioscript
 
 A collection of bioinformatics tools and utilities organized as a monorepo.
+Install and import individual `@bioscript/*` packages — this workspace root is not published as an umbrella library.
 
 ## Packages
 
+### [@bioscript/seq-utils](./packages/seq-utils)
+
+Core DNA/RNA utilities: complement, reverse complement, normalization, validation, k-mers, minimizers, and De Bruijn graphs.
+
 ### [@bioscript/seq-stream](./packages/seq-stream)
 
-High-performance streaming parser and writer for FASTA and FASTQ bioinformatics file formats. Features include:
+High-performance streaming parser and writer for FASTA and FASTQ:
 
-- ✨ Streaming design for processing large files with minimal memory
-- 📦 Support for both FASTA and FASTQ formats
-- 🗜️ Automatic gzip compression/decompression
-- 🔄 Quality score conversion between Phred encodings
-- 📊 Comprehensive sequence statistics
-- 🌐 Browser and Node.js support
+- Streaming design for large files with minimal memory
+- FASTA and FASTQ formats with automatic gzip support
+- Quality score conversion between Phred encodings
+- Sequence statistics (GC%, N50/L50)
+- Browser and Node.js support
+
+### [@bioscript/seq-translate](./packages/seq-translate)
+
+Genetic code translation with all NCBI transl_table codes (1–33), multi-frame translation, ORF finding, worker-thread batching, and browser APIs.
 
 ### [@bioscript/seq-align](./packages/seq-align)
 
-Pairwise sequence alignment algorithms for bioinformatics. Features include:
+Pairwise sequence alignment:
 
-- ✨ Global alignment (Needleman-Wunsch) for end-to-end alignment
-- 📍 Local alignment (Smith-Waterman) for finding conserved regions
-- 🧬 Multiple scoring matrices (BLOSUM62, BLOSUM80, PAM250, DNA)
-- ⚡ High-performance dynamic programming (~100k cell updates/sec)
-- 🔧 Full TypeScript support with comprehensive type definitions
-- 📦 Zero dependencies, pure TypeScript implementation
+- Global (Needleman-Wunsch), local (Smith-Waterman), semi-global, overlap, banded, Hirschberg
+- BLOSUM / PAM / DNA scoring matrices
+- Pure TypeScript, zero runtime dependencies beyond `@bioscript/seq-utils`
 
 ### [@bioscript/seq-format](./packages/seq-format)
 
-Comprehensive bioinformatics file format converters and parsers. Features include:
+Bioinformatics file format parsers and writers:
 
-- ✨ GenBank format parsing and FASTA conversion
-- 📦 EMBL format support
-- 🧬 GFF3/GTF annotation parsing and writing
-- 📍 BED format support (BED3, BED6, BED12)
-- 🔬 VCF variant call format parsing
-- 🎯 SAM alignment format with flag decoding
-- 🚀 High-performance O(n) parsers
-- 📦 Zero dependencies, pure TypeScript
+- GenBank, EMBL, GFF3/GTF, BED, VCF, SAM (text), Newick, CIGAR utilities
+- BAM binary is not supported (convert with samtools)
+
+### [@bioscript/seq-search](./packages/seq-search)
+
+Pattern and motif search: IUPAC motifs, exact/regex find, restriction sites, and basic primer utilities (Tm, GC, pair checks).
+
+### [@bioscript/seq-quality](./packages/seq-quality)
+
+FASTQ quality control: Phred helpers, length/quality/N-content filters, quality trimming, adapter trimming, and FastQC-lite reports.
 
 ## Getting Started
 
-This is a monorepo using npm workspaces. To get started:
+This is a monorepo using npm workspaces:
 
 ```bash
 # Install dependencies for all packages
@@ -50,8 +57,14 @@ npm install
 # Build all packages
 npm run build
 
+# Typecheck all packages
+npm run typecheck
+
 # Run tests for all packages
 npm run test
+
+# Run alignment reference validation
+npm run validate:reference -w @bioscript/seq-align
 
 # Run tests in browser environments
 npm run test:browser
@@ -59,11 +72,15 @@ npm run test:browser
 
 ## Development
 
-Each package has its own README with specific documentation. Navigate to the package directory for more details:
+Each package has its own README:
 
-- [seq-stream package documentation](./packages/seq-stream/README.md)
-- [seq-align package documentation](./packages/seq-align/README.md)
-- [seq-format package documentation](./packages/seq-format/README.md)
+- [seq-utils](./packages/seq-utils/README.md)
+- [seq-stream](./packages/seq-stream/README.md)
+- [seq-translate](./packages/seq-translate/README.md)
+- [seq-align](./packages/seq-align/README.md)
+- [seq-format](./packages/seq-format/README.md)
+- [seq-search](./packages/seq-search/README.md)
+- [seq-quality](./packages/seq-quality/README.md)
 
 ## License
 

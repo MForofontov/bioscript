@@ -1,7 +1,7 @@
 {
   "name": "@bioscript/seq-format",
-  "version": "0.1.0",
-  "description": "Bioinformatics file format converters and parsers (GenBank, EMBL, GFF/GTF, BED, VCF, SAM/BAM)",
+  "version": "0.1.1",
+  "description": "Bioinformatics file format converters and parsers (GenBank, EMBL, GFF/GTF, BED, VCF, SAM text)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "MIT",
@@ -23,7 +23,6 @@
     "bed",
     "vcf",
     "sam",
-    "bam",
     "fasta",
     "format-conversion",
     "parser",
@@ -47,7 +46,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@bioscript/seq-utils": "^0.2.0"
+    "@bioscript/seq-utils": "^0.2.1"
   },
   "scripts": {
     "build": "tsc",

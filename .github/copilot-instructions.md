@@ -888,23 +888,23 @@ When adding a new package to the monorepo:
 - Scoring matrices (BLOSUM, PAM)
 - Local and global alignment
 
-#### @bioscript/seq-search
-- Pattern matching and motif finding
+#### @bioscript/seq-search (implemented)
+- Pattern matching and IUPAC motif finding
 - Restriction site search
-- Primer design utilities
+- Primer design utilities (Tm, GC, pair checks)
 - Regular expression-based searching
 
-#### @bioscript/seq-quality
-- FASTQ quality control
+#### @bioscript/seq-quality (implemented)
+- FASTQ quality control helpers
 - Adapter trimming
-- Quality filtering
-- Read quality reports
+- Quality / length / N-content filtering
+- FastQC-lite aggregate reports
 
-#### @bioscript/seq-format
+#### @bioscript/seq-format (implemented)
 - Format converters (FASTA ↔ GenBank ↔ EMBL)
 - GFF/GTF parsers
-- SAM/BAM support
-- BED file handling
+- SAM text support (BAM binary not included)
+- BED / VCF / Newick / CIGAR
 
 ### CI/CD Standards (Future)
 

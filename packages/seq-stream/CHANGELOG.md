@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Additional FASTQ edge-case tests (`_flush`, malformed headers/separators, plain writer, QualityConverter)
+
 ## [0.1.1] - 2026-02-17
 
 ### Added

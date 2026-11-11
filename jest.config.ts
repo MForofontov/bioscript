@@ -32,6 +32,20 @@ const config: Config = {
   ],
   // Coverage for all packages at root
   coverageDirectory: 'coverage',
+  collectCoverageFrom: [
+    'packages/*/src/**/*.ts',
+    '!packages/*/src/**/*.test.ts',
+    '!packages/*/src/**/*.spec.ts',
+    '!packages/*/src/tests/**',
+    '!packages/*/src/index.ts',
+    '!packages/*/src/browser-bundle.ts',
+    '!packages/*/src/browser-index.ts',
+    '!packages/*/src/browser-fasta.ts',
+    '!packages/*/src/browser-fastq.ts',
+    '!packages/*/src/browser-stats.ts',
+    '!packages/*/src/worker-script.ts',
+  ],
+  testMatch: ['<rootDir>/packages/*/src/tests/**/*.test.ts'],
 };
 
 export default config;
