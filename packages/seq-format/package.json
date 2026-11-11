@@ -1,6 +1,6 @@
 {
   "name": "@bioscript/seq-format",
-  "version": "0.2.0",
+  "version": "0.1.2",
   "description": "Bioinformatics file format converters and parsers (GenBank, EMBL, GFF/GTF, BED, VCF, SAM text)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -46,7 +46,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@bioscript/seq-utils": "^0.3.0"
+    "@bioscript/seq-utils": "^0.2.2"
   },
   "scripts": {
     "build": "tsc",
