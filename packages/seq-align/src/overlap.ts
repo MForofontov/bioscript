@@ -14,6 +14,7 @@ import { Direction } from './types';
 import { getScore, getMatrix } from './matrices';
 import { gotohTraceback } from './gotoh';
 import { assertTwoSequences, assertNonEmptySequences, normalizeSequence } from '@bioscript/seq-utils';
+import { assertGapPenalties, resolveNormalizeScore } from './alignment-utils';
 
 /**
  * Perform overlap alignment on two sequences (suffix of seq1 ↔ prefix of seq2).
@@ -30,7 +31,16 @@ export function overlapAlign(
 
   assertNonEmptySequences(s1, s2);
 
-  const { matrix = 'BLOSUM62', gapOpen = -10, gapExtend = -1, normalize = false } = options;
+  const {
+    matrix = 'BLOSUM62',
+    gapOpen = -10,
+    gapExtend = -1,
+    normalize = false,
+    normalizeScore,
+  } = options;
+
+  assertGapPenalties(gapOpen, gapExtend);
+  const shouldNormalizeScore = resolveNormalizeScore(normalizeScore, normalize);
   const scoringMatrix: ScoringMatrix =
     typeof matrix === 'string' ? getMatrix(matrix) : matrix;
 
@@ -143,11 +153,12 @@ export function overlapAlign(
 
   const alignmentLength = alignedSeq1.length;
   const identityPercent = alignmentLength === 0 ? 0 : (identity / alignmentLength) * 100;
-  const finalScore = normalize ? maxScore / Math.max(m, n) : maxScore;
+  const finalScore = shouldNormalizeScore ? maxScore / Math.max(m, n) : maxScore;
 
   return {
     alignedSeq1,
     alignedSeq2,
+    /** Overlap score at best end position; excludes free prefix/suffix gaps. */
     score: finalScore,
     startPos1: 0,
     startPos2: 0,

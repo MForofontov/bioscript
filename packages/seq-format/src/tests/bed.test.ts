@@ -44,6 +44,11 @@ describe('parseBEDLine', () => {
     expect(dot.strand).toBe('.');
   });
 
+  it('handles missing score as undefined', () => {
+    const record = parseBEDLine('chr1\t1\t10\ttest\t.\t+');
+    expect(record.score).toBeUndefined();
+  });
+
   it('5. should throw TypeError when input is not a string', () => {
     expect(() => parseBEDLine(123 as any)).toThrow(TypeError);
   });

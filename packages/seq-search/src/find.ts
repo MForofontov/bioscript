@@ -2,7 +2,7 @@
  * Generic pattern search on nucleotide sequences.
  */
 
-import { normalizeSequence, reverseComplement, assertString } from '@bioscript/seq-utils';
+import { normalizeToDna, reverseComplement, assertString } from '@bioscript/seq-utils';
 import { assertIupacMotif, iupacToRegex } from './iupac';
 
 export type SearchStrand = '+' | '-' | 'both';
@@ -45,7 +45,7 @@ export function findPattern(
     ignoreCase = true,
   } = options;
 
-  const seq = normalizeSequence(sequence);
+  const seq = normalizeToDna(sequence);
   const hits: PatternHit[] = [];
 
   const searchOne = (haystack: string, hitStrand: '+' | '-') => {
@@ -105,5 +105,17 @@ export function findPattern(
     searchOne(reverseComplement(seq), '-');
   }
 
-  return hits.sort((a, b) => a.start - b.start || a.end - b.end);
+  const sorted = hits.sort((a, b) => a.start - b.start || a.end - b.end);
+
+  if (strand === 'both') {
+    const seen = new Set<string>();
+    return sorted.filter((hit) => {
+      const key = `${hit.start}:${hit.end}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  return sorted;
 }

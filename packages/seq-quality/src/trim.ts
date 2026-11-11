@@ -9,6 +9,11 @@ import {
 } from '@bioscript/seq-stream';
 
 function sliceRecord(record: FastqRecord, start: number, end: number): FastqRecord {
+  if (record.sequence.length !== record.quality.length) {
+    throw new TypeError(
+      `sequence and quality length mismatch: ${record.sequence.length} vs ${record.quality.length}`
+    );
+  }
   return {
     ...record,
     sequence: record.sequence.slice(start, end),

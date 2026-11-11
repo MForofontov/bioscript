@@ -6,6 +6,17 @@
 import type { GFFRecord, GFFVersion } from './types';
 import { assertString, assertArray, assertObject } from '@bioscript/seq-utils';
 
+function parseGffInteger(value: string, field: string): number {
+  if (!/^\d+$/.test(value)) {
+    throw new Error(`Invalid GFF ${field}: ${value}`);
+  }
+  const parsed = parseInt(value, 10);
+  if (parsed < 1) {
+    throw new Error(`GFF ${field} must be >= 1, got ${parsed}`);
+  }
+  return parsed;
+}
+
 /**
  * Parse GFF3 or GTF format line into structured record.
  *
@@ -52,10 +63,13 @@ export function parseGFFLine(line: string, version: GFFVersion = 'gff3'): GFFRec
   const [seqid, source, type, startStr, endStr, scoreStr, strand, phaseStr, attributesStr] = fields;
 
   // Parse numeric fields
-  const start = parseInt(startStr);
-  const end = parseInt(endStr);
+  const start = parseGffInteger(startStr, 'start');
+  const end = parseGffInteger(endStr, 'end');
+  if (start > end) {
+    throw new Error(`Invalid GFF coordinates: start (${start}) > end (${end})`);
+  }
   const score = scoreStr === '.' ? null : parseFloat(scoreStr);
-  const phase = phaseStr === '.' ? null : (parseInt(phaseStr) as 0 | 1 | 2);
+  const phase = phaseStr === '.' ? null : (parseInt(phaseStr, 10) as 0 | 1 | 2);
 
   // Validate strand
   if (!['+', '-', '.', '?'].includes(strand)) {
@@ -188,8 +202,13 @@ export function formatGFFLine(record: GFFRecord, version: GFFVersion = 'gff3'): 
  * @performance O(n) where n is number of lines.
  * Typical: 10K lines in ~50ms, 100K lines in ~500ms.
  */
-export function parseGFF(text: string, version: GFFVersion = 'gff3'): GFFRecord[] {
+export function parseGFF(
+  text: string,
+  version: GFFVersion = 'gff3',
+  options: { strict?: boolean } = {}
+): GFFRecord[] {
   assertString(text, 'text');
+  const { strict = false } = options;
 
   const lines = text.split('\n');
   const records: GFFRecord[] = [];
@@ -197,8 +216,12 @@ export function parseGFF(text: string, version: GFFVersion = 'gff3'): GFFRecord[
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // Skip comments and empty lines
     if (!trimmed || trimmed.startsWith('#')) {
+      continue;
+    }
+
+    if (strict) {
+      records.push(parseGFFLine(trimmed, version));
       continue;
     }
 
@@ -206,7 +229,6 @@ export function parseGFF(text: string, version: GFFVersion = 'gff3'): GFFRecord[
       const record = parseGFFLine(trimmed, version);
       records.push(record);
     } catch {
-      // Skip malformed lines
       continue;
     }
   }

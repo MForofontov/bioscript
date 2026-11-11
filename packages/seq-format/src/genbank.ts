@@ -232,6 +232,42 @@ export function parseGenBank(text: string): GenBankRecord {
  * @performance O(n + f) where n is sequence length, f is number of features.
  * Typical: <1ms for standard records.
  */
+function extractSequenceFromLocation(location: string, fullSequence: string): string | null {
+  let loc = location.trim();
+  let isComplement = false;
+
+  const complementMatch = loc.match(/^complement\((.+)\)$/);
+  if (complementMatch) {
+    isComplement = true;
+    loc = complementMatch[1].trim();
+  }
+
+  let segments: string[] = [];
+  const joinMatch = loc.match(/^join\((.+)\)$/);
+  if (joinMatch) {
+    segments = joinMatch[1].split(',').map((part) => part.trim());
+  } else {
+    segments = [loc];
+  }
+
+  let featureSeq = '';
+  for (const segment of segments) {
+    const rangeMatch = segment.match(/^(\d+)\.\.(\d+)$/);
+    if (!rangeMatch) {
+      return null;
+    }
+    const start = parseInt(rangeMatch[1], 10) - 1;
+    const end = parseInt(rangeMatch[2], 10);
+    featureSeq += fullSequence.substring(start, end);
+  }
+
+  if (!featureSeq) {
+    return null;
+  }
+
+  return isComplement ? reverseComplement(featureSeq) : featureSeq;
+}
+
 export function genBankToFasta(
   record: GenBankRecord,
   includeFeatures: boolean = false
@@ -259,24 +295,13 @@ export function genBankToFasta(
         const id = geneQual?.value || locusTagQual?.value || feature.type;
         const description = productQual?.value || feature.location;
 
-        // Extract sequence from location (handles simple ranges and complement)
-        const isComplement = feature.location.includes('complement');
-        const locationMatch = feature.location.match(/(\d+)\.\.(\d+)/);
-        if (locationMatch) {
-          const start = parseInt(locationMatch[1], 10) - 1; // 0-based
-          const end = parseInt(locationMatch[2], 10);
-          let featureSeq = record.sequence.substring(start, end);
-          if (isComplement) {
-            featureSeq = reverseComplement(featureSeq);
-          }
-
-          if (featureSeq) {
-            results.push({
-              id,
-              description,
-              sequence: featureSeq,
-            });
-          }
+        const featureSeq = extractSequenceFromLocation(feature.location, record.sequence);
+        if (featureSeq) {
+          results.push({
+            id,
+            description,
+            sequence: featureSeq,
+          });
         }
       }
     }

@@ -119,4 +119,17 @@ describe('report', () => {
     expect(report.readCount).toBe(0);
     expect(report.meanLength).toBe(0);
   });
+
+  it('throws on sequence/quality length mismatch', () => {
+    const records = [rec('bad', 'ACGT', 'III')];
+    expect(() => qualityReport(records)).toThrow(TypeError);
+  });
+});
+
+describe('trim length validation', () => {
+  it('throws on sequence/quality length mismatch', () => {
+    const r = rec('bad', 'ACGT', 'III');
+    expect(() => trimFixed(r, 1)).toThrow(TypeError);
+    expect(() => hardClip(r, 0, 2)).toThrow(TypeError);
+  });
 });

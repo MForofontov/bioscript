@@ -48,6 +48,11 @@ export interface OrfOptions extends TranslationOptions {
   translate?: boolean;
   /** Alternative start codons (default: all codons encoding Met in the genetic table) */
   startCodons?: string[];
+  /**
+   * When true (default), stop scanning each reading frame after the first in-frame stop codon.
+   * This limits ORFs discovered per frame; distinct from translation `breakOnStop` which
+   * clips translated protein output at the first stop.
+   */
 }
 
 /**

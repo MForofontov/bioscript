@@ -130,6 +130,8 @@ export function getHashMinimizers(
   assertString(sequence, 'sequence');
   assertNumber(k, 'k');
   assertNumber(w, 'w');
+  assertPositiveInteger(k, 'k');
+  assertPositiveInteger(w, 'w');
 
   const normalized = normalizeSequence(sequence);
   const { canonical = false, hashFunction = defaultHash } = options;
@@ -195,8 +197,13 @@ export function getMinimizerDensity(
   w: number,
   options: { canonical?: boolean } = {}
 ): number {
+  const normalized = normalizeSequence(sequence);
+  const denominator = normalized.length - k + 1;
+  if (denominator <= 0) {
+    return 0;
+  }
   const minimizers = getMinimizers(sequence, k, w, options);
-  return minimizers.length / (sequence.trim().length - k + 1);
+  return minimizers.length / denominator;
 }
 
 /**

@@ -1,6 +1,6 @@
 {
   "name": "@bioscript/seq-utils",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Core sequence manipulation utilities for DNA/RNA operations: conversion, complement, reverse complement, k-mer analysis, minimizers, and De Bruijn graphs.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

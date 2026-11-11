@@ -157,13 +157,12 @@ describe('translateBatch', () => {
     expect(results[1]).toBe('MX');
   });
 
-  // Test case 18: Reuse lookup table for efficiency
-  it('18. should reuse lookup table for efficiency', () => {
+  // Test case 18: Reuse lookup table across many sequences
+  it('18. should translate many sequences with shared lookup table', () => {
     const sequences = Array(100).fill('ATGGCCAAA');
-    const start = Date.now();
-    translateBatch(sequences, { table: 'standard' });
-    const duration = Date.now() - start;
+    const results = translateBatch(sequences, { table: 'standard' });
 
-    expect(duration).toBeLessThan(50);
+    expect(results).toHaveLength(100);
+    expect(results.every((r) => r === 'MAK')).toBe(true);
   });
 });

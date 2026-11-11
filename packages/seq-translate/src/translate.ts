@@ -7,7 +7,7 @@
 
 import { getTable } from './tables';
 import { buildLookup, translateWithLookup } from './lookup';
-import { reverseComplement, normalizeSequence } from '@bioscript/seq-utils';
+import { reverseComplement, normalizeSequence, assertValidSequence } from '@bioscript/seq-utils';
 
 /**
  * Translation options
@@ -19,6 +19,8 @@ export interface TranslationOptions {
   stopSymbol?: string;
   /** If true, translation stops at first stop codon (default: true) */
   breakOnStop?: boolean;
+  /** Validate sequence characters before translation (default: false) */
+  strict?: boolean;
 }
 
 /**
@@ -38,7 +40,11 @@ export interface TranslationOptions {
  * @performance O(n) where n is sequence length. Processes ~1M codons/sec.
  */
 export function translateSequence(seq: string, options: TranslationOptions = {}): string {
-  const { table = 'standard', stopSymbol = '*', breakOnStop = true } = options;
+  const { table = 'standard', stopSymbol = '*', breakOnStop = true, strict = false } = options;
+
+  if (strict) {
+    assertValidSequence(seq);
+  }
 
   const codonTable = getTable(table);
   const lookup = buildLookup(codonTable);

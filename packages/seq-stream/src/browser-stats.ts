@@ -5,6 +5,7 @@
 
 import type { FastaRecord } from './fasta';
 import type { FastqRecord } from './fastq';
+import { calculateN50L50FromHistogram } from './histogram-stats';
 
 // Define QualityEncoding locally to avoid importing Node.js dependencies
 enum QualityEncoding {
@@ -120,16 +121,19 @@ export async function calculateStatsBrowser(
     }
   }
 
-  // Calculate median from lengthDistribution map
+  // Calculate median from length distribution (correct for odd N)
   let medianLength = 0;
   if (lengthDistribution.size > 0) {
     const sortedLengths = Array.from(lengthDistribution.keys()).sort((a, b) => a - b);
-    const halfPoint = Math.floor(totalSequences / 2);
+    const medianIndex =
+      totalSequences % 2 === 1
+        ? Math.ceil(totalSequences / 2)
+        : Math.floor(totalSequences / 2);
     let count = 0;
 
     for (const length of sortedLengths) {
       count += lengthDistribution.get(length)!;
-      if (count >= halfPoint) {
+      if (count >= medianIndex) {
         medianLength = length;
         break;
       }
@@ -141,12 +145,7 @@ export async function calculateStatsBrowser(
   const variance = totalSequences > 0 ? sumOfSquares / totalSequences - meanLength * meanLength : 0;
   const stdDevLength = Math.sqrt(Math.max(0, variance));
 
-  // Calculate N50 and L50
-  const allLengths: number[] = Array.from(lengthDistribution.entries()).flatMap(
-    ([length, count]: [number, number]): number[] => Array(count).fill(length) as number[]
-  );
-  const n50 = calculateN50Browser(allLengths);
-  const l50 = calculateL50Browser(allLengths);
+  const { n50, l50 } = calculateN50L50FromHistogram(lengthDistribution);
 
   const stats: BrowserStats = {
     totalSequences,
@@ -242,16 +241,19 @@ export function calculateStatsSync(
     }
   }
 
-  // Calculate median from lengthDistribution map
+  // Calculate median from length distribution (correct for odd N)
   let medianLength = 0;
   if (lengthDistribution.size > 0) {
     const sortedLengths = Array.from(lengthDistribution.keys()).sort((a, b) => a - b);
-    const halfPoint = Math.floor(totalSequences / 2);
+    const medianIndex =
+      totalSequences % 2 === 1
+        ? Math.ceil(totalSequences / 2)
+        : Math.floor(totalSequences / 2);
     let count = 0;
 
     for (const length of sortedLengths) {
       count += lengthDistribution.get(length)!;
-      if (count >= halfPoint) {
+      if (count >= medianIndex) {
         medianLength = length;
         break;
       }
@@ -263,12 +265,7 @@ export function calculateStatsSync(
   const variance = totalSequences > 0 ? sumOfSquares / totalSequences - meanLength * meanLength : 0;
   const stdDevLength = Math.sqrt(Math.max(0, variance));
 
-  // Calculate N50 and L50
-  const allLengths: number[] = Array.from(lengthDistribution.entries()).flatMap(
-    ([length, count]: [number, number]): number[] => Array(count).fill(length) as number[]
-  );
-  const n50 = calculateN50Browser(allLengths);
-  const l50 = calculateL50Browser(allLengths);
+  const { n50, l50 } = calculateN50L50FromHistogram(lengthDistribution);
 
   const stats: BrowserStats = {
     totalSequences,

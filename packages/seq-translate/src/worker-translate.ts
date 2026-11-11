@@ -139,37 +139,27 @@ export async function translateWorker(
 }
 
 /**
- * Translate a single large sequence by splitting it into chunks
- * and processing chunks in parallel. Useful for very long sequences (> 1MB)
+ * Translate a single large sequence by splitting it into codon-aligned chunks
+ * and processing chunks in parallel. Useful for very long sequences (> 1MB).
  *
- * @example
- * ```typescript
- * const longSeq = 'ATG' + 'GCC'.repeat(100000) + 'TAA';
- * const results = await translateWorkerChunked(longSeq, {
- *   table: 'standard',
- *   chunkSize: 30000
- * });
- *
- * // Combine chunks
- * const fullTranslation = results.map(r => r.sequence).join('');
- * ```
+ * Chunks are split on codon boundaries so the joined translation matches
+ * `translateSequence` on the full input (frame 0).
  */
 export async function translateWorkerChunked(
   sequence: string,
   options: WorkerTranslationOptions & { chunkSize?: number } = {}
 ): Promise<TranslationResult[]> {
-  const chunkSize = options.chunkSize || 30000; // 30kb chunks (10k codons)
+  const rawChunkSize = options.chunkSize || 30000;
+  const chunkSize = Math.max(3, Math.floor(rawChunkSize / 3) * 3);
   const seq = normalizeSequence(sequence);
 
-  // Split sequence into overlapping chunks to maintain frame
   const chunks: string[] = [];
   for (let i = 0; i < seq.length; i += chunkSize) {
-    chunks.push(seq.slice(i, Math.min(i + chunkSize + 2, seq.length)));
+    chunks.push(seq.slice(i, i + chunkSize));
   }
 
   const results = await translateWorker(chunks, options);
 
-  // Return first frame of each chunk
   return results.map((chunkResults) => chunkResults[0]);
 }
 

@@ -51,6 +51,19 @@ SQ   Sequence 1859 BP; 609 A; 314 C; 355 G; 581 T; 0 other;
     expect(record.organism).toBe('Trifolium repens (white clover)');
   });
 
+  it('4b. should append multi-line OS fields', () => {
+    const embl = `ID   TEST01; SV 1; linear; DNA; STD; PRO; 10 BP.
+OS   Homo sapiens
+OS   (human)
+XX
+SQ   Sequence 10 BP; 5 A; 5 T; 0 other;
+     aaaaaatttt
+//
+`;
+    const record = parseEMBL(embl);
+    expect(record.organism).toBe('Homo sapiens (human)');
+  });
+
   it('5. should parse features', () => {
     const record = parseEMBL(simpleEMBL);
 

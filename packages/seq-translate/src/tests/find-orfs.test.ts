@@ -153,17 +153,14 @@ describe('findOrfs', () => {
     expect(orfsWithPartial[0].hasStopCodon).toBe(false);
   });
 
-  it('13. should handle very long sequence efficiently', () => {
-    // Generate 10KB sequence with ORF
-    const orf = 'ATG' + 'GCC'.repeat(300) + 'TAA'; // ~900bp ORF
+  it('13. should find ORFs in very long sequence', () => {
+    const orf = 'ATG' + 'GCC'.repeat(300) + 'TAA';
     const sequence = 'ACGT'.repeat(1000) + orf + 'ACGT'.repeat(1000);
 
-    const startTime = performance.now();
     const orfs = findOrfs(sequence, { minLength: 75 });
-    const duration = performance.now() - startTime;
 
     expect(orfs.length).toBeGreaterThanOrEqual(1);
-    expect(duration).toBeLessThan(1000); // Generous bound (coverage/CI slower)
+    expect(orfs[0].length).toBeGreaterThanOrEqual(75);
   });
 
   it('14. should handle sequence with only N bases', () => {

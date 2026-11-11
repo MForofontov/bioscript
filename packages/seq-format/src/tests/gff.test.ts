@@ -88,6 +88,16 @@ describe('parseGFFLine', () => {
     expect(() => parseGFFLine(line)).toThrow(Error);
     expect(() => parseGFFLine(line)).toThrow('Invalid strand');
   });
+
+  it('11. should reject scientific notation coordinates', () => {
+    const line = 'chr1\tsource\tgene\t1e2\t100\t.\t+\t.\tID=test';
+    expect(() => parseGFFLine(line)).toThrow('Invalid GFF start');
+  });
+
+  it('12. should reject start greater than end', () => {
+    const line = 'chr1\tsource\tgene\t100\t50\t.\t+\t.\tID=test';
+    expect(() => parseGFFLine(line)).toThrow('start (100) > end (50)');
+  });
 });
 
 describe('formatGFFLine', () => {

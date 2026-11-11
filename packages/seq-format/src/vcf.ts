@@ -236,14 +236,17 @@ export function parseVCFLine(line: string, _samples: string[] = []): VCFRecord {
  * @performance O(n) where n is number of lines.
  * Typical: 10K variants in ~100ms, 100K variants in ~1s.
  */
-export function parseVCF(text: string): { header: VCFHeader; records: VCFRecord[] } {
+export function parseVCF(
+  text: string,
+  options: { strict?: boolean } = {}
+): { header: VCFHeader; records: VCFRecord[] } {
   assertString(text, 'text');
+  const { strict = false } = options;
 
   const header = parseVCFHeader(text);
   const lines = text.split('\n');
   const records: VCFRecord[] = [];
 
-  // Find start of data section
   let dataStartIndex = 0;
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].startsWith('#CHROM')) {
@@ -252,7 +255,6 @@ export function parseVCF(text: string): { header: VCFHeader; records: VCFRecord[
     }
   }
 
-  // Parse data lines
   for (let i = dataStartIndex; i < lines.length; i++) {
     const line = lines[i].trim();
 
@@ -260,11 +262,15 @@ export function parseVCF(text: string): { header: VCFHeader; records: VCFRecord[
       continue;
     }
 
+    if (strict) {
+      records.push(parseVCFLine(line, header.samples));
+      continue;
+    }
+
     try {
       const record = parseVCFLine(line, header.samples);
       records.push(record);
     } catch {
-      // Skip malformed lines
       continue;
     }
   }
