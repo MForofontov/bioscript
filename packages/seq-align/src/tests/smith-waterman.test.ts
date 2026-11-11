@@ -210,7 +210,7 @@ describe('smithWaterman', () => {
     expect(result.score).toBeGreaterThan(0);
   });
 
-  it('17. should align long sequences efficiently', () => {
+  it('17. should align long sequences with positive local score', () => {
     const seq1 = 'A'.repeat(50) + 'CGTA'.repeat(10) + 'T'.repeat(50);
     const seq2 = 'CGTA'.repeat(10);
 
@@ -221,6 +221,8 @@ describe('smithWaterman', () => {
     });
 
     expect(result.score).toBeGreaterThan(0);
+    expect(result.alignedSeq1.replace(/-/g, '').length).toBeGreaterThan(0);
+    expect(result.alignedSeq2.replace(/-/g, '').length).toBeGreaterThan(0);
   });
 
   it('18. should throw TypeError when seq1 is not a string', () => {

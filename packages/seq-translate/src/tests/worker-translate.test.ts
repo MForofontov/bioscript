@@ -101,6 +101,18 @@ describe('translateWorkerChunked', () => {
     expect(results).toHaveLength(1);
     expect(results[0].sequence).toBe('MA');
   });
+
+  it('3. joined chunked translation matches translateSequence', async () => {
+    const { translateSequence } = await import('../translate');
+    const longSeq = 'ATG' + 'GCC'.repeat(200) + 'TAA';
+    const chunked = await translateWorkerChunked(longSeq, {
+      table: 'standard',
+      chunkSize: 33,
+    });
+    const joined = chunked.map((r) => r.sequence).join('');
+    const full = translateSequence(longSeq, { table: 'standard', breakOnStop: false });
+    expect(joined).toBe(full);
+  });
 });
 
 describe('TranslationPool', () => {

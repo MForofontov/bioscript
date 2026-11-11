@@ -5,6 +5,8 @@
  */
 
 import { translateBrowser, translateBrowserBatch } from '../browser-translate';
+import { TextDecoder as NodeTextDecoder } from 'util';
+import { ReadableStream as NodeReadableStream } from 'stream/web';
 
 describe('translateBrowser', () => {
   // Test case 1: Translate a simple sequence
@@ -159,5 +161,100 @@ describe('translateBrowserBatch', () => {
     expect(results[0]).toHaveLength(2);
     expect(results[0][0].isReverse).toBe(false);
     expect(results[0][1].isReverse).toBe(true);
+  });
+});
+
+describe('translateBrowserStreaming', () => {
+  function makeStreamableBlob(text: string, name?: string): Blob {
+    const bytes = Uint8Array.from(Buffer.from(text, 'utf8'));
+    const blob = name
+      ? new File([bytes], name, { type: 'text/plain' })
+      : new Blob([bytes], { type: 'text/plain' });
+
+    // jsdom may lack Blob.stream(); polyfill a simple ReadableStream
+    if (typeof blob.stream !== 'function') {
+      Object.defineProperty(blob, 'stream', {
+        value: () =>
+          new ReadableStream<Uint8Array>({
+            start(controller) {
+              controller.enqueue(bytes);
+              controller.close();
+            },
+          }),
+      });
+    }
+
+    return blob;
+  }
+
+  beforeAll(() => {
+    if (typeof globalThis.TextDecoder === 'undefined') {
+      Object.assign(globalThis, { TextDecoder: NodeTextDecoder });
+    }
+    if (typeof globalThis.ReadableStream === 'undefined') {
+      Object.assign(globalThis, { ReadableStream: NodeReadableStream });
+    }
+  });
+
+  it('1. should stream-translate a Blob sequence with small chunks', async () => {
+    const { translateBrowserStreaming } = await import('../browser-translate');
+    const blob = makeStreamableBlob('ATGGCCAAATTT');
+    const chunks: string[] = [];
+
+    for await (const result of translateBrowserStreaming(blob, {
+      table: 'standard',
+      chunkSize: 6,
+      breakOnStop: false,
+    })) {
+      chunks.push(result.sequence);
+    }
+
+    expect(chunks.join('')).toBe('MAKF');
+  });
+
+  it('2. should stop streaming at first stop codon when breakOnStop is true', async () => {
+    const { translateBrowserStreaming } = await import('../browser-translate');
+    const seq = 'ATGTAA' + 'GGG'.repeat(4000);
+    const blob = makeStreamableBlob(seq);
+    const chunks: string[] = [];
+
+    for await (const result of translateBrowserStreaming(blob, {
+      table: 'standard',
+      chunkSize: 9,
+      breakOnStop: true,
+    })) {
+      chunks.push(result.sequence);
+    }
+
+    expect(chunks.length).toBeGreaterThanOrEqual(1);
+    expect(chunks[0]).toContain('*');
+    expect(chunks.join('').replace(/\*/g, '').length).toBeLessThan(4000);
+  });
+
+  it('3. should process final remainder shorter than chunkSize', async () => {
+    const { translateBrowserStreaming } = await import('../browser-translate');
+    const blob = makeStreamableBlob('ATGAAATTT');
+    const chunks: string[] = [];
+
+    for await (const result of translateBrowserStreaming(blob, {
+      chunkSize: 10000,
+      breakOnStop: false,
+    })) {
+      chunks.push(result.sequence);
+    }
+
+    expect(chunks.join('')).toBe('MKF');
+  });
+
+  it('4. should use File.stream path for non-gzip names', async () => {
+    const { translateBrowserStreaming } = await import('../browser-translate');
+    const file = makeStreamableBlob('ATGGCC', 'seq.txt');
+    const chunks: string[] = [];
+
+    for await (const result of translateBrowserStreaming(file, { chunkSize: 3 })) {
+      chunks.push(result.sequence);
+    }
+
+    expect(chunks.join('')).toBe('MA');
   });
 });

@@ -16,3 +16,8 @@ allure-results/
 **/e2e/*.bundle.js
 **/dist/*.bundle.js
 jest.html
+# Never commit accidental emit-next-to-source artifacts
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.d.ts.map

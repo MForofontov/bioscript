@@ -8,7 +8,15 @@ const root = resolve(__dirname, '..');
 const temporary = mkdtempSync(join(tmpdir(), 'bioscript-packages-'));
 const npm = process.env.npm_execpath;
 if (!npm) throw new Error('Run this check with npm run test:packages');
-const names = ['seq-utils', 'seq-stream', 'seq-translate', 'seq-align', 'seq-format'];
+const names = [
+  'seq-utils',
+  'seq-stream',
+  'seq-translate',
+  'seq-align',
+  'seq-format',
+  'seq-search',
+  'seq-quality',
+];
 function run(args, cwd = temporary, executable = process.execPath) {
   const result = spawnSync(executable, args, { cwd, encoding: 'utf8' });
   if (result.error) throw result.error;
@@ -40,6 +48,12 @@ async function main() {
 const assert = require('assert');
 const utils = require('@bioscript/seq-utils');
 assert.equal(utils.reverseComplement('ACG'), 'CGT');
+assert.equal(utils.normalizeToDna(' aug '), 'ATG');
+assert.equal(utils.normalizeToRna(' atg '), 'AUG');
+assert.equal(utils.isValidSequence('AX'), false);
+utils.assertValidSequence('ACGT');
+assert.deepEqual(require('@bioscript/seq-search').findExact('ACAC','AC').map(hit => hit.start), [0,2]);
+assert.equal(require('@bioscript/seq-quality').meanQuality('II'), 40);
 assert.equal(require('@bioscript/seq-align').needlemanWunsch('AC', 'AC', {matrix:'DNA_SIMPLE'}).score, 10);
 assert.equal(require('@bioscript/seq-format').parseBEDLine('chr1\\t0\\t10').chromEnd, 10);
 assert.equal(typeof require('@bioscript/seq-stream').FastaParser, 'function');
@@ -106,7 +120,7 @@ void [alignment, sequence, parseBEDLine, FastaParser, parseFastqBrowser, transla
       logLevel: 'silent',
     });
     console.log(
-      'All five tarballs passed CommonJS, ESM, declarations, worker, and browser bundle checks.'
+      'All seven tarballs passed CommonJS, ESM, declarations, worker, and browser bundle checks.'
     );
   } finally {
     if (!resolve(temporary).startsWith(join(resolve(tmpdir()), 'bioscript-packages-'))) {

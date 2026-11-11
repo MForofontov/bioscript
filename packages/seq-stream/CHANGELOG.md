@@ -7,14 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-08
+
 ### Fixed
 
-- Correct median sequence lengths for odd and even record counts in Node and browser statistics.
-- Use numeric Phred encoding constants in the script-tag browser bundle, matching its quality conversion and statistics APIs.
+- Preserve strict FASTQ handling and the public histogram statistics helper.
+- Fix UTF-8/EOF handling, truncation detection, cancellation, backpressure, and file/gzip error propagation.
+- Correct odd/even medians and summarize length frequencies without per-record expansion.
+- Share numeric Phred constants across Node and browser bundles.
 
-### Changed
+## [0.2.0] - 2026-07-29
 
-- Compute median, N50, and L50 directly from length frequencies, avoiding per-record arrays and repeated sorting during statistics finalization.
+### Fixed
+
+- FASTQ parser ignores blank lines between records (no state-machine desync)
+
+## [Unreleased]
+
+### Added
+
+- Additional FASTQ edge-case tests (`_flush`, malformed headers/separators, plain writer, QualityConverter)
 
 ## [0.1.1] - 2026-02-17
 

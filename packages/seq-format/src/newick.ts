@@ -73,16 +73,26 @@ export function parseNewick(newick: string): NewickTree {
 
     // Parse node name (optional)
     let name = '';
-    while (
-      position < treeString.length &&
-      treeString[position] !== ':' &&
-      treeString[position] !== ',' &&
-      treeString[position] !== '(' &&
-      treeString[position] !== ')' &&
-      treeString[position] !== ';'
-    ) {
-      name += treeString[position];
+    if (treeString[position] === "'") {
       position++;
+      let closed = false;
+      while (position < treeString.length) {
+        const char = treeString[position++];
+        if (char === "'") {
+          if (treeString[position] === "'") {
+            name += "'";
+            position++;
+          } else {
+            closed = true;
+            break;
+          }
+        } else name += char;
+      }
+      if (!closed) throw new Error('Unterminated quoted label');
+    } else {
+      while (position < treeString.length && !':,();'.includes(treeString[position])) {
+        name += treeString[position++];
+      }
     }
     if (name) {
       node.name = name;
@@ -111,7 +121,7 @@ export function parseNewick(newick: string): NewickTree {
   try {
     const root = parseNode();
     if (position !== treeString.length)
-      throw new Error(`Unexpected content at position ${position}`);
+      throw new Error(`Unexpected trailing content at position ${position}`);
 
     // Calculate tree metadata
     const leafCount = countLeaves(root);
@@ -181,7 +191,10 @@ export function formatNewick(
 
     // Add node name if present
     if (node.name) {
-      result += node.name;
+      result +=
+        /[\s():,;']/.test(node.name) || node.name.includes('[') || node.name.includes(']')
+          ? "'" + node.name.replace(/'/g, "''") + "'"
+          : node.name;
     }
 
     // Add branch length if present and requested
@@ -296,33 +309,7 @@ export function getTotalLength(node: NewickNode): number {
  * ```
  */
 export function validateNewick(newick: string): boolean {
-  if (typeof newick !== 'string') {
-    return false;
-  }
-
-  const trimmed = newick.trim();
-  if (!trimmed.endsWith(';')) {
-    return false;
-  }
-
-  // Check parentheses balance
-  let depth = 0;
-  for (const char of trimmed) {
-    if (char === '(') {
-      depth++;
-    } else if (char === ')') {
-      depth--;
-      if (depth < 0) {
-        return false;
-      }
-    }
-  }
-
-  if (depth !== 0) {
-    return false;
-  }
-
-  // Try parsing
+  if (typeof newick !== 'string') return false;
   try {
     parseNewick(newick);
     return true;

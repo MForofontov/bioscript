@@ -1,3 +1,4 @@
+import { assertString } from '@bioscript/seq-utils';
 import { integer } from './validation';
 /**
  * BED format parser and writer.
@@ -74,7 +75,7 @@ export function parseBEDLine(line: string): BEDRecord {
     throw new Error('Invalid BED coordinates: start and end must be integers');
   }
 
-  if (record.chromStart < 0 || record.chromEnd < 0 || record.chromStart >= record.chromEnd) {
+  if (record.chromStart < 0 || record.chromEnd < 0 || record.chromStart > record.chromEnd) {
     throw new Error(`Invalid BED coordinates: start=${record.chromStart}, end=${record.chromEnd}`);
   }
 
@@ -83,7 +84,7 @@ export function parseBEDLine(line: string): BEDRecord {
     record.name = fields[3];
   }
 
-  if (fields.length >= 5) {
+  if (fields.length >= 5 && fields[4] !== '.') {
     record.score = integer(fields[4], 'BED score');
   }
 
@@ -176,6 +177,8 @@ export function formatBEDLine(record: BEDRecord): string {
 
   if (record.score !== undefined) {
     fields.push(record.score.toString());
+  } else if (record.strand !== undefined) {
+    fields.push('.');
   } else {
     return fields.join('\t');
   }
@@ -242,10 +245,9 @@ export function formatBEDLine(record: BEDRecord): string {
  * @performance O(n) where n is number of lines.
  * Typical: 10K lines in ~30ms, 100K lines in ~300ms.
  */
-export function parseBED(text: string): BEDRecord[] {
-  if (typeof text !== 'string') {
-    throw new TypeError(`text must be a string, got ${typeof text}`);
-  }
+export function parseBED(text: string, options: { strict?: boolean } = {}): BEDRecord[] {
+  assertString(text, 'text');
+  const { strict = false } = options;
 
   const lines = text.split('\n');
   const records: BEDRecord[] = [];
@@ -253,7 +255,6 @@ export function parseBED(text: string): BEDRecord[] {
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // Skip comments, track lines, browser lines, and empty lines
     if (
       !trimmed ||
       trimmed.startsWith('#') ||
@@ -263,11 +264,15 @@ export function parseBED(text: string): BEDRecord[] {
       continue;
     }
 
+    if (strict) {
+      records.push(parseBEDLine(trimmed));
+      continue;
+    }
+
     try {
       const record = parseBEDLine(trimmed);
       records.push(record);
-    } catch (_error) {
-      // Skip malformed lines
+    } catch {
       continue;
     }
   }

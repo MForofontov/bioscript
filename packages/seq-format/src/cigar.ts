@@ -6,6 +6,7 @@
  */
 
 import type { CigarOp, CigarOperation, CigarStats } from './types';
+import { assertString, assertArray } from '@bioscript/seq-utils';
 
 /**
  * Parse CIGAR string into array of operations.
@@ -32,9 +33,7 @@ import type { CigarOp, CigarOperation, CigarStats } from './types';
  * @performance O(n) where n is CIGAR string length.
  */
 export function parseCIGAR(cigar: string): CigarOp[] {
-  if (typeof cigar !== 'string') {
-    throw new TypeError(`cigar must be a string, got ${typeof cigar}`);
-  }
+  assertString(cigar, 'cigar');
 
   if (cigar === '*') {
     return [];
@@ -57,9 +56,14 @@ export function parseCIGAR(cigar: string): CigarOp[] {
       length: parseInt(match[1], 10),
       operation: match[2] as CigarOperation,
     });
+    consumed = pattern.lastIndex;
   }
 
   if (operations.length === 0 || consumed !== cigar.length) {
+    throw new Error(`Invalid CIGAR string: ${cigar}`);
+  }
+
+  if (consumed !== cigar.length) {
     throw new Error(`Invalid CIGAR string: ${cigar}`);
   }
 
@@ -89,9 +93,7 @@ export function parseCIGAR(cigar: string): CigarOp[] {
  * @performance O(n) where n is number of operations.
  */
 export function formatCIGAR(operations: CigarOp[]): string {
-  if (!Array.isArray(operations)) {
-    throw new TypeError(`operations must be an array, got ${typeof operations}`);
-  }
+  assertArray(operations, 'operations');
 
   if (operations.length === 0) {
     return '*';
@@ -140,9 +142,7 @@ export function formatCIGAR(operations: CigarOp[]): string {
  * @performance O(n) where n is number of operations.
  */
 export function getCIGARStats(operations: CigarOp[]): CigarStats {
-  if (!Array.isArray(operations)) {
-    throw new TypeError(`operations must be an array, got ${typeof operations}`);
-  }
+  assertArray(operations, 'operations');
 
   const stats: CigarStats = {
     alignedLength: 0,
@@ -212,6 +212,14 @@ export function getCIGARStats(operations: CigarOp[]): CigarStats {
  * @param querySeq - Query sequence.
  * @returns Object with aligned query and reference representations.
  *
+ * Reconstruct aligned query/reference strings from a CIGAR and query sequence.
+ * Without a true reference sequence, matched columns (M/=/X) copy query bases
+ * into the reference track, and deletions use N placeholders.
+ *
+ * @param cigar - CIGAR string.
+ * @param querySeq - Query/read sequence (excluding hard clips).
+ * @returns Aligned query and approximate reference strings.
+ *
  * @throws {TypeError} If cigar or querySeq is not a string.
  * @throws {Error} If query sequence length doesn't match CIGAR.
  *
@@ -219,7 +227,7 @@ export function getCIGARStats(operations: CigarOp[]): CigarStats {
  * ```typescript
  * const aligned = cigarToAlignedSequence('3M2I2M1D2M', 'ACGTACGTA');
  * console.log(aligned.query); // 'ACGTACGTA'
- * console.log(aligned.reference); // 'ACG--TA-TA'
+ * console.log(aligned.reference); // 'ACG--TA-TA' (query-derived for matches; N for deletions)
  * ```
  *
  * @note Hard clipped bases are not included in query sequence.
@@ -229,12 +237,8 @@ export function cigarToAlignedSequence(
   cigar: string,
   querySeq: string
 ): { query: string; reference: string } {
-  if (typeof cigar !== 'string') {
-    throw new TypeError(`cigar must be a string, got ${typeof cigar}`);
-  }
-  if (typeof querySeq !== 'string') {
-    throw new TypeError(`querySeq must be a string, got ${typeof querySeq}`);
-  }
+  assertString(cigar, 'cigar');
+  assertString(querySeq, 'querySeq');
 
   const operations = parseCIGAR(cigar);
   const stats = getCIGARStats(operations);

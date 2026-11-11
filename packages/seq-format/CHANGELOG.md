@@ -7,11 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-11-08
+
 ### Fixed
 
-- Strip CRLF carriage returns from SAM header values and comments.
-- Reject incomplete Newick parses, malformed numeric branch lengths, and nonfinite lengths.
-- Reject reserved opening parentheses inside unquoted Newick labels, keeping parsing consistent with validation.
+- Preserve strict whole-file parser options, quoted Newick labels, numeric VCF INFO arrays, and current GenBank/EMBL fixes.
+- Validate complete numeric fields, CIGAR operations, and Newick syntax/lengths.
+- Preserve SAM colon values/CRLF headers and escaped/reordered VCF metadata.
+
+## [0.2.1] - 2026-07-29
+
+### Fixed
+
+- SAM optional tags preserve `:` inside values
+- VCF multi-valued INFO kept as number arrays
+- GenBank/EMBL ORIGIN accepts uppercase sequence lines
+
+## [Unreleased]
+
+### Changed
+
+- All parser/formatter functions now use `assertString()`, `assertNumber()`, `assertArray()`, and `assertObject()` from `@bioscript/seq-utils` for input validation (replaces all inline `typeof` checks)
+- Added `@bioscript/seq-utils` as a dependency
 
 ## [0.1.0] - 2026-02-17
 

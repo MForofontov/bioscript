@@ -1,3 +1,4 @@
+import { assertString } from '@bioscript/seq-utils';
 import { integer, numeric } from './validation';
 /**
  * VCF (Variant Call Format) parser.
@@ -154,7 +155,7 @@ export function parseVCFLine(line: string, _samples: string[] = []): VCFRecord {
   const alt = altStr.split(',');
 
   // Parse INFO field
-  const info: Record<string, string | number | boolean> = {};
+  const info: Record<string, string | number | boolean | number[]> = {};
   if (infoStr !== '.') {
     const infoPairs = infoStr.split(';');
     for (const pair of infoPairs) {
@@ -163,8 +164,12 @@ export function parseVCFLine(line: string, _samples: string[] = []): VCFRecord {
         const key = pair.slice(0, separator);
         const value = pair.slice(separator + 1);
         // Try to parse as number
-        const numValue = Number(value);
-        info[key] = value.trim() !== '' && Number.isFinite(numValue) ? numValue : value;
+        const parts = value.split(',');
+        const numbers = parts.map(Number);
+        const numericParts =
+          parts.every((part) => /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(part)) &&
+          numbers.every(Number.isFinite);
+        info[key] = numericParts ? (parts.length > 1 ? numbers : numbers[0]) : value;
       } else {
         // Flag (boolean)
         info[pair] = true;
@@ -223,16 +228,17 @@ export function parseVCFLine(line: string, _samples: string[] = []): VCFRecord {
  * @performance O(n) where n is number of lines.
  * Typical: 10K variants in ~100ms, 100K variants in ~1s.
  */
-export function parseVCF(text: string): { header: VCFHeader; records: VCFRecord[] } {
-  if (typeof text !== 'string') {
-    throw new TypeError(`text must be a string, got ${typeof text}`);
-  }
+export function parseVCF(
+  text: string,
+  options: { strict?: boolean } = {}
+): { header: VCFHeader; records: VCFRecord[] } {
+  assertString(text, 'text');
+  const { strict = false } = options;
 
   const header = parseVCFHeader(text);
   const lines = text.split('\n');
   const records: VCFRecord[] = [];
 
-  // Find start of data section
   let dataStartIndex = 0;
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].startsWith('#CHROM')) {
@@ -241,7 +247,6 @@ export function parseVCF(text: string): { header: VCFHeader; records: VCFRecord[
     }
   }
 
-  // Parse data lines
   for (let i = dataStartIndex; i < lines.length; i++) {
     const line = lines[i].trim();
 
@@ -249,11 +254,15 @@ export function parseVCF(text: string): { header: VCFHeader; records: VCFRecord[
       continue;
     }
 
+    if (strict) {
+      records.push(parseVCFLine(line, header.samples));
+      continue;
+    }
+
     try {
       const record = parseVCFLine(line, header.samples);
       records.push(record);
     } catch {
-      // Skip malformed lines
       continue;
     }
   }
@@ -290,6 +299,7 @@ export function formatVCFLine(record: VCFRecord): string {
     if (value === true) {
       return key;
     }
+    if (Array.isArray(value)) return `${key}=${value.join(',')}`;
     return `${key}=${value}`;
   });
   const infoStr = infoPairs.length > 0 ? infoPairs.join(';') : '.';

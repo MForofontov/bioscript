@@ -1,3 +1,4 @@
+export { calculateN50L50FromHistogram } from './histogram-stats';
 import { summarizeLengths } from './length-summary';
 import { Transform, type TransformCallback } from 'stream';
 import type { FastaRecord } from './fasta';

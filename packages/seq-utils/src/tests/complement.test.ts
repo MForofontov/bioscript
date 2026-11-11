@@ -76,21 +76,30 @@ describe('complement', () => {
 
   // Test case 13: Handle unknown characters in DNA (preserved)
   it('13. should preserve unknown characters in DNA', () => {
-    expect(complement('ATGCXYZ')).toBe('TACGXYZ');
+    expect(complement('ATGCQJZ')).toBe('TACGQJZ');
   });
 
   // Test case 14: Handle unknown characters in RNA (preserved)
   it('14. should preserve unknown characters in RNA', () => {
-    expect(complement('AUGCXYZ')).toBe('UACGXYZ');
+    expect(complement('AUGCQJZ')).toBe('UACGQJZ');
   });
 
   // Test case 15: Handle lowercase unknown characters in DNA
   it('15. should preserve lowercase unknown characters in DNA', () => {
-    expect(complement('atgcxyz')).toBe('tacgxyz');
+    expect(complement('atgcqjz')).toBe('tacgqjz');
   });
 
   // Test case 16: Handle lowercase unknown characters in RNA
   it('16. should preserve lowercase unknown characters in RNA', () => {
-    expect(complement('augcxyz')).toBe('uacgxyz');
+    expect(complement('augcqjz')).toBe('uacgqjz');
+  });
+
+  it('17. should complement IUPAC ambiguity codes', () => {
+    expect(complement('RYSWKM')).toBe('YRSWMK');
+    expect(complement('BDHV')).toBe('VHDB');
+  });
+
+  it('18. should treat mixed T+U as DNA (per-base, U→A)', () => {
+    expect(complement('ATUG')).toBe('TAAC');
   });
 });

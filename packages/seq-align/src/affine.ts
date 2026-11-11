@@ -206,7 +206,8 @@ export function affineAlign(
   const length = aligned1.length;
   // Retain historical score normalization in semi-global, overlap, and banded APIs.
   const normalizeScore =
-    (mode === 'semi' || mode === 'overlap' || bandwidth !== undefined) && options.normalize;
+    (mode === 'semi' || mode === 'overlap' || bandwidth !== undefined) &&
+    (options.normalizeScore ?? options.normalize);
   return {
     alignedSeq1,
     alignedSeq2,

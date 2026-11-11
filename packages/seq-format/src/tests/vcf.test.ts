@@ -94,6 +94,13 @@ describe('parseVCFLine', () => {
     expect(record.info.AF).toBe(0.5);
   });
 
+  it('2b. should keep multi-valued INFO as array', () => {
+    const line = '20\t14370\trs6054257\tG\tA\t29\tPASS\tAF=0.5,0.5;DP=14';
+    const record = parseVCFLine(line);
+    expect(record.info.AF).toEqual([0.5, 0.5]);
+    expect(record.info.DP).toBe(14);
+  });
+
   it('3. should handle INFO flags', () => {
     const line = '20\t14370\trs6054257\tG\tA\t29\tPASS\tDB;H2';
     const record = parseVCFLine(line);

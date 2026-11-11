@@ -137,7 +137,13 @@ r001\t99\tref\t7\t30\t8M2I4M1D3M\t=\t37\t39\tTTAGATAAAGGATACTG\t*\tNM:i:1
     expect(header.comments[0]).toBe('This is a comment');
   });
 
-  it('6. should throw TypeError when input is not a string', () => {
+  it('6. should preserve reference names containing colons', () => {
+    const header = parseSAMHeader('@SQ\tSN:chr1:extra\tLN:1000\n');
+    expect(header.references[0].name).toBe('chr1:extra');
+    expect(header.references[0].length).toBe(1000);
+  });
+
+  it('7. should throw TypeError when input is not a string', () => {
     expect(() => parseSAMHeader(123 as any)).toThrow(TypeError);
   });
 });
@@ -173,6 +179,13 @@ describe('parseSAMLine', () => {
     expect(record.tags.NM).toBe(1);
     expect(record.tags.MD).toBe('8');
     expect(record.tags.AS).toBe(8);
+  });
+
+  it('3b. should preserve colons inside tag values', () => {
+    const line =
+      'r001\t99\tref\t7\t30\t8M\t=\t37\t39\tTTAGATAA\t*\tXA:Z:chr2,+1000,8M,0;chr3,-200,8M,1';
+    const record = parseSAMLine(line);
+    expect(record.tags.XA).toBe('chr2,+1000,8M,0;chr3,-200,8M,1');
   });
 
   it('4. should parse integer tags', () => {

@@ -12,6 +12,10 @@ import {
   parseCIGAR,
   parseNewick,
   validateNewick,
+  formatNewick,
+  parseBED,
+  parseGFF,
+  parseVCF,
 } from '../index';
 
 test.each(['1.5', '12junk', 'NaN', 'Infinity', '9007199254740992'])(
@@ -26,7 +30,7 @@ test.each(['1.5', '12junk', 'NaN', 'Infinity', '9007199254740992'])(
 test('preserves VCF INFO arrays, string prefixes, and equals signs', () => {
   const line = 'chr1\t1\t.\tA\tC\t10\tPASS\tAF=0.1,0.2;NOTE=12bases=x;DP=12';
   const record = parseVCFLine(line);
-  expect(record.info).toEqual({ AF: '0.1,0.2', NOTE: '12bases=x', DP: 12 });
+  expect(record.info).toEqual({ AF: [0.1, 0.2], NOTE: '12bases=x', DP: 12 });
   expect(parseVCFLine(formatVCFLine(record))).toEqual(record);
 });
 
@@ -66,6 +70,26 @@ test.each(['2Mgarbage', 'garbage2M', '2M0I', '9007199254740992M'])(
     expect(() => parseCIGAR(cigar)).toThrow();
   }
 );
+
+test('quoted Newick labels preserve reserved syntax and escaped quotes on round trip', () => {
+  const text = "('A(B':0.5,'O''Brien':1);";
+  const tree = parseNewick(text);
+  expect(tree.root.children?.map((node) => node.name)).toEqual(['A(B', "O'Brien"]);
+  expect(validateNewick(text)).toBe(true);
+  expect(parseNewick(formatNewick(tree))).toEqual(tree);
+  expect(validateNewick("('unfinished,A);")).toBe(false);
+});
+
+test('published strict whole-file parser options reject malformed data', () => {
+  expect(parseBED('chr1\tbad\t20')).toEqual([]);
+  expect(() => parseBED('chr1\tbad\t20', { strict: true })).toThrow();
+  expect(() =>
+    parseGFF('chr1\t.\tgene\tbad\t20\t.\t+\t.\tID=g', 'gff3', { strict: true })
+  ).toThrow();
+  const vcf =
+    '##fileformat=VCFv4.2\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\nchr1\tbad\t.\tA\tC\t.\tPASS\t.';
+  expect(() => parseVCF(vcf, { strict: true })).toThrow();
+});
 
 test('BED12 round trips and enforces block consistency', () => {
   const record = parseBEDLine('chr1\t10\t30\tx\t500\t+\t10\t30\t0\t2\t5,5,\t0,15,');

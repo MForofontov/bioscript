@@ -32,6 +32,11 @@ export class FastqParser extends LineParser {
 
   protected processLine(line: string): void {
     const trimmed = line.trim();
+    if (!trimmed) {
+      if (this.lineNumber % 4 !== 0 || this.currentRecord.id)
+        throw new Error('Unexpected blank line in FASTQ record');
+      return;
+    }
     const position = this.lineNumber % 4;
 
     switch (position) {

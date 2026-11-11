@@ -7,6 +7,8 @@
  */
 
 import { reverseComplement } from './reverse-complement';
+import { assertArray, assertNumber } from './validation';
+import { normalizeSequence } from './normalize';
 
 /**
  * De Bruijn graph node.
@@ -61,12 +63,8 @@ export function buildDeBruijnGraph(
   k: number,
   options: { canonical?: boolean; minCoverage?: number } = {}
 ): DeBruijnGraph {
-  if (!Array.isArray(sequences)) {
-    throw new TypeError(`sequences must be an array, got ${typeof sequences}`);
-  }
-  if (typeof k !== 'number') {
-    throw new TypeError(`k must be a number, got ${typeof k}`);
-  }
+  assertArray(sequences, 'sequences');
+  assertNumber(k, 'k');
   if (k < 2 || !Number.isInteger(k)) {
     throw new Error(`k must be an integer >= 2, got ${k}`);
   }
@@ -83,15 +81,11 @@ export function buildDeBruijnGraph(
       continue;
     }
 
-    const normalized = sequence.trim().toUpperCase();
+    const normalized = normalizeSequence(sequence);
 
     for (let i = 0; i <= normalized.length - k; i++) {
-      let kmer = normalized.slice(i, i + k);
-
-      if (canonical) {
-        const revComp = reverseComplement(kmer);
-        kmer = kmer < revComp ? kmer : revComp;
-      }
+      const rawKmer = normalized.slice(i, i + k);
+      const kmer = canonicalKmer(rawKmer, canonical);
 
       // Add node if doesn't exist
       if (!nodes.has(kmer)) {
@@ -101,13 +95,14 @@ export function buildDeBruijnGraph(
       const node = nodes.get(kmer)!;
       node.coverage++;
 
-      // Add edge to next k-mer
+      // Add edge to next k-mer only when canonical forms still share a (k-1) overlap.
+      // Independently canonicalizing consecutive k-mers can otherwise create invalid edges.
       if (i < normalized.length - k) {
-        let nextKmer = normalized.slice(i + 1, i + 1 + k);
+        const rawNext = normalized.slice(i + 1, i + 1 + k);
+        const nextKmer = canonicalKmer(rawNext, canonical);
 
-        if (canonical) {
-          const revComp = reverseComplement(nextKmer);
-          nextKmer = nextKmer < revComp ? nextKmer : revComp;
+        if (kmer.slice(1) !== nextKmer.slice(0, k - 1)) {
+          continue;
         }
 
         if (!node.edges.includes(nextKmer)) {
@@ -281,22 +276,24 @@ export function getGraphStats(graph: DeBruijnGraph): {
  */
 export function removeTips(graph: DeBruijnGraph, maxTipLength: number): number {
   let removed = 0;
-  const toRemove: string[] = [];
+  const toRemove = new Set<string>();
 
   for (const [kmer, node] of graph.nodes) {
     if (node.edges.length === 0) {
-      // Dead end - check if it's a tip
-      const pathLength = getTipLength(graph, kmer);
-      if (pathLength <= maxTipLength) {
-        toRemove.push(kmer);
+      const tipPath = collectTipPath(graph, kmer);
+      if (tipPath.length > 0 && tipPath.length <= maxTipLength) {
+        for (const tipKmer of tipPath) {
+          toRemove.add(tipKmer);
+        }
       }
     }
   }
 
-  // Remove tips
   for (const kmer of toRemove) {
-    removeKmer(graph, kmer);
-    removed++;
+    if (graph.nodes.has(kmer)) {
+      removeKmer(graph, kmer);
+      removed++;
+    }
   }
 
   return removed;
@@ -335,29 +332,36 @@ export function removeLowCoverageNodes(graph: DeBruijnGraph, minCoverage: number
 
 // Helper functions
 
-function getTipLength(graph: DeBruijnGraph, kmer: string): number {
-  let length = 0;
-  let current = kmer;
-  const visited = new Set<string>();
+function canonicalKmer(kmer: string, canonical: boolean): string {
+  if (!canonical) return kmer;
+  const revComp = reverseComplement(kmer);
+  return kmer < revComp ? kmer : revComp;
+}
 
-  while (!visited.has(current)) {
-    visited.add(current);
+/** Walk backward from a dead-end along a non-branching path; returns tip nodes (dead-end last). */
+function collectTipPath(graph: DeBruijnGraph, deadEnd: string): string[] {
+  const path: string[] = [deadEnd];
+  const seen = new Set(path);
+  let current = deadEnd;
+
+  while (true) {
     const incoming = graph.reverseEdges.get(current);
-    if (!incoming || incoming.size === 0) {
+    if (!incoming || incoming.size !== 1) {
       break;
     }
 
     const prev = [...incoming][0];
     const prevNode = graph.nodes.get(prev);
-    if (!prevNode || prevNode.edges.length > 1) {
+    if (!prevNode || prevNode.edges.length !== 1 || seen.has(prev)) {
       break;
     }
 
-    length++;
+    path.push(prev);
+    seen.add(prev);
     current = prev;
   }
 
-  return length;
+  return path.reverse();
 }
 
 function removeKmer(graph: DeBruijnGraph, kmer: string): void {

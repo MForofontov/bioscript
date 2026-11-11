@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-11-08
+
+### Fixed
+
+- Preserve the published ORF and NCBI-table corrections.
+- Reuse persistent workers and settle queued/active tasks on termination.
+- Preserve codon boundaries, stop semantics, and final browser streaming buffers.
+- Require the corrected sequence utilities release.
+
+## [0.2.1] - 2026-07-29
+
+### Fixed
+
+- NCBI table 27: UGA → W (productive dual-sense assignment)
+- `getTable` throws on unknown table ids instead of silent fallback
+
+## [Unreleased]
+
+### Fixed
+
+- Corrected NCBI table 9 (echinoderm/flatworm): AUA remains Ile (was incorrectly Met)
+- Corrected tables 21–23 DNA codon keys to RNA (`AUA`/`UCA`/`UUA`) so RNA inputs resolve
+- `translateBrowserStreaming` now translates leftover buffer when input is shorter than `chunkSize`
+
+### Changed
+
+- `translateWorkerChunked()` now uses `normalizeSequence()` from `@bioscript/seq-utils` instead of inline `.trim().toUpperCase()`
+- `translate.ts` uses `normalizeSequence()` from `@bioscript/seq-utils` instead of inline `.trim().toUpperCase()`
+- `find-orfs.ts` uses `assertString()`, `assertValidSequence()`, and `normalizeToDna()` from `@bioscript/seq-utils`
+
 ## [0.1.1] - 2026-02-17
 
 ### Changed

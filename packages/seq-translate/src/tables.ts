@@ -173,9 +173,9 @@ export const ciliateNuclear: CodonTable = {
 };
 
 // Table 9: Echinoderm and Flatworm Mitochondrial
+// NCBI diffs: AAA→N, AGA/AGG→S, UGA→W (AUA remains Ile)
 export const echinodermFlatwormMitochondrial: CodonTable = {
   ...standardTable,
-  AUA: 'M',
   UGA: 'W',
   AGA: 'S',
   AGG: 'S',
@@ -226,23 +226,23 @@ export const chlorophyceanMitochondrial: CodonTable = {
   UAG: 'L',
 };
 
-// Table 21: Trematode Mitochondrial
+// Table 21: Trematode Mitochondrial (table 9 + AUA→M)
 export const trematodeMitochondrial: CodonTable = {
   ...echinodermFlatwormMitochondrial,
-  ATA: 'M',
+  AUA: 'M',
 };
 
 // Table 22: Scenedesmus obliquus Mitochondrial
 export const scenedesmusMitochondrial: CodonTable = {
   ...standardTable,
-  TCA: '*',
+  UCA: '*',
   UAG: 'L',
 };
 
 // Table 23: Thraustochytrium Mitochondrial
 export const thraustochytriumMitochondrial: CodonTable = {
   ...bacterialArchaealPlastid,
-  TTA: '*',
+  UUA: '*',
 };
 
 // Table 24: Rhabdopleuridae Mitochondrial
@@ -266,11 +266,12 @@ export const pachysolenNuclear: CodonTable = {
 };
 
 // Table 27: Karyorelict Nuclear
+// NCBI: UAA/UAG→Gln; UGA is dual-sense (Trp or stop). Productive assignment matches Biopython (W).
 export const karyorelictNuclear: CodonTable = {
   ...standardTable,
   UAA: 'Q',
   UAG: 'Q',
-  UGA: '*',
+  UGA: 'W',
 };
 
 // Table 28: Condylostoma Nuclear
@@ -375,5 +376,11 @@ export const tables: Record<string, CodonTable> = {
 };
 
 export function getTable(name = 'standard'): CodonTable {
-  return tables[name] ?? standardTable;
+  const table = tables[name];
+  if (!table) {
+    throw new Error(
+      `Unknown genetic code table: ${name}. Use a NCBI id (e.g. '1', '2') or named key (e.g. 'standard').`
+    );
+  }
+  return table;
 }
